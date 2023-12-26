@@ -17,10 +17,13 @@ class Game : public game::Engine
 public:
 	game::PixelMode pixelMode;
 	triangle tri;
+	game::ThreadPool threadPool;
+	std::atomic<uint64_t> fence;
 
 	Game() : game::Engine()
 	{
 		ZeroMemory(&tri, sizeof(triangle));
+		fence = 0;
 	}
 
 	void Initialize()
@@ -40,6 +43,8 @@ public:
 			geLogLastError();
 		}
 
+		threadPool.Start();
+
 
 		// top
 		tri.vertices[0].x = 320;
@@ -57,6 +62,7 @@ public:
 
 	void Shutdown()
 	{
+		threadPool.Stop();
 	}
 
 	void Update(const float_t msElapsed)
@@ -93,13 +99,14 @@ public:
 			(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
 			(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
 			color);
+		fence++;
 	}
 
 	void Render(const float_t msElapsed)
 	{
 		static float rotation = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		triangle rotatedTri;
@@ -113,8 +120,14 @@ public:
 
 		pixelMode.Clear(game::Colors::Black);
 
-		DrawWireFrame(rotatedTri, game::Colors::Red);
-		DrawWireFrame(tri, game::Colors::White);
+		threadPool.Queue(std::bind(&Game::DrawWireFrame, this, rotatedTri, game::Colors::Red));
+		threadPool.Queue(std::bind(&Game::DrawWireFrame, this, tri, game::Colors::White));
+
+		//DrawWireFrame(rotatedTri, game::Colors::Red);
+		//DrawWireFrame(tri, game::Colors::White);
+		while(fence < 2)
+		{ }
+		fence = 0;
 
 		//pixelMode.LineClip(
 		//	(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
