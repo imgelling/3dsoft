@@ -1,4 +1,5 @@
 #include <stdint.h>
+#define GAME_SUPPORT_DIRECTX9
 #include "game.h"
 
 struct vertex
@@ -33,6 +34,7 @@ public:
 
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
+		attributes.RenderingAPI = game::RenderAPI::DirectX9;
 		geSetAttributes(attributes);
 
 	}
@@ -108,8 +110,7 @@ public:
 		fence++;
 	}
 
-	inline
-		float edgeFunction(const game::Vector2f& a, const game::Vector2f& b, const game::Vector2f& c)
+	inline float_t edgeFunction(const game::Vector2f& a, const game::Vector2f& b, const game::Vector2f& c)
 	{
 		return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
 	}
@@ -169,6 +170,34 @@ public:
 		fence++;
 	}
 
+	/*
+	* // Does it pass the top-left rule?
+Vec2f v0 = { ... };
+Vec2f v1 = { ... };
+Vec2f v2 = { ... };
+
+float w0 = edgeFunction(v1, v2, p); 
+float w1 = edgeFunction(v2, v0, p); 
+float w2 = edgeFunction(v0, v1, p); 
+
+Vec2f edge0 = v2 - v1;
+Vec2f edge1 = v0 - v2;
+Vec2f edge2 = v1 - v0;
+
+bool overlaps = true;
+
+// If the point is on the edge, test if it is a top or left edge, 
+// otherwise test if  the edge function is positive
+overlaps &= (w0 == 0 ? ((edge0.y == 0 && edge0.x > 0) ||  edge0.y > 0) : (w0 > 0));
+overlaps &= (w1 == 0 ? ((edge1.y == 0 && edge1.x > 0) ||  edge1.y > 0) : (w1 > 0));
+overlaps &= (w1 == 0 ? ((edge2.y == 0 && edge2.x > 0) ||  edge2.y > 0) : (w2 > 0));
+
+if (overlaps) {
+    // pixel overlap the triangle
+    ...draw it
+}
+	*/
+
 	void Render(const float_t msElapsed)
 	{
 		static float rotation = 0.0f;
@@ -176,6 +205,7 @@ public:
 		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
+		fence = 0;
 		triangle rotatedTri;
 		//ZeroMemory(&rotatedTri, sizeof(triangle));
 		rotatedTri = tri;
@@ -193,14 +223,14 @@ public:
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
 		
-		//threadPool.Queue(std::bind(&Game::DrawColored, this, rotatedTri));
-		//threadPool.Queue(std::bind(&Game::DrawColored, this, tri));
-		//while(fence < 2)
-		//{ }
-		//fence = 0;
+		threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(rotatedTri)));
+		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
+		while(fence < 1)
+		{ }
+
 
 		DrawWireFrame(rotatedTri, game::Colors::White);
-		DrawColored(rotatedTri);
+		//DrawColored(rotatedTri);
 
 		//pixelMode.LineClip(
 		//	(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
