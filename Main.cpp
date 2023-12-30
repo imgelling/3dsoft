@@ -160,17 +160,58 @@ public:
 		float_t b = 0.0f;
 		game::Vector2f p;
 
+		// test optimization
+		bool foundTriangle = false;
 
-		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j) {
-			for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i) {
+
+		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j) 
+		{
+			foundTriangle = false;
+			for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i) 
+			{
 				p = { i + 0.5f, j + 0.5f };
 
 				w0 = edgeFunctionCW(v1, v2, p);
-				if (w0 <= 0) continue;  // >= for clockwise triangles  <= counter
+				if (w0 <= 0)  // >= for clockwise triangles  <= counter
+				{					
+					if (foundTriangle)
+					{
+						break;
+					}
+					else
+					{
+						pixelMode.Pixel(i, j, game::Colors::Pink);
+						continue;
+					}
+				}
 				w1 = edgeFunctionCW(v2, v0, p);
-				if (w1 <= 0) continue;
+				if (w1 <= 0)
+				{
+					if (foundTriangle)
+					{
+						break;
+					}
+					else
+					{
+						pixelMode.Pixel(i, j, game::Colors::Pink);
+						continue;
+					}
+				}
 				w2 = edgeFunctionCW(v0, v1, p);
-				if (w2 <= 0) continue;
+				if (w2 <= 0)
+				{
+					if (foundTriangle)
+					{
+						break;
+					}
+					else
+					{
+						pixelMode.Pixel(i, j, game::Colors::Pink);
+						continue;
+					}
+				}
+
+				foundTriangle = true;
 
 				w0 *= oneOverArea;
 				w1 *= oneOverArea;
@@ -185,6 +226,7 @@ public:
 			}
 		}
 		fence++;
+		//std::cout << boundingBox.right - boundingBox.left << "," << boundingBox.bottom - boundingBox.top << "\n";
 	}
 
 	/*
@@ -240,14 +282,14 @@ if (overlaps) {
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
 		
-		threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(rotatedTri)));
+		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(rotatedTri)));
 		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
-		while(fence < 1)
+		//while(fence < 1)
 		{ }
 
 
+		DrawColored(rotatedTri);
 		DrawWireFrame(rotatedTri, game::Colors::White);
-		//DrawColored(rotatedTri);
 
 		//pixelMode.LineClip(
 		//	(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
