@@ -21,6 +21,12 @@ public:
 	game::ThreadPool threadPool;
 	std::atomic<uint64_t> fence;
 
+	game::Recti clip[4];
+	std::vector<Triangle> tris;
+	std::vector<Triangle> clippedTris;
+
+#include "Header.h"
+
 	Game() : game::Engine()
 	{
 		ZeroMemory(&tri, sizeof(Triangle));
@@ -35,6 +41,31 @@ public:
 		attributes.VsyncOn = false;
 		geSetAttributes(attributes);
 
+		//tl
+		clip[0].x = 0;
+		clip[0].y = 0;
+		clip[0].right = 640 / 2 - 1;
+		clip[0].bottom = 360 / 2 - 1;
+
+		// tr
+		clip[1].x = 640 / 2 - 1;
+		clip[1].y = 0;
+		clip[1].right = 640 - 1;
+		clip[1].bottom = 360 / 2 - 1;
+
+		// bl
+		clip[2].x = 0;
+		clip[2].y = 360 / 2 - 1;
+		clip[2].right = 640 / 2 - 1;
+		clip[2].bottom = 360 - 1;
+
+		// br
+		clip[3].x = 640 / 2 -1;
+		clip[3].y = 360 / 2 - 1;
+		clip[3].right = 640 - 1;
+		clip[3].bottom = 360 - 1;
+		
+
 	}
 
 	void LoadContent()
@@ -43,9 +74,12 @@ public:
 		{
 			geLogLastError();
 		}
+		game::Random rnd;
+
+		rnd.NewSeed();
 
 		// Start the threads up
-		threadPool.Start();
+		threadPool.Start(4);
 
 		// Clockwise vertex winding
 		// top
@@ -63,8 +97,17 @@ public:
 		tri.vertices[2].y = 230;
 		tri.vertices[2].g = 1.0f;
 
-
-
+		for (int i = 0; i < 1000; i++)
+		{
+			Triangle temp(tri);
+			for (int v = 0; v < 3; v++)
+			{
+				temp.vertices[v].x = (float_t)rnd.RndRange(0, 640);
+				temp.vertices[v].y = (float_t)rnd.RndRange(0, 360);
+				temp.vertices[v].z = (float_t)rnd.RndRange(0, 360);
+			}
+			tris.emplace_back(temp);
+		}
 	}
 
 	void Shutdown()
@@ -107,20 +150,6 @@ public:
 			(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
 			color);
 		fence++;
-	}
-
-	// Returns the signed area of the triangle formed by
-	// points a,b,c with clockwise winding
-	inline float_t edgeFunctionCW(const game::Vector2f& a, const game::Vector2f& b, const game::Vector2f& c)
-	{
-		return -((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x));
-	}
-
-	// Returns the signed area of the triangle formed by
-	// points a,b,c with counter (anti) clockwise winding
-	inline float_t edgeFunctionCCW(const game::Vector2f& a, const game::Vector2f& b, const game::Vector2f& c)
-	{
-		return ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x));
 	}
 
 	inline const game::Rectf TriangleBoundingBox(const Triangle& tri)
@@ -233,27 +262,56 @@ public:
 		game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
 		game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
 
-
-
-		//game::Vector2f p;
-
 		// test optimization
 		bool foundTriangle = false;
 
-		EdgeEquation e0(v1,v2);
-		EdgeEquation e1(v2,v0);
-		EdgeEquation e2(v0,v1);
+		EdgeEquation e0(v1, v2);
+		EdgeEquation e1(v2, v0);
+		EdgeEquation e2(v0, v1);
 
 		// back face cull
 		float area = (e0.c + e1.c + e2.c);
-		if (area < 0) return;
+		if (area < 0)
+		{
+			fence++;
+			return;
+		}
 
+		float a0 = 0.0f;
+		float a1 = 0.0f;
+		float a2 = 0.0f;
 		game::Rectf boundingBox = TriangleBoundingBox(tri);
 		game::Vector2f p;
-		// 
+
 		ParameterEquation r(tri.vertices[0].r, tri.vertices[1].r, tri.vertices[2].r, e0, e1, e2, area);
 		ParameterEquation g(tri.vertices[0].g, tri.vertices[1].g, tri.vertices[2].g, e0, e1, e2, area);
 		ParameterEquation b(tri.vertices[0].b, tri.vertices[1].b, tri.vertices[2].b, e0, e1, e2, area);
+
+		// Wireframe precalcs
+		float_t d[3] = {}; 
+		float_t minDistSq = 0.0f;
+		float_t yy[3] = {};
+		float_t xx[3] = {};
+		float_t xy[3] = {};
+		float_t yx[3] = {};
+		yy[0] = tri.vertices[1].y - tri.vertices[0].y; //y2 - y1;
+		xx[0] = tri.vertices[1].x - tri.vertices[0].x; //x2 - x1;
+		xy[0] = tri.vertices[1].x * tri.vertices[0].y; //x2 * y1;
+		yx[0] = tri.vertices[1].y * tri.vertices[0].x; //y2 * x1;
+
+		yy[1] = tri.vertices[2].y - tri.vertices[1].y; //y2 - y1;
+		xx[1] = tri.vertices[2].x - tri.vertices[1].x; //x2 - x1;
+		xy[1] = tri.vertices[2].x * tri.vertices[1].y; //x2 * y1;
+		yx[1] = tri.vertices[2].y * tri.vertices[1].x; //y2 * x1;
+
+		yy[2] = tri.vertices[0].y - tri.vertices[2].y; //y2 - y1;
+		xx[2] = tri.vertices[0].x - tri.vertices[2].x; //x2 - x1;
+		xy[2] = tri.vertices[0].x * tri.vertices[2].y; //x2 * y1;
+		yx[2] = tri.vertices[0].y * tri.vertices[2].x; //y2 * x1;
+
+		xy[0] = xy[0] - yx[0];
+		xy[1] = xy[1] - yx[1];
+		xy[2] = xy[2] - yx[2];
 
 		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j)
 		{
@@ -262,7 +320,8 @@ public:
 			{
 				p = { i + 0.5f , j + 0.5f };
 
-				if (e0.test(p.x,p.y))  // >= for clockwise triangles  <= counter
+				a0 = e0.evaluate(p.x, p.y);
+				if (e0.test(a0))  // >= for clockwise triangles  <= counter
 				{
 					if (foundTriangle)
 					{
@@ -274,7 +333,8 @@ public:
 						continue;
 					}
 				}
-				if (e1.test(p.x, p.y))
+				a1 = e1.evaluate(p.x, p.y);
+				if (e1.test(a1))
 				{
 					if (foundTriangle)
 					{
@@ -286,7 +346,8 @@ public:
 						continue;
 					}
 				}
-				if (e2.test(p.x, p.y))
+				a2 = e2.evaluate(p.x, p.y);
+				if (e2.test(a2))
 				{
 					if (foundTriangle)
 					{
@@ -298,10 +359,21 @@ public:
 						continue;
 					}
 				}
-
-
 				foundTriangle = true;
 
+				// Wireframe
+				for (uint32_t dis = 0; dis < 3; dis++)
+				{
+					d[dis] = distanceFromPointToLineSq(p.x, p.y, yy[dis], xx[dis], xy[dis]);
+				}
+				minDistSq = d[0];
+				if (d[1] < minDistSq) minDistSq = d[1];
+				if (d[2] < minDistSq) minDistSq = d[2];
+				if (minDistSq < 4)
+				{
+					pixelMode.Pixel(i, j, game::Colors::White);
+					continue;
+				}
 
 				// Calculates the color
 				pixelMode.Pixel(i, j, game::Color(r.evaluate(p.x, p.y), g.evaluate(p.x, p.y), b.evaluate(p.x, p.y), 1.0f));
@@ -310,130 +382,18 @@ public:
 		fence++;
 	}
 
-	//void DrawColored(const Triangle& tri)
-	//{
-	//	game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
-	//	game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
-	//	game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
+	float distanceFromPointToLineSq(const float x0, const float y0, const float yy, const float xx, const float xyyx)
+	{
+		float num = yy * x0 - xx * y0 + xyyx;
+		float numerator = num * num;
+		float denominator = xx * xx + yy * yy;
+		return (numerator / denominator);
+	}
 
-	//	game::Rectf boundingBox = TriangleBoundingBox(tri);
+	void ClipTriangle(Triangle tri)
+	{
 
-	//	float_t area = edgeFunctionCW(v0, v1, v2);
-	//	float_t oneOverArea = 1.0f / area;
-	//	float_t w0(0.0f);
-	//	float_t w1 = 0.0f;
-	//	float_t w2 = 0.0f;
-	//	float_t r = 0.0f;
-	//	float_t g = 0.0f;
-	//	float_t b = 0.0f;
-	//	game::Vector2f p;
-
-	//	// test optimization
-	//	bool foundTriangle = false;
-
-
-	//	for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; j++) 
-	//	{
-	//		foundTriangle = false;
-	//		for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i) 
-	//		{
-	//			p = { i + 0.5f , j + 0.5f  };
-
-	//			w0 = edgeFunctionCW(v1, v2, p);
-	//			if (w0 < 0.0f)  // >= for clockwise triangles  <= counter
-	//			{					
-	//				if (foundTriangle)
-	//				{
-	//					break;
-	//				}
-	//				else
-	//				{
-	//					pixelMode.Pixel(i, j, game::Colors::Pink);
-	//					continue;
-	//				}
-	//			}
-	//			w1 = edgeFunctionCW(v2, v0, p);
-	//			if (w1 < 0.0f)
-	//			{
-	//				if (foundTriangle)
-	//				{
-	//					break;
-	//				}
-	//				else
-	//				{
-	//					pixelMode.Pixel(i, j, game::Colors::Pink);
-	//					continue;
-	//				}
-	//			}
-	//			w2 = edgeFunctionCW(v0, v1, p);
-	//			if (w2 < 0.0f)
-	//			{
-	//				if (foundTriangle)
-	//				{
-	//					break;
-	//				}
-	//				else
-	//				{
-	//					pixelMode.Pixel(i, j, game::Colors::Pink);
-	//					continue;
-	//				}
-	//			}
-
-
-	//			foundTriangle = true;
-
-	//			//// wireframe test
-	//			//int w = 200;
-	//			//if (((int)w0 <= w) || ((int)w1 <= w) || ((int)w2 <= w))
-	//			//{
-	//			//	pixelMode.Pixel(i, j, game::Colors::White);
-	//			//	continue;
-	//			//}
-
-
-	//			w0 *= oneOverArea;
-	//			w1 *= oneOverArea;
-	//			w2 *= oneOverArea;
-
-	//			// Calculates the color
-	//			r = w0 * tri.vertices[0].r + w1 * tri.vertices[1].r + w2 * tri.vertices[2].r;
-	//			g = w0 * tri.vertices[0].g + w1 * tri.vertices[1].g + w2 * tri.vertices[2].g;
-	//			b = w0 * tri.vertices[0].b + w1 * tri.vertices[1].b + w2 * tri.vertices[2].b;
-	//			pixelMode.Pixel(i, j, game::Color(r, g, b, 1.0f));
-
-	//		}
-	//	}
-	//	fence++;
-	//	//std::cout << boundingBox.right - boundingBox.left << "," << boundingBox.bottom - boundingBox.top << "\n";
-	//}
-
-	/*
-	* // Does it pass the top-left rule?
-Vec2f v0 = { ... };
-Vec2f v1 = { ... };
-Vec2f v2 = { ... };
-
-float w0 = edgeFunction(v1, v2, p); 
-float w1 = edgeFunction(v2, v0, p); 
-float w2 = edgeFunction(v0, v1, p); 
-
-Vec2f edge0 = v2 - v1;
-Vec2f edge1 = v0 - v2;
-Vec2f edge2 = v1 - v0;
-
-bool overlaps = true;
-
-// If the point is on the edge, test if it is a top or left edge, 
-// otherwise test if  the edge function is positive
-overlaps &= (w0 == 0 ? ((edge0.y == 0 && edge0.x > 0) ||  edge0.y > 0) : (w0 > 0));
-overlaps &= (w1 == 0 ? ((edge1.y == 0 && edge1.x > 0) ||  edge1.y > 0) : (w1 > 0));
-overlaps &= (w1 == 0 ? ((edge2.y == 0 && edge2.x > 0) ||  edge2.y > 0) : (w2 > 0));
-
-if (overlaps) {
-    // pixel overlap the triangle
-    ...draw it
-}
-	*/
+	}
 
 	void Render(const float_t msElapsed)
 	{
@@ -460,17 +420,26 @@ if (overlaps) {
 
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
-		
-		//for (int t = 0; t < 1000; t++)
-		{
-			//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(rotatedTri)));
-		}
-		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
-		//while(fence < 1)
-		{ }
 
-
+		//for (int s = 0; s < tris.size(); s++)
+		//{
+		//	for (int t = 0; t < 4; t++)
+		//	{
+		//		threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
+		//	}
+		//}
+	
+		////threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
+		//while(fence < tris.size() * 4)
+		//{
+		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		//}
+		rotation = 0;
 		DrawColored(rotatedTri);
+
+		//for (int i = 0; i < 4; i++)
+		//DrawColored(rotatedTri,clip[i]);
+		//pixelMode.RectClip(clip[1], game::Colors::White);
 		//DrawWireFrame(rotatedTri, game::Colors::White);
 
 		//pixelMode.LineClip(
