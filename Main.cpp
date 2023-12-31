@@ -99,10 +99,10 @@ public:
 		tri.vertices[2].y = 230;
 		tri.vertices[2].g = 1.0f;
 
-		for (int i = 0; i < 1000; i++)
+		for (uint32_t i = 0; i < 1000; i++)
 		{
 			Triangle temp(tri);
-			for (int v = 0; v < 3; v++)
+			for (uint32_t v = 0; v < 3; v++)
 			{
 				temp.vertices[v].x = (float_t)rnd.RndRange(0, 640);
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 360);
@@ -130,9 +130,9 @@ public:
 		}
 	}
 
-	void Rotate(float& x, float& y, float theta) {
-		float_t x_new = (x-320) * cos(-theta) - (y - 180) * sin(-theta);
-		float_t y_new = (x-320) * sin(-theta) + (y - 180) * cos(-theta);
+	void Rotate(float_t& x, float_t& y, const float_t theta) {
+		float_t x_new = (x - 320) * cos(-theta) - (y - 180) * sin(-theta);
+		float_t y_new = (x - 320) * sin(-theta) + (y - 180) * cos(-theta);
 		x = x_new + 320;
 		y = y_new + 180;
 	}
@@ -164,7 +164,6 @@ public:
 		float_t sy1 = tri.vertices[0].y;
 		float_t sy2 = tri.vertices[1].y;
 		float_t sy3 = tri.vertices[2].y;
-		max(1, 2);
 
 		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
 		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
@@ -188,44 +187,44 @@ public:
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
-		/// Evaluate the edge equation for the given point.
-		float evaluate(float x, float y) const
+		// Evaluate the edge equation for the given point.
+		float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
 			return a * x + b * y + c;
 		}
 
-		/// Test if the given point is inside the edge.
-		bool test(float x, float y) const
+		// Test if the given point is inside the edge.
+		bool test(const float_t x, const float_t y) const noexcept
 		{
 			return test(evaluate(x, y));
 		}
 
-		/// Test for a given evaluated value.
-		bool test(float v) const
+		// Test for a given evaluated value.
+		bool test(const float_t v) const noexcept
 		{
 			return (v < 0 || v == 0 && fillRule);
 		}
 
-		/// Step the equation value v to the x direction.
-		float stepX(float v) const
+		// Step the equation value v to the x direction.
+		float_t stepX(const float_t v) const noexcept
 		{
 			return v + a;
 		}
 
-		/// Step the equation value v to the x direction.
-		float stepX(float v, float stepSize) const
+		// Step the equation value v to the x direction.
+		float_t stepX(const float_t v, const float_t stepSize) const noexcept
 		{
 			return v + a * stepSize;
 		}
 
-		/// Step the equation value v to the y direction.
-		float stepY(float v) const
+		// Step the equation value v to the y direction.
+		float_t stepY(const float_t v) const noexcept
 		{
 			return v + b;
 		}
 
-		/// Step the equation value vto the y direction.
-		float stepY(float v, float stepSize) const
+		// Step the equation value vto the y direction.
+		float_t stepY(const float_t v, const float_t stepSize) const noexcept
 		{
 			return v + b * stepSize;
 		}
@@ -237,9 +236,9 @@ public:
 		float c;
 
 		ParameterEquation(
-			const float p0,
-			const float p1,
-			const float p2,
+			const float_t p0,
+			const float_t p1,
+			const float_t p2,
 			const EdgeEquation& e0,
 			const EdgeEquation& e1,
 			const EdgeEquation& e2,
@@ -253,7 +252,7 @@ public:
 		}
 
 		/// Evaluate the parameter equation for the given point.
-		float evaluate(float x, float y) const
+		float evaluate(const float_t x, const float_t y) const noexcept
 		{
 			return a * x + b * y + c;
 		}
@@ -381,11 +380,11 @@ public:
 		fence++;
 	}
 
-	float distanceFromPointToLineSq(const float x0, const float y0, const float yy, const float xx, const float xyyx)
+	float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx)
 	{
-		float num = yy * x0 - xx * y0 + xyyx;
-		float numerator = num * num;
-		float denominator = xx * xx + yy * yy;
+		float_t num = yy * x0 - xx * y0 + xyyx;
+		float_t numerator = num * num;
+		float_t denominator = xx * xx + yy * yy;
 		return (numerator / denominator);
 	}
 
@@ -396,17 +395,14 @@ public:
 
 	void Render(const float_t msElapsed)
 	{
-		static float rotation = 0.0f;
+		static float_t rotation = 0.0f;
 
 		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		fence = 0;
 		Triangle rotatedTri(tri);
-		//ZeroMemory(&rotatedTri, sizeof(triangle));
-		//rotatedTri = tri;
 
-		//rotation = 3.14f / 3.0f;
 		Rotate(rotatedTri.vertices[0].x, rotatedTri.vertices[0].y, rotation);
 		Rotate(rotatedTri.vertices[1].x, rotatedTri.vertices[1].y, rotation);
 		Rotate(rotatedTri.vertices[2].x, rotatedTri.vertices[2].y, rotation);
