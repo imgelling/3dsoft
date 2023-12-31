@@ -1,3 +1,4 @@
+#define GAME_SUPPORT_DIRECTX11
 #include "game.h"
 
 struct Vertex
@@ -39,6 +40,7 @@ public:
 
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
+		attributes.RenderingAPI = game::RenderAPI::DirectX11;
 		geSetAttributes(attributes);
 
 		//tl
@@ -70,7 +72,7 @@ public:
 
 	void LoadContent()
 	{
-		if (!pixelMode.Initialize({ 640,360 }))
+		if (!pixelMode.Initialize({ 640, 360 }))
 		{
 			geLogLastError();
 		}
@@ -162,6 +164,7 @@ public:
 		float_t sy1 = tri.vertices[0].y;
 		float_t sy2 = tri.vertices[1].y;
 		float_t sy3 = tri.vertices[2].y;
+		max(1, 2);
 
 		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
 		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
@@ -234,9 +237,9 @@ public:
 		float c;
 
 		ParameterEquation(
-			float p0,
-			float p1,
-			float p2,
+			const float p0,
+			const float p1,
+			const float p2,
 			const EdgeEquation& e0,
 			const EdgeEquation& e1,
 			const EdgeEquation& e2,
@@ -277,9 +280,6 @@ public:
 			return;
 		}
 
-		float a0 = 0.0f;
-		float a1 = 0.0f;
-		float a2 = 0.0f;
 		game::Rectf boundingBox = TriangleBoundingBox(tri);
 		game::Vector2f p;
 
@@ -290,29 +290,31 @@ public:
 		// Wireframe precalcs
 		float_t d[3] = {}; 
 		float_t minDistSq = 0.0f;
-		float_t yy[3] = {};
-		float_t xx[3] = {};
-		float_t xy[3] = {};
-		float_t yx[3] = {};
-		yy[0] = tri.vertices[1].y - tri.vertices[0].y; //y2 - y1;
-		xx[0] = tri.vertices[1].x - tri.vertices[0].x; //x2 - x1;
-		xy[0] = tri.vertices[1].x * tri.vertices[0].y; //x2 * y1;
-		yx[0] = tri.vertices[1].y * tri.vertices[0].x; //y2 * x1;
+		float_t yy[3] = {}; //y2 - y1;
+		float_t xx[3] = {}; //x2 - x1;
+		float_t xy[3] = {}; //x2 * y1 then xy - yx
+		float_t yx[3] = {}; //y2 * x1;
+		yy[0] = tri.vertices[1].y - tri.vertices[0].y; 
+		xx[0] = tri.vertices[1].x - tri.vertices[0].x; 
+		xy[0] = tri.vertices[1].x * tri.vertices[0].y; 
+		yx[0] = tri.vertices[1].y * tri.vertices[0].x; 
 
-		yy[1] = tri.vertices[2].y - tri.vertices[1].y; //y2 - y1;
-		xx[1] = tri.vertices[2].x - tri.vertices[1].x; //x2 - x1;
-		xy[1] = tri.vertices[2].x * tri.vertices[1].y; //x2 * y1;
-		yx[1] = tri.vertices[2].y * tri.vertices[1].x; //y2 * x1;
+		yy[1] = tri.vertices[2].y - tri.vertices[1].y;
+		xx[1] = tri.vertices[2].x - tri.vertices[1].x;
+		xy[1] = tri.vertices[2].x * tri.vertices[1].y;
+		yx[1] = tri.vertices[2].y * tri.vertices[1].x;
 
-		yy[2] = tri.vertices[0].y - tri.vertices[2].y; //y2 - y1;
-		xx[2] = tri.vertices[0].x - tri.vertices[2].x; //x2 - x1;
-		xy[2] = tri.vertices[0].x * tri.vertices[2].y; //x2 * y1;
-		yx[2] = tri.vertices[0].y * tri.vertices[2].x; //y2 * x1;
+		yy[2] = tri.vertices[0].y - tri.vertices[2].y;
+		xx[2] = tri.vertices[0].x - tri.vertices[2].x;
+		xy[2] = tri.vertices[0].x * tri.vertices[2].y;
+		yx[2] = tri.vertices[0].y * tri.vertices[2].x;
 
 		xy[0] = xy[0] - yx[0];
 		xy[1] = xy[1] - yx[1];
 		xy[2] = xy[2] - yx[2];
 
+		// jitters with floats, maybe a pixel with floats for subpixel? It is slower 
+		// with just floats no subpixel
 		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j)
 		{
 			foundTriangle = false;
@@ -320,8 +322,7 @@ public:
 			{
 				p = { i + 0.5f , j + 0.5f };
 
-				a0 = e0.evaluate(p.x, p.y);
-				if (e0.test(a0))  // >= for clockwise triangles  <= counter
+				if (e0.test(p.x, p.y))
 				{
 					if (foundTriangle)
 					{
@@ -333,8 +334,7 @@ public:
 						continue;
 					}
 				}
-				a1 = e1.evaluate(p.x, p.y);
-				if (e1.test(a1))
+				if (e1.test(p.x, p.y))
 				{
 					if (foundTriangle)
 					{
@@ -346,8 +346,7 @@ public:
 						continue;
 					}
 				}
-				a2 = e2.evaluate(p.x, p.y);
-				if (e2.test(a2))
+				if (e2.test(p.x, p.y))
 				{
 					if (foundTriangle)
 					{
@@ -434,7 +433,7 @@ public:
 		//{
 		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
 		//}
-		rotation = 0;
+
 		DrawColored(rotatedTri);
 
 		//for (int i = 0; i < 4; i++)
