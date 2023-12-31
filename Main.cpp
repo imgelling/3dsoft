@@ -81,7 +81,7 @@ public:
 		rnd.NewSeed();
 
 		// Start the threads up
-		threadPool.Start(4);
+		threadPool.Start();
 
 		// Clockwise vertex winding
 		// top
@@ -380,7 +380,7 @@ public:
 		fence++;
 	}
 
-	float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx)
+	inline float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx)
 	{
 		float_t num = yy * x0 - xx * y0 + xyyx;
 		float_t numerator = num * num;
@@ -416,21 +416,22 @@ public:
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
 
-		//for (int s = 0; s < tris.size(); s++)
-		//{
-		//	for (int t = 0; t < 4; t++)
-		//	{
-		//		threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
-		//	}
-		//}
+		for (int s = 0; s < tris.size(); s++)
+		{
+			//for (int t = 0; t < 4; t++)
+			{
+				threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
+				//DrawColored(tris[s]);
+			}
+		}
 	
-		////threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
-		//while(fence < tris.size() * 4)
-		//{
-		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
-		//}
+		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
+		while(fence < tris.size())
+		{
+			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		}
 
-		DrawColored(rotatedTri);
+		//DrawColored(rotatedTri);
 
 		//for (int i = 0; i < 4; i++)
 		//DrawColored(rotatedTri,clip[i]);
