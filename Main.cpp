@@ -86,8 +86,8 @@ public:
 	}
 
 	void Rotate(float& x, float& y, float theta) {
-		float_t x_new = (x-320) * cos(theta) - (y-180) * sin(theta);
-		float_t y_new = (x-320) * sin(theta) + (y - 180) * cos(theta);
+		float_t x_new = (x-320) * cos(-theta) - (y - 180) * sin(-theta);
+		float_t y_new = (x-320) * sin(-theta) + (y - 180) * cos(-theta);
 		x = x_new + 320;
 		y = y_new + 180;
 	}
@@ -123,7 +123,7 @@ public:
 		return ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x));
 	}
 
-	inline game::Rectf TriangleBoundingBox(const Triangle& tri)
+	inline const game::Rectf TriangleBoundingBox(const Triangle& tri)
 	{
 		game::Rectf boundingBox;
 
@@ -142,50 +142,127 @@ public:
 		return boundingBox;
 	}
 
+	struct EdgeEquation {
+		float_t a;
+		float_t b;
+		float_t c;
+		bool fillRule;
+
+		EdgeEquation(const game::Vector2f& v0, const game::Vector2f& v1)
+		{
+			a = v0.y - v1.y;
+			b = v1.x - v0.x;
+			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
+			fillRule = a != 0 ? a > 0 : b > 0;
+		}
+
+		/// Evaluate the edge equation for the given point.
+		float evaluate(float x, float y) const
+		{
+			return a * x + b * y + c;
+		}
+
+		/// Test if the given point is inside the edge.
+		bool test(float x, float y) const
+		{
+			return test(evaluate(x, y));
+		}
+
+		/// Test for a given evaluated value.
+		bool test(float v) const
+		{
+			return (v < 0 || v == 0 && fillRule);
+		}
+
+		/// Step the equation value v to the x direction.
+		float stepX(float v) const
+		{
+			return v + a;
+		}
+
+		/// Step the equation value v to the x direction.
+		float stepX(float v, float stepSize) const
+		{
+			return v + a * stepSize;
+		}
+
+		/// Step the equation value v to the y direction.
+		float stepY(float v) const
+		{
+			return v + b;
+		}
+
+		/// Step the equation value vto the y direction.
+		float stepY(float v, float stepSize) const
+		{
+			return v + b * stepSize;
+		}
+	};
+
+	struct ParameterEquation {
+		float a;
+		float b;
+		float c;
+
+		ParameterEquation(
+			float p0,
+			float p1,
+			float p2,
+			const EdgeEquation& e0,
+			const EdgeEquation& e1,
+			const EdgeEquation& e2,
+			float area)
+		{
+			float factor = 1.0f / area;
+
+			a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
+			b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
+			c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
+		}
+
+		/// Evaluate the parameter equation for the given point.
+		float evaluate(float x, float y) const
+		{
+			return a * x + b * y + c;
+		}
+	};
+
 	void DrawColored(const Triangle& tri)
 	{
 		game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
 		game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
 		game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
 
-		game::Rectf boundingBox = TriangleBoundingBox(tri);
 
-		float_t area = edgeFunctionCW(v0, v1, v2);
-		float_t oneOverArea = 1.0f / area;
-		float_t w0(0.0f);
-		float_t w1 = 0.0f;
-		float_t w2 = 0.0f;
-		float_t r = 0.0f;
-		float_t g = 0.0f;
-		float_t b = 0.0f;
-		game::Vector2f p;
+
+		//game::Vector2f p;
 
 		// test optimization
 		bool foundTriangle = false;
 
+		EdgeEquation e0(v1,v2);
+		EdgeEquation e1(v2,v0);
+		EdgeEquation e2(v0,v1);
 
-		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j) 
+		// back face cull
+		float area = (e0.c + e1.c + e2.c);
+		if (area < 0) return;
+
+		game::Rectf boundingBox = TriangleBoundingBox(tri);
+		game::Vector2f p;
+		// 
+		ParameterEquation r(tri.vertices[0].r, tri.vertices[1].r, tri.vertices[2].r, e0, e1, e2, area);
+		ParameterEquation g(tri.vertices[0].g, tri.vertices[1].g, tri.vertices[2].g, e0, e1, e2, area);
+		ParameterEquation b(tri.vertices[0].b, tri.vertices[1].b, tri.vertices[2].b, e0, e1, e2, area);
+
+		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j)
 		{
 			foundTriangle = false;
-			for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i) 
+			for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i)
 			{
-				p = { i + 0.5f, j + 0.5f };
+				p = { i + 0.5f , j + 0.5f };
 
-				w0 = edgeFunctionCW(v1, v2, p);
-				if (w0 <= 0)  // >= for clockwise triangles  <= counter
-				{					
-					if (foundTriangle)
-					{
-						break;
-					}
-					else
-					{
-						pixelMode.Pixel(i, j, game::Colors::Pink);
-						continue;
-					}
-				}
-				w1 = edgeFunctionCW(v2, v0, p);
-				if (w1 <= 0)
+				if (e0.test(p.x,p.y))  // >= for clockwise triangles  <= counter
 				{
 					if (foundTriangle)
 					{
@@ -193,12 +270,11 @@ public:
 					}
 					else
 					{
-						pixelMode.Pixel(i, j, game::Colors::Pink);
+						//pixelMode.Pixel((int)i, (int32_t)j, game::Colors::Pink);
 						continue;
 					}
 				}
-				w2 = edgeFunctionCW(v0, v1, p);
-				if (w2 <= 0)
+				if (e1.test(p.x, p.y))
 				{
 					if (foundTriangle)
 					{
@@ -206,28 +282,130 @@ public:
 					}
 					else
 					{
-						pixelMode.Pixel(i, j, game::Colors::Pink);
+						//pixelMode.Pixel((int32_t)i, (int32_t)j, game::Colors::Pink);
 						continue;
 					}
 				}
+				if (e2.test(p.x, p.y))
+				{
+					if (foundTriangle)
+					{
+						break;
+					}
+					else
+					{
+						//pixelMode.Pixel((int32_t)i, (int32_t)j, game::Colors::Pink);
+						continue;
+					}
+				}
+
 
 				foundTriangle = true;
 
-				w0 *= oneOverArea;
-				w1 *= oneOverArea;
-				w2 *= oneOverArea;
 
 				// Calculates the color
-				r = w0 * tri.vertices[0].r + w1 * tri.vertices[1].r + w2 * tri.vertices[2].r;
-				g = w0 * tri.vertices[0].g + w1 * tri.vertices[1].g + w2 * tri.vertices[2].g;
-				b = w0 * tri.vertices[0].b + w1 * tri.vertices[1].b + w2 * tri.vertices[2].b;
-				pixelMode.Pixel(i, j, game::Color(r, g, b, 1.0f));
-
+				pixelMode.Pixel(i, j, game::Color(r.evaluate(p.x, p.y), g.evaluate(p.x, p.y), b.evaluate(p.x, p.y), 1.0f));
 			}
 		}
 		fence++;
-		//std::cout << boundingBox.right - boundingBox.left << "," << boundingBox.bottom - boundingBox.top << "\n";
 	}
+
+	//void DrawColored(const Triangle& tri)
+	//{
+	//	game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
+	//	game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
+	//	game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
+
+	//	game::Rectf boundingBox = TriangleBoundingBox(tri);
+
+	//	float_t area = edgeFunctionCW(v0, v1, v2);
+	//	float_t oneOverArea = 1.0f / area;
+	//	float_t w0(0.0f);
+	//	float_t w1 = 0.0f;
+	//	float_t w2 = 0.0f;
+	//	float_t r = 0.0f;
+	//	float_t g = 0.0f;
+	//	float_t b = 0.0f;
+	//	game::Vector2f p;
+
+	//	// test optimization
+	//	bool foundTriangle = false;
+
+
+	//	for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; j++) 
+	//	{
+	//		foundTriangle = false;
+	//		for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i) 
+	//		{
+	//			p = { i + 0.5f , j + 0.5f  };
+
+	//			w0 = edgeFunctionCW(v1, v2, p);
+	//			if (w0 < 0.0f)  // >= for clockwise triangles  <= counter
+	//			{					
+	//				if (foundTriangle)
+	//				{
+	//					break;
+	//				}
+	//				else
+	//				{
+	//					pixelMode.Pixel(i, j, game::Colors::Pink);
+	//					continue;
+	//				}
+	//			}
+	//			w1 = edgeFunctionCW(v2, v0, p);
+	//			if (w1 < 0.0f)
+	//			{
+	//				if (foundTriangle)
+	//				{
+	//					break;
+	//				}
+	//				else
+	//				{
+	//					pixelMode.Pixel(i, j, game::Colors::Pink);
+	//					continue;
+	//				}
+	//			}
+	//			w2 = edgeFunctionCW(v0, v1, p);
+	//			if (w2 < 0.0f)
+	//			{
+	//				if (foundTriangle)
+	//				{
+	//					break;
+	//				}
+	//				else
+	//				{
+	//					pixelMode.Pixel(i, j, game::Colors::Pink);
+	//					continue;
+	//				}
+	//			}
+
+
+	//			foundTriangle = true;
+
+	//			//// wireframe test
+	//			//int w = 200;
+	//			//if (((int)w0 <= w) || ((int)w1 <= w) || ((int)w2 <= w))
+	//			//{
+	//			//	pixelMode.Pixel(i, j, game::Colors::White);
+	//			//	continue;
+	//			//}
+
+
+	//			w0 *= oneOverArea;
+	//			w1 *= oneOverArea;
+	//			w2 *= oneOverArea;
+
+	//			// Calculates the color
+	//			r = w0 * tri.vertices[0].r + w1 * tri.vertices[1].r + w2 * tri.vertices[2].r;
+	//			g = w0 * tri.vertices[0].g + w1 * tri.vertices[1].g + w2 * tri.vertices[2].g;
+	//			b = w0 * tri.vertices[0].b + w1 * tri.vertices[1].b + w2 * tri.vertices[2].b;
+	//			pixelMode.Pixel(i, j, game::Color(r, g, b, 1.0f));
+
+	//		}
+	//	}
+	//	fence++;
+	//	//std::cout << boundingBox.right - boundingBox.left << "," << boundingBox.bottom - boundingBox.top << "\n";
+	//}
 
 	/*
 	* // Does it pass the top-left rule?
@@ -265,10 +443,11 @@ if (overlaps) {
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		fence = 0;
-		Triangle rotatedTri;
+		Triangle rotatedTri(tri);
 		//ZeroMemory(&rotatedTri, sizeof(triangle));
-		rotatedTri = tri;
+		//rotatedTri = tri;
 
+		//rotation = 3.14f / 3.0f;
 		Rotate(rotatedTri.vertices[0].x, rotatedTri.vertices[0].y, rotation);
 		Rotate(rotatedTri.vertices[1].x, rotatedTri.vertices[1].y, rotation);
 		Rotate(rotatedTri.vertices[2].x, rotatedTri.vertices[2].y, rotation);
@@ -282,14 +461,17 @@ if (overlaps) {
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
 		
-		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(rotatedTri)));
+		//for (int t = 0; t < 1000; t++)
+		{
+			//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(rotatedTri)));
+		}
 		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
 		//while(fence < 1)
 		{ }
 
 
 		DrawColored(rotatedTri);
-		DrawWireFrame(rotatedTri, game::Colors::White);
+		//DrawWireFrame(rotatedTri, game::Colors::White);
 
 		//pixelMode.LineClip(
 		//	(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
