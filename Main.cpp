@@ -364,9 +364,10 @@ public:
 				{
 					d[dis] = distanceFromPointToLineSq(p.x, p.y, yy[dis], xx[dis], xy[dis]);
 				}
-				minDistSq = d[0];
-				if (d[1] < minDistSq) minDistSq = d[1];
-				if (d[2] < minDistSq) minDistSq = d[2];
+				//minDistSq = d[0];
+				//if (d[1] < minDistSq) minDistSq = d[1];
+				//if (d[2] < minDistSq) minDistSq = d[2];
+				minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 				if (minDistSq < 4)
 				{
 					pixelMode.Pixel(i, j, game::Colors::White);
@@ -411,47 +412,24 @@ public:
 		pixelMode.Clear(game::Colors::Black);
 
 		//threadPool.Queue(std::bind(&Game::DrawWireFrame, this, rotatedTri, game::Colors::Red));
+		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
 		//threadPool.Queue(std::bind(&Game::DrawWireFrame, this, tri, game::Colors::White));
-
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
 
-		for (int s = 0; s < tris.size(); s++)
-		{
-			//for (int t = 0; t < 4; t++)
-			{
-				threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
-				//DrawColored(tris[s]);
-			}
-		}
-	
-		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
-		while(fence < tris.size())
-		{
-			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
-		}
+		//for (int s = 0; s < tris.size(); s++)
+		//{
+		//	threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
+		//}
 
-		//DrawColored(rotatedTri);
+		//while(fence < tris.size())
+		//{
+		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		//}
 
-		//for (int i = 0; i < 4; i++)
-		//DrawColored(rotatedTri,clip[i]);
-		//pixelMode.RectClip(clip[1], game::Colors::White);
-		//DrawWireFrame(rotatedTri, game::Colors::White);
+		DrawColored(rotatedTri);
 
-		//pixelMode.LineClip(
-		//	(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
-		//	(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
-		//	game::Colors::White);
-		//pixelMode.LineClip(
-		//	(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
-		//	(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
-		//	game::Colors::White);
-		//pixelMode.LineClip(
-		//	(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
-		//	(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
-		//	game::Colors::White);
-
-		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::White, 2);
+		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Pink, 2);
 
 
 		pixelMode.Render();
