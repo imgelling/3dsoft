@@ -1,6 +1,8 @@
 #define GAME_SUPPORT_DIRECTX11
 #include "game.h"
 
+
+// GameSoftwareRenderer.h
 struct Triangle
 {
 	game::Vector3f vertices[3];
@@ -44,10 +46,7 @@ static std::ostream& operator<< (std::ostream& stream, FillMode rmode)
 	}
 }
 
-enum class RasterMode
-{
-
-};
+// end GameSoftwareRenderer.h
 
 class Game : public game::Engine
 {
@@ -308,6 +307,105 @@ public:
 		}
 	};
 
+	void DrawColoredBlock(const Triangle& tri)
+	{
+		fence++;
+		game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
+		game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
+		game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
+
+		EdgeEquation e0(v1, v2);
+		EdgeEquation e1(v2, v0);
+		EdgeEquation e2(v0, v1);
+
+		// back face cull
+		float area = (e0.c + e1.c + e2.c);
+		if (area < 0)
+		{
+			return;
+		}
+
+		game::Recti boundingBox = TriangleBoundingBox(tri);
+		game::Vector2f pixelOffset;
+
+		int blockSize = 8;
+
+		game::Vector2f samples[4];
+
+		for (int y = boundingBox.top; y < boundingBox.bottom+blockSize; y+=blockSize)
+		{
+			for (int x = boundingBox.left; x < boundingBox.right + blockSize; x += blockSize)
+			{
+				// tl
+				samples[0].x = x + 0.5f;
+				samples[0].y = y + 0.5f;
+
+				// tr
+				samples[1].x = x + blockSize + 0.5f;
+				samples[1].y = y + 0.5f;
+
+				// br
+				samples[2].x = x + blockSize + 0.5f;
+				samples[2].y = y + blockSize + 0.5f;
+				
+				// bl
+				samples[3].x = x + 0.5f;
+				samples[3].y = y + blockSize + 0.5f;
+
+				bool found[4] = {};
+				for (int i = 0; i < 2; i++)
+				{
+					if (e0.test(samples[i].x, samples[i].y)) goto step;
+					if (e1.test(samples[i].x, samples[i].y)) goto step;
+					if (e2.test(samples[i].x, samples[i].y)) goto step;
+					found[i] = true;
+					pixelMode.Rect({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::White);
+					step:
+					e0.stepX(blockSize);
+					e1.stepX(blockSize);
+					e2.stepX(blockSize);
+				}
+				e0.stepX(-blockSize*2.0f);
+				e1.stepX(-blockSize*2.0f);
+				e2.stepX(-blockSize*2.0f);
+				e0.stepY(blockSize);
+				e1.stepY(blockSize);
+				e2.stepY(blockSize);
+				for (int i = 2; i < 4; i++)
+				{
+					if (e0.test(samples[i].x, samples[i].y)) goto step2;
+					if (e1.test(samples[i].x, samples[i].y)) goto step2;
+					if (e2.test(samples[i].x, samples[i].y)) goto step2;
+					found[i] = true;
+					pixelMode.Rect({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::White);
+				step2:
+					e0.stepX(blockSize);
+					e1.stepX(blockSize);
+					e2.stepX(blockSize);
+				}
+
+				// Full block
+				if (found[0] && found[1] && found[2] && found[3])
+				{
+					//pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::Magenta);
+					continue;
+				}
+				// Partial block
+				if (found[0] || found[1] || found[2] || found[3])
+				{
+					pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::DarkGray);
+					continue;
+				}
+				// special case?
+
+
+
+				pixelMode.Pixel(x, y, game::Colors::White);
+			}
+		}
+
+	}
+
 	template<bool wireFrame, bool filled>
 	void DrawColored(const Triangle& tri)
 	{
@@ -453,6 +551,7 @@ public:
 				}
 			}
 		}
+		DrawColoredBlock(tri);
 	}
 
 	inline float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx)
@@ -467,7 +566,7 @@ public:
 	{
 		static float_t rotation = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 100.0f) * (msElapsed / 1000.0f);
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		fence = 0;
@@ -492,15 +591,16 @@ public:
 		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
 		//}
 		//Game::DrawColored<w, true>(rotatedTri);
-		switch (state)
-		{
-		case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
-		case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
-		case FillMode::Filled: DrawColored<false, true>(rotatedTri); break;
-		default: break;
-		}
+		//switch (state)
+		//{
+		//case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
+		//case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
+		//case FillMode::Filled: DrawColored<false, true>(rotatedTri); break;
+		//default: break;
+		//}
 		//DrawColored<w,true>(rotatedTri);
-		//DrawColored<false>(tri);
+		DrawColored<false,true>(rotatedTri);
+		//DrawColored(rotatedTri);
 
 		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Magenta, 2);
 		std::stringstream ss;
