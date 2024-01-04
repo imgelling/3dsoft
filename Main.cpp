@@ -3,14 +3,14 @@
 
 struct Vertex
 {
-	float_t x, y, z;
-	float_t r, g, b;
+	float_t x, y, z, w;
+	float_t r, g, b, a;
 };
 
 struct Triangle
 {
 	Vertex vertices[3];
-	float_t averageZ;
+	//float_t averageZ;
 };
 
 class Game : public game::Engine
@@ -67,7 +67,13 @@ public:
 		clip[3].right = 640 - 1;
 		clip[3].bottom = 360 - 1;
 		
-
+		//math test
+		game::Vector3f t(1.0f, 2.0f, 3.0f);
+		game::Vector3f a(1.0f, 2.0f, 3.0f);
+		t *= 2.0f;
+		std::cout << t.x << "," << t.y << "," << t.z << "\n";
+		t += t + a;
+		std::cout << t.x << "," << t.y << "," << t.z << "\n";
 	}
 
 	void LoadContent()
@@ -258,6 +264,7 @@ public:
 		}
 	};
 
+	template<bool wireFrame>
 	void DrawColored(const Triangle& tri)
 	{
 		game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
@@ -282,35 +289,40 @@ public:
 		game::Rectf boundingBox = TriangleBoundingBox(tri);
 		game::Vector2f p;
 
+
+		// Color attribute
 		ParameterEquation r(tri.vertices[0].r, tri.vertices[1].r, tri.vertices[2].r, e0, e1, e2, area);
 		ParameterEquation g(tri.vertices[0].g, tri.vertices[1].g, tri.vertices[2].g, e0, e1, e2, area);
 		ParameterEquation b(tri.vertices[0].b, tri.vertices[1].b, tri.vertices[2].b, e0, e1, e2, area);
 
 		// Wireframe precalcs
-		float_t d[3] = {}; 
+		float_t d[3] = {};
 		float_t minDistSq = 0.0f;
 		float_t yy[3] = {}; //y2 - y1;
 		float_t xx[3] = {}; //x2 - x1;
 		float_t xy[3] = {}; //x2 * y1 then xy - yx
 		float_t yx[3] = {}; //y2 * x1;
-		yy[0] = tri.vertices[1].y - tri.vertices[0].y; 
-		xx[0] = tri.vertices[1].x - tri.vertices[0].x; 
-		xy[0] = tri.vertices[1].x * tri.vertices[0].y; 
-		yx[0] = tri.vertices[1].y * tri.vertices[0].x; 
+		if (wireFrame)
+		{
+			yy[0] = tri.vertices[1].y - tri.vertices[0].y;
+			xx[0] = tri.vertices[1].x - tri.vertices[0].x;
+			xy[0] = tri.vertices[1].x * tri.vertices[0].y;
+			yx[0] = tri.vertices[1].y * tri.vertices[0].x;
 
-		yy[1] = tri.vertices[2].y - tri.vertices[1].y;
-		xx[1] = tri.vertices[2].x - tri.vertices[1].x;
-		xy[1] = tri.vertices[2].x * tri.vertices[1].y;
-		yx[1] = tri.vertices[2].y * tri.vertices[1].x;
+			yy[1] = tri.vertices[2].y - tri.vertices[1].y;
+			xx[1] = tri.vertices[2].x - tri.vertices[1].x;
+			xy[1] = tri.vertices[2].x * tri.vertices[1].y;
+			yx[1] = tri.vertices[2].y * tri.vertices[1].x;
 
-		yy[2] = tri.vertices[0].y - tri.vertices[2].y;
-		xx[2] = tri.vertices[0].x - tri.vertices[2].x;
-		xy[2] = tri.vertices[0].x * tri.vertices[2].y;
-		yx[2] = tri.vertices[0].y * tri.vertices[2].x;
+			yy[2] = tri.vertices[0].y - tri.vertices[2].y;
+			xx[2] = tri.vertices[0].x - tri.vertices[2].x;
+			xy[2] = tri.vertices[0].x * tri.vertices[2].y;
+			yx[2] = tri.vertices[0].y * tri.vertices[2].x;
 
-		xy[0] = xy[0] - yx[0];
-		xy[1] = xy[1] - yx[1];
-		xy[2] = xy[2] - yx[2];
+			xy[0] = xy[0] - yx[0];
+			xy[1] = xy[1] - yx[1];
+			xy[2] = xy[2] - yx[2];
+		}
 
 		// jitters with floats, maybe a pixel with floats for subpixel? It is slower 
 		// with just floats no subpixel
@@ -359,19 +371,23 @@ public:
 				}
 				foundTriangle = true;
 
-				// Wireframe
-				for (uint32_t dis = 0; dis < 3; dis++)
+				if (wireFrame)
 				{
-					d[dis] = distanceFromPointToLineSq(p.x, p.y, yy[dis], xx[dis], xy[dis]);
-				}
-				//minDistSq = d[0];
-				//if (d[1] < minDistSq) minDistSq = d[1];
-				//if (d[2] < minDistSq) minDistSq = d[2];
-				minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
-				if (minDistSq < 4)
-				{
-					pixelMode.Pixel(i, j, game::Colors::White);
-					continue;
+					// Wireframe
+					for (uint32_t dis = 0; dis < 3; dis++)
+					{
+						d[dis] = distanceFromPointToLineSq(p.x, p.y, yy[dis], xx[dis], xy[dis]);
+					}
+					//minDistSq = d[0];
+					//if (d[1] < minDistSq) minDistSq = d[1];
+					//if (d[2] < minDistSq) minDistSq = d[2];
+					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
+					//std::cout << "dist = " << minDistSq << "\n";
+					if (minDistSq < 4)
+					{
+						pixelMode.Pixel(i, j, game::Colors::White);
+						continue;
+					}
 				}
 
 				// Calculates the color
@@ -387,11 +403,6 @@ public:
 		float_t numerator = num * num;
 		float_t denominator = xx * xx + yy * yy;
 		return (numerator / denominator);
-	}
-
-	void ClipTriangle(Triangle tri)
-	{
-
 	}
 
 	void Render(const float_t msElapsed)
@@ -412,7 +423,8 @@ public:
 		pixelMode.Clear(game::Colors::Black);
 
 		//threadPool.Queue(std::bind(&Game::DrawWireFrame, this, rotatedTri, game::Colors::Red));
-		//threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tri)));
+		//threadPool.Queue(std::bind(&Game::DrawColored<false>, this, std::ref(tri)));
+		//threadPool.Queue(std::bind(&Game::DrawColored<true>, this, std::ref(rotatedTri)));
 		//threadPool.Queue(std::bind(&Game::DrawWireFrame, this, tri, game::Colors::White));
 		//DrawWireFrame(rotatedTri, game::Colors::Red);
 		//DrawWireFrame(tri, game::Colors::White);
@@ -422,12 +434,13 @@ public:
 		//	threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
 		//}
 
-		//while(fence < tris.size())
+		//while(fence < 2)//tris.size())
 		//{
-		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
 		//}
 
-		DrawColored(rotatedTri);
+		DrawColored<true>(rotatedTri);
+		//DrawColored<false>(tri);
 
 		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Pink, 2);
 
