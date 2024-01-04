@@ -1,16 +1,13 @@
 #define GAME_SUPPORT_DIRECTX11
 #include "game.h"
 
-struct Vertex
-{
-	float_t x, y, z, w;
-	float_t r, g, b, a;
-};
-
 struct Triangle
 {
-	Vertex vertices[3];
-	//float_t averageZ;
+	game::Vector3f vertices[3];
+	game::Color color[3];
+	game::Vector3f faceNormal;
+	game::Vector3f normals[3];
+	game::Vector2f uvs[3];
 };
 
 class Game : public game::Engine
@@ -93,17 +90,17 @@ public:
 		// top
 		tri.vertices[0].x = 320;
 		tri.vertices[0].y = 130;
-		tri.vertices[0].r = 1.0f;
+		tri.color[0] = game::Colors::Red;
 
 		// right
 		tri.vertices[1].x = 370;
 		tri.vertices[1].y = 230;
-		tri.vertices[1].b = 1.0f;
+		tri.color[1] = game::Colors::Blue;
 
 		// left
 		tri.vertices[2].x = 270;
 		tri.vertices[2].y = 230;
-		tri.vertices[2].g = 1.0f;
+		tri.color[2] = game::Colors::Green;
 
 		for (uint32_t i = 0; i < 1000; i++)
 		{
@@ -291,9 +288,9 @@ public:
 
 
 		// Color attribute
-		ParameterEquation r(tri.vertices[0].r, tri.vertices[1].r, tri.vertices[2].r, e0, e1, e2, area);
-		ParameterEquation g(tri.vertices[0].g, tri.vertices[1].g, tri.vertices[2].g, e0, e1, e2, area);
-		ParameterEquation b(tri.vertices[0].b, tri.vertices[1].b, tri.vertices[2].b, e0, e1, e2, area);
+		ParameterEquation r(tri.color[0].rf, tri.color[1].rf, tri.color[2].rf, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf, tri.color[1].gf, tri.color[2].gf, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf, tri.color[1].bf, tri.color[2].bf, e0, e1, e2, area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
