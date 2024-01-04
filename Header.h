@@ -138,3 +138,176 @@ if (overlaps) {
 	...draw it
 }
 	*/
+
+//
+//void DrawWireFrame(const Triangle& tri, const game::Color& color)
+//{
+//	fence++;
+//	pixelMode.LineClip(
+//		(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
+//		(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
+//		color);
+//	pixelMode.LineClip(
+//		(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
+//		(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
+//		color);
+//	pixelMode.LineClip(
+//		(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
+//		(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
+//		color);
+//}
+
+
+//void DrawColoredBlock(const Triangle& tri)
+//{
+//	fence++;
+//	game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
+//	game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
+//	game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
+//
+//	EdgeEquation e0(v1, v2);
+//	EdgeEquation e1(v2, v0);
+//	EdgeEquation e2(v0, v1);
+//	EdgeEquation b0(v1, v2);
+//	EdgeEquation b1(v2, v0);
+//	EdgeEquation b2(v0, v1);
+//
+//
+//	// back face cull
+//	float area = (e0.c + e1.c + e2.c);
+//	if (area < 0)
+//	{
+//		return;
+//	}
+//
+//	game::Recti boundingBox = TriangleBoundingBox(tri);
+//	game::Vector2f pixelOffset;
+//
+//	int blockSize = 4;
+//	float s = (float)blockSize - 1;
+//
+//	// Round to block grid.
+//
+//	int minX = boundingBox.x - blockSize;// &~(blockSize - 1);
+//	int maxX = boundingBox.right + blockSize;// &~(blockSize - 1);
+//	int minY = boundingBox.y - blockSize;// &~(blockSize - 1);
+//	int maxY = boundingBox.bottom + blockSize;// &~(blockSize - 1);
+//
+//	game::Vector2f samples[4];
+//	bool eres[4][3] = {};
+//	pixelMode.Rect({ minX,minY,maxX, maxY }, game::Colors::White);
+//	bool lasthblock = false;
+//	bool lastvblock = false;
+//	for (int y = minY; y < maxY; y += blockSize)
+//	{
+//		lasthblock = false;
+//		for (int x = minX; x < maxX; x += blockSize)
+//		{
+//			// tl
+//			samples[0].x = x + 0.5f;
+//			samples[0].y = y + 0.5f;
+//
+//			// tr
+//			samples[1].x = x + blockSize + 0.5f;
+//			samples[1].y = y + 0.5f;
+//
+//			// br
+//			samples[2].x = x + blockSize + 0.5f;
+//			samples[2].y = y + blockSize + 0.5f;
+//
+//			// bl
+//			samples[3].x = x + 0.5f;
+//			samples[3].y = y + blockSize + 0.5f;
+//
+//			bool found[4] = {};
+//			//eres[4][3] = {};
+//			for (int i = 0; i < 2; i++)
+//			{
+//				eres[i][0] = e0.test(samples[i].x, samples[i].y);
+//				eres[i][1] = e1.test(samples[i].x, samples[i].y);
+//				eres[i][2] = e2.test(samples[i].x, samples[i].y);
+//				if (eres[i][0]) goto step;
+//				if (eres[i][1]) goto step;
+//				if (eres[i][2]) goto step;
+//				found[i] = true;
+//				pixelMode.Rect({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::White);
+//			step:
+//				e0.stepX((float_t)s);
+//				e1.stepX((float_t)s);
+//				e2.stepX((float_t)s);
+//			}
+//			e0 = b0;// .stepX(-(float_t)s * 2.0f);
+//			e1 = b1;// .stepX(-(float_t)s * 2.0f);
+//			e2 = b2;// .stepX(-(float_t)s * 2.0f);
+//			e0.stepY((float_t)s);
+//			e1.stepY((float_t)s);
+//			e2.stepY((float_t)s);
+//			//eres[4] = {};
+//			for (int i = 2; i < 4; i++)
+//			{
+//				//if (e0.test(samples[i].x, samples[i].y)) goto step2;
+//				//if (e1.test(samples[i].x, samples[i].y)) goto step2;
+//				//if (e2.test(samples[i].x, samples[i].y)) goto step2;
+//				eres[i][0] = e0.test(samples[i].x, samples[i].y);
+//				eres[i][1] = e1.test(samples[i].x, samples[i].y);
+//				eres[i][2] = e2.test(samples[i].x, samples[i].y);
+//				if (eres[i][0]) goto step2;
+//				if (eres[i][1]) goto step2;
+//				if (eres[i][2]) goto step2;
+//				found[i] = true;
+//				pixelMode.Rect({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::White);
+//			step2:
+//				e0.stepX((float_t)s);
+//				e1.stepX((float_t)s);
+//				e2.stepX((float_t)s);
+//			}
+//
+//			int result = found[0] + found[1] + found[2] + found[3];
+//			if (result == 0)
+//			{
+//				bool e00Same = eres[0][0] == eres[0][1] == eres[0][2];
+//				bool e01Same = eres[1][0] == eres[1][1] == eres[1][2];
+//				bool e10Same = eres[2][0] == eres[2][1] == eres[2][2];
+//				bool e11Same = eres[3][0] == eres[3][1] == eres[3][2];
+//
+//				//if ((boundingBox.right - x < blockSize) && (lasthblock))
+//				if (!e00Same || !e01Same || !e10Same || !e11Same)
+//				{
+//					pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::Blue);
+//				}
+//				else if ((boundingBox.left - y < blockSize) && (lasthblock))
+//				{
+//					pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::Blue);
+//				}
+//				else
+//				{
+//					//pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::Green);
+//				}
+//				lasthblock = false;
+//
+//
+//				// special case?
+//			}
+//			// Full block
+//			else if (result == 4)
+//			{
+//				lasthblock = true;
+//				lastvblock = true;
+//				pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::Magenta);
+//			}
+//			// Partial block
+//			else
+//			{
+//				lasthblock = true;
+//				lasthblock = true;
+//				pixelMode.RectFilled({ x,y,(x + blockSize),(y + blockSize) }, game::Colors::DarkGray);
+//			}
+//
+//
+//
+//
+//			//pixelMode.Pixel(x, y, game::Colors::White);
+//		}
+//	}
+//
+//}
