@@ -15,7 +15,7 @@ struct Triangle
 enum class FillMode
 {
 	WireFrame,
-	Filled,
+	FilledColor,
 	WireFrameFilled,
 	//AffineTextureMapped,
 	//WireFrameAffTexture,
@@ -36,7 +36,7 @@ static std::ostream& operator<< (std::ostream& stream, FillMode rmode)
 	switch (rmode)
 	{
 	case FillMode::WireFrame: return stream << "WireFrame";
-	case FillMode::Filled: return stream << "Filled";
+	case FillMode::FilledColor: return stream << "Filled Color";
 	case FillMode::WireFrameFilled: return stream << "WireFrame Filled";
 	//case FillMode::AffineTextureMapped: return stream << "Affine Texture Mapped";
 	//case FillMode::WireFrameAffTexture: return stream << "WireFrame Affine Texture Mapped";
@@ -473,17 +473,17 @@ public:
 		{
 		case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
 		case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
-		case FillMode::Filled: DrawColored<false, true>(rotatedTri); break;
+		case FillMode::FilledColor: DrawColored<false, true>(rotatedTri); break;
 		default: break;
 		}
 		//DrawColored<w,true>(rotatedTri);
 		//DrawColored<false,true>(rotatedTri);
 		//DrawColoredBlock(rotatedTri);
 
-		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Magenta, 2);
+		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
 		std::stringstream ss;
 		ss << "Fill Mode: " << state;
-		pixelMode.TextClip(ss.str(), 0, 20, game::Colors::Magenta, 1);
+		pixelMode.TextClip(ss.str(), 0, 10, game::Colors::Yellow, 1);
 
 
 		pixelMode.Render();
