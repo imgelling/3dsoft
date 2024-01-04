@@ -10,6 +10,45 @@ struct Triangle
 	game::Vector2f uvs[3];
 };
 
+enum class FillMode
+{
+	WireFrame,
+	Filled,
+	WireFrameFilled,
+	//AffineTextureMapped,
+	//WireFrameAffTexture,
+	//ProjectionTextureMapped,
+	//WireFrameProjTexture,
+	None
+};
+//FillMode& operator++ (RasterMode& rmode, int);
+//std::ostream& operator<< (std::ostream& stm, FillMode rmode);
+static FillMode& operator++ (FillMode& rmode, int)
+{
+	rmode = static_cast<FillMode>((int)rmode + 1);
+	if (rmode == FillMode::None) rmode = static_cast<FillMode>(0);
+	return rmode;
+}
+static std::ostream& operator<< (std::ostream& stream, FillMode rmode)
+{
+	switch (rmode)
+	{
+	case FillMode::WireFrame: return stream << "WireFrame";
+	case FillMode::Filled: return stream << "Filled";
+	case FillMode::WireFrameFilled: return stream << "WireFrame Filled";
+	//case FillMode::AffineTextureMapped: return stream << "Affine Texture Mapped";
+	//case FillMode::WireFrameAffTexture: return stream << "WireFrame Affine Texture Mapped";
+	//case FillMode::ProjectionTextureMapped: return stream << "Projection Correct Texture Mapped";
+	//case FillMode::WireFrameProjTexture: return stream << "WireFrame Projection Correct Texture Mapped";
+	default: return stream << "Unknown Enumerator";
+	}
+}
+
+enum class RasterMode
+{
+
+};
+
 class Game : public game::Engine
 {
 
@@ -22,6 +61,8 @@ public:
 	game::Recti clip[4];
 	std::vector<Triangle> tris;
 	std::vector<Triangle> clippedTris;
+
+	FillMode state = FillMode::WireFrameFilled;
 
 #include "Header.h"
 
@@ -131,9 +172,15 @@ public:
 		{
 			geToggleFullscreen();
 		}
+
+		if (geKeyboard.WasKeyPressed(geK_W))
+		{
+			state++;
+		}
 	}
 
-	void Rotate(float_t& x, float_t& y, const float_t theta) {
+	void Rotate(float_t& x, float_t& y, const float_t theta)
+	{
 		float_t x_new = (x - 320) * cos(-theta) - (y - 180) * sin(-theta);
 		float_t y_new = (x - 320) * sin(-theta) + (y - 180) * cos(-theta);
 		x = x_new + 320.0f;
@@ -157,16 +204,16 @@ public:
 			color);
 	}
 
-	inline const game::Recti TriangleBoundingBox(const Triangle& tri)
+	inline const game::Recti TriangleBoundingBox(const Triangle& tri) const noexcept
 	{
 		game::Recti boundingBox;
 
-		int32_t sx1 = (int32_t)tri.vertices[0].x;
-		int32_t sx2 = (int32_t)tri.vertices[1].x;
-		int32_t sx3 = (int32_t)tri.vertices[2].x;
-		int32_t sy1 = (int32_t)tri.vertices[0].y;
-		int32_t sy2 = (int32_t)tri.vertices[1].y;
-		int32_t sy3 = (int32_t)tri.vertices[2].y;
+		int32_t sx1 = (int32_t)(tri.vertices[0].x + 0.5f);
+		int32_t sx2 = (int32_t)(tri.vertices[1].x + 0.5f);
+		int32_t sx3 = (int32_t)(tri.vertices[2].x + 0.5f);
+		int32_t sy1 = (int32_t)(tri.vertices[0].y + 0.5f);
+		int32_t sy2 = (int32_t)(tri.vertices[1].y + 0.5f);
+		int32_t sy3 = (int32_t)(tri.vertices[2].y + 0.5f);
 
 		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
 		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
@@ -254,7 +301,7 @@ public:
 			c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
 		}
 
-		/// Evaluate the parameter equation for the given point.
+		// Evaluate the parameter equation for the given point.
 		float evaluate(const float_t x, const float_t y) const noexcept
 		{
 			return a * x + b * y + c;
@@ -303,7 +350,7 @@ public:
 		if (boundingBox.bottom > pixelMode.GetPixelFrameBufferSize().height - 1) 
 			boundingBox.bottom = pixelMode.GetPixelFrameBufferSize().height - 1;
 
-		// Color attribute
+		// Color parameter
 		ParameterEquation r(tri.color[0].rf, tri.color[1].rf, tri.color[2].rf, e0, e1, e2, area);
 		ParameterEquation g(tri.color[0].gf, tri.color[1].gf, tri.color[2].gf, e0, e1, e2, area);
 		ParameterEquation b(tri.color[0].bf, tri.color[1].bf, tri.color[2].bf, e0, e1, e2, area);
@@ -391,12 +438,8 @@ public:
 					{
 						d[dis] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dis], xx[dis], xy[dis]);
 					}
-					//minDistSq = d[0];
-					//if (d[1] < minDistSq) minDistSq = d[1];
-					//if (d[2] < minDistSq) minDistSq = d[2];
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
-					//std::cout << "dist = " << minDistSq << "\n";
-					if (minDistSq < 4)
+					if (minDistSq < 1)
 					{
 						pixelMode.Pixel(i, j, game::Colors::White);
 						continue;
@@ -439,20 +482,30 @@ public:
 		//threadPool.Queue(std::bind(&Game::DrawColored<false,true>, this, std::ref(tri)));
 		//DrawWireFrame(tri, game::Colors::White);
 
-		for (int s = 0; s < tris.size(); s++)
-		{
-			threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
-		}
+		//for (int s = 0; s < tris.size(); s++)
+		//{
+		//	threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
+		//}
 
-		while(fence < tris.size())
+		//while(fence < tris.size())
+		//{
+		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		//}
+		//Game::DrawColored<w, true>(rotatedTri);
+		switch (state)
 		{
-			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
+		case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
+		case FillMode::Filled: DrawColored<false, true>(rotatedTri); break;
+		default: break;
 		}
-
-		//DrawColored<true,true>(rotatedTri);
+		//DrawColored<w,true>(rotatedTri);
 		//DrawColored<false>(tri);
 
-		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Pink, 2);
+		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Magenta, 2);
+		std::stringstream ss;
+		ss << "Fill Mode: " << state;
+		pixelMode.TextClip(ss.str(), 0, 20, game::Colors::Magenta, 1);
 
 
 		pixelMode.Render();
