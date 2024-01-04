@@ -136,37 +136,37 @@ public:
 	void Rotate(float_t& x, float_t& y, const float_t theta) {
 		float_t x_new = (x - 320) * cos(-theta) - (y - 180) * sin(-theta);
 		float_t y_new = (x - 320) * sin(-theta) + (y - 180) * cos(-theta);
-		x = x_new + 320;
-		y = y_new + 180;
+		x = x_new + 320.0f;
+		y = y_new + 180.0f;
 	}
 
 	void DrawWireFrame(const Triangle &tri, const game::Color &color)
 	{
-		pixelMode.LineClip(
-			(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
-			(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
-			color);
-		pixelMode.LineClip(
-			(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
-			(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
-			color);
-		pixelMode.LineClip(
-			(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
-			(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
-			color);
 		fence++;
+		pixelMode.LineClip(
+			(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
+			(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
+			color);
+		pixelMode.LineClip(
+			(int32_t)tri.vertices[1].x, (int32_t)tri.vertices[1].y,
+			(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
+			color);
+		pixelMode.LineClip(
+			(int32_t)tri.vertices[2].x, (int32_t)tri.vertices[2].y,
+			(int32_t)tri.vertices[0].x, (int32_t)tri.vertices[0].y,
+			color);
 	}
 
-	inline const game::Rectf TriangleBoundingBox(const Triangle& tri)
+	inline const game::Recti TriangleBoundingBox(const Triangle& tri)
 	{
-		game::Rectf boundingBox;
+		game::Recti boundingBox;
 
-		float_t sx1 = tri.vertices[0].x;
-		float_t sx2 = tri.vertices[1].x;
-		float_t sx3 = tri.vertices[2].x;
-		float_t sy1 = tri.vertices[0].y;
-		float_t sy2 = tri.vertices[1].y;
-		float_t sy3 = tri.vertices[2].y;
+		int32_t sx1 = (int32_t)tri.vertices[0].x;
+		int32_t sx2 = (int32_t)tri.vertices[1].x;
+		int32_t sx3 = (int32_t)tri.vertices[2].x;
+		int32_t sy1 = (int32_t)tri.vertices[0].y;
+		int32_t sy2 = (int32_t)tri.vertices[1].y;
+		int32_t sy3 = (int32_t)tri.vertices[2].y;
 
 		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
 		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
@@ -261,15 +261,16 @@ public:
 		}
 	};
 
-	template<bool wireFrame>
+	template<bool wireFrame, bool filled>
 	void DrawColored(const Triangle& tri)
 	{
 		game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
 		game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
 		game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
 
-		// test optimization
 		bool foundTriangle = false;
+
+		fence++;
 
 		EdgeEquation e0(v1, v2);
 		EdgeEquation e1(v2, v0);
@@ -279,13 +280,28 @@ public:
 		float area = (e0.c + e1.c + e2.c);
 		if (area < 0)
 		{
-			fence++;
 			return;
 		}
 
-		game::Rectf boundingBox = TriangleBoundingBox(tri);
-		game::Vector2f p;
+		game::Recti boundingBox = TriangleBoundingBox(tri);
+		game::Vector2f pixelOffset;
 
+		// Screen clipping
+		// Offscreen completely
+		if (boundingBox.right < 0) return;
+		if (boundingBox.x > pixelMode.GetPixelFrameBufferSize().width - 1) return;
+		if (boundingBox.bottom < 0) return;
+		if (boundingBox.y > pixelMode.GetPixelFrameBufferSize().height - 1) return;
+
+		// Partial offscreen
+		if (boundingBox.x < 0)
+			boundingBox.x = 0;
+		if (boundingBox.right > pixelMode.GetPixelFrameBufferSize().width - 1) 
+			boundingBox.right = pixelMode.GetPixelFrameBufferSize().width - 1;
+		if (boundingBox.y < 0) 
+			boundingBox.y = 0;
+		if (boundingBox.bottom > pixelMode.GetPixelFrameBufferSize().height - 1) 
+			boundingBox.bottom = pixelMode.GetPixelFrameBufferSize().height - 1;
 
 		// Color attribute
 		ParameterEquation r(tri.color[0].rf, tri.color[1].rf, tri.color[2].rf, e0, e1, e2, area);
@@ -323,14 +339,14 @@ public:
 
 		// jitters with floats, maybe a pixel with floats for subpixel? It is slower 
 		// with just floats no subpixel
-		for (int32_t j = (int32_t)boundingBox.y; j < (int32_t)boundingBox.bottom; ++j)
+		for (int32_t j = boundingBox.y; j < boundingBox.bottom; ++j)
 		{
 			foundTriangle = false;
-			for (int32_t i = (int32_t)boundingBox.x; i < (int32_t)boundingBox.right; ++i)
+			for (int32_t i = boundingBox.x; i < boundingBox.right; ++i)
 			{
-				p = { i + 0.5f , j + 0.5f };
+				pixelOffset = { i + 0.5f , j + 0.5f };
 
-				if (e0.test(p.x, p.y))
+				if (e0.test(pixelOffset.x, pixelOffset.y))
 				{
 					if (foundTriangle)
 					{
@@ -342,7 +358,7 @@ public:
 						continue;
 					}
 				}
-				if (e1.test(p.x, p.y))
+				if (e1.test(pixelOffset.x, pixelOffset.y))
 				{
 					if (foundTriangle)
 					{
@@ -354,7 +370,7 @@ public:
 						continue;
 					}
 				}
-				if (e2.test(p.x, p.y))
+				if (e2.test(pixelOffset.x, pixelOffset.y))
 				{
 					if (foundTriangle)
 					{
@@ -373,7 +389,7 @@ public:
 					// Wireframe
 					for (uint32_t dis = 0; dis < 3; dis++)
 					{
-						d[dis] = distanceFromPointToLineSq(p.x, p.y, yy[dis], xx[dis], xy[dis]);
+						d[dis] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dis], xx[dis], xy[dis]);
 					}
 					//minDistSq = d[0];
 					//if (d[1] < minDistSq) minDistSq = d[1];
@@ -388,10 +404,12 @@ public:
 				}
 
 				// Calculates the color
-				pixelMode.Pixel(i, j, game::Color(r.evaluate(p.x, p.y), g.evaluate(p.x, p.y), b.evaluate(p.x, p.y), 1.0f));
+				if (filled)
+				{
+					pixelMode.Pixel(i, j, game::Color(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f));
+				}
 			}
 		}
-		fence++;
 	}
 
 	inline float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx)
@@ -418,25 +436,20 @@ public:
 
 
 		pixelMode.Clear(game::Colors::Black);
-
-		//threadPool.Queue(std::bind(&Game::DrawWireFrame, this, rotatedTri, game::Colors::Red));
-		//threadPool.Queue(std::bind(&Game::DrawColored<false>, this, std::ref(tri)));
-		//threadPool.Queue(std::bind(&Game::DrawColored<true>, this, std::ref(rotatedTri)));
-		//threadPool.Queue(std::bind(&Game::DrawWireFrame, this, tri, game::Colors::White));
-		//DrawWireFrame(rotatedTri, game::Colors::Red);
+		//threadPool.Queue(std::bind(&Game::DrawColored<false,true>, this, std::ref(tri)));
 		//DrawWireFrame(tri, game::Colors::White);
 
-		//for (int s = 0; s < tris.size(); s++)
-		//{
-		//	threadPool.Queue(std::bind(&Game::DrawColored, this, std::ref(tris[s])));
-		//}
+		for (int s = 0; s < tris.size(); s++)
+		{
+			threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
+		}
 
-		//while(fence < 2)//tris.size())
-		//{
+		while(fence < tris.size())
+		{
 			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
-		//}
+		}
 
-		DrawColored<true>(rotatedTri);
+		//DrawColored<true,true>(rotatedTri);
 		//DrawColored<false>(tri);
 
 		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Pink, 2);
