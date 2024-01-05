@@ -257,9 +257,9 @@ public:
 	};
 
 	struct ParameterEquation {
-		float a;
-		float b;
-		float c;
+		float_t a;
+		float_t b;
+		float_t c;
 
 		ParameterEquation(
 			const float_t p0,
@@ -268,9 +268,9 @@ public:
 			const EdgeEquation& e0,
 			const EdgeEquation& e1,
 			const EdgeEquation& e2,
-			float area)
+			float_t area)
 		{
-			float factor = 1.0f / area;
+			float_t factor = 1.0f / area;
 
 			a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
 			b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
@@ -278,7 +278,7 @@ public:
 		}
 
 		// Evaluate the parameter equation for the given point.
-		float evaluate(const float_t x, const float_t y) const noexcept
+		float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
 			return a * x + b * y + c;
 		}
