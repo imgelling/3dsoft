@@ -291,7 +291,10 @@ public:
 		game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
 		game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
 
-		bool foundTriangle = false;
+		bool foundTriangle(false);
+		uint32_t videoBufferPos(0);
+		uint32_t videoBufferStride(pixelMode.GetPixelFrameBufferSize().x);
+
 
 		fence++;
 
@@ -300,7 +303,7 @@ public:
 		EdgeEquation e2(v0, v1);
 
 		// back face cull
-		float area = (e0.c + e1.c + e2.c);
+		float area(e0.c + e1.c + e2.c);
 		if (area < 0)
 		{
 			return;
@@ -338,6 +341,7 @@ public:
 		float_t xx[3] = {}; //x2 - x1;
 		float_t xy[3] = {}; //x2 * y1 then xy - yx
 		float_t yx[3] = {}; //y2 * x1;
+		float_t denominator[3] = {};	//1.0f / (xx * xx + yy * yy);
 		if (wireFrame)
 		{
 			yy[0] = tri.vertices[1].y - tri.vertices[0].y;
@@ -358,26 +362,38 @@ public:
 			xy[0] = xy[0] - yx[0];
 			xy[1] = xy[1] - yx[1];
 			xy[2] = xy[2] - yx[2];
+
+			denominator[0] = 1.0f / (xx[0] * xx[0] + yy[0] * yy[0]);
+			denominator[1] = 1.0f / (xx[1] * xx[1] + yy[1] * yy[1]);
+			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
 		// jitters with floats, maybe a pixel with floats for subpixel? It is slower 
 		// with just floats no subpixel
-		for (int32_t j = boundingBox.y; j < boundingBox.bottom; ++j)
+		videoBufferPos = (boundingBox.y * videoBufferStride + boundingBox.x);
+		uint32_t xLoopCount = 0;
+		// added the = last night below
+		for (int32_t j = boundingBox.y; j <= boundingBox.bottom; ++j)
 		{
 			foundTriangle = false;
-			for (int32_t i = boundingBox.x; i < boundingBox.right; ++i)
+			xLoopCount = 0;
+			for (int32_t i = boundingBox.x; i <= boundingBox.right; ++i)
 			{
+				xLoopCount++;
 				pixelOffset = { i + 0.5f , j + 0.5f };
-
+				
 				if (e0.test(pixelOffset.x, pixelOffset.y))
-				{
+				{					
 					if (foundTriangle)
 					{
+						videoBufferPos++;
 						break;
 					}
 					else
 					{
 						//pixelMode.Pixel((int)i, (int32_t)j, game::Colors::Pink);
+						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
+						videoBufferPos++;
 						continue;
 					}
 				}
@@ -385,11 +401,14 @@ public:
 				{
 					if (foundTriangle)
 					{
+						videoBufferPos++;
 						break;
 					}
 					else
 					{
-						//pixelMode.Pixel((int32_t)i, (int32_t)j, game::Colors::Pink);
+						//pixelMode.Pixel((int)i, (int32_t)j, game::Colors::Pink);
+						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
+						videoBufferPos++;
 						continue;
 					}
 				}
@@ -397,11 +416,14 @@ public:
 				{
 					if (foundTriangle)
 					{
+						videoBufferPos++;
 						break;
 					}
 					else
 					{
-						//pixelMode.Pixel((int32_t)i, (int32_t)j, game::Colors::Pink);
+						//pixelMode.Pixel((int)i, (int32_t)j, game::Colors::Pink);
+						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
+						videoBufferPos++;
 						continue;
 					}
 				}
@@ -410,14 +432,16 @@ public:
 				if (wireFrame)
 				{
 					// Wireframe
-					for (uint32_t dis = 0; dis < 3; dis++)
+					for (uint32_t dist = 0; dist < 3; dist++)
 					{
-						d[dis] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dis], xx[dis], xy[dis]);
+						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
 					}
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
-					if (minDistSq < 1)
+					if (minDistSq < 4)
 					{
-						pixelMode.Pixel(i, j, game::Colors::White);
+						//pixelMode.Pixel(i, j, game::Colors::White);
+						pixelMode.videoBuffer[videoBufferPos] = game::Colors::White.packedARGB;
+						videoBufferPos++;
 						continue;
 					}
 				}
@@ -425,19 +449,21 @@ public:
 				// Calculates the color
 				if (filled)
 				{
-					pixelMode.Pixel(i, j, game::Color(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f));
+					//pixelMode.Pixel(i, j, game::Color(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f));
+					game::Color color(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
+					pixelMode.videoBuffer[videoBufferPos] = color.packedARGB;
 				}
+				videoBufferPos++;
 			}
+			videoBufferPos += videoBufferStride - xLoopCount;
 		}
-		//DrawColoredBlock(tri);
 	}
 
-	inline float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx)
+	inline float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx, const float_t denominator)
 	{
 		float_t num = yy * x0 - xx * y0 + xyyx;
 		float_t numerator = num * num;
-		float_t denominator = xx * xx + yy * yy;
-		return (numerator / denominator);
+		return (numerator * denominator);
 	}
 
 	void Render(const float_t msElapsed)
