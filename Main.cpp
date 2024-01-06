@@ -54,9 +54,9 @@ class Game : public game::Engine
 public:
 	game::PixelMode pixelMode;
 	Triangle tri;
+	Triangle tri2;
 	game::ThreadPool threadPool;
 	std::atomic<uint64_t> fence;
-	//size_t fence;
 
 	game::Recti clip[4];
 	std::vector<Triangle> tris;
@@ -119,20 +119,37 @@ public:
 		threadPool.Start();
 
 		// Clockwise vertex winding
-		// top
-		tri.vertices[0].x = 320;
+		// tl
+		tri.vertices[0].x = 270;
 		tri.vertices[0].y = 130;
 		tri.color[0] = game::Colors::Red;
 
-		// right
+		// br
 		tri.vertices[1].x = 370;
 		tri.vertices[1].y = 230;
 		tri.color[1] = game::Colors::Blue;
 
-		// left
+		// bl
 		tri.vertices[2].x = 270;
 		tri.vertices[2].y = 230;
 		tri.color[2] = game::Colors::Green;
+
+		// Clockwise vertex winding
+		// tr
+		tri2.vertices[0].x = 370;
+		tri2.vertices[0].y = 130;
+		tri2.color[0] = game::Colors::White;
+
+		// br
+		tri2.vertices[1].x = 370;
+		tri2.vertices[1].y = 230;
+		tri2.color[1] = game::Colors::Blue;
+
+		// tl
+		tri2.vertices[2].x = 270;
+		tri2.vertices[2].y = 130;
+		tri2.color[2] = game::Colors::Red;
+
 
 		for (uint32_t i = 0; i < 1000; i++)
 		{
@@ -435,7 +452,7 @@ public:
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
 					}
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
-					if (minDistSq < 4)
+					if (minDistSq < 1)
 					{
 						//pixelMode.Pixel(i, j, game::Colors::White);
 						pixelMode.videoBuffer[videoBufferPos] = game::Colors::White.packedARGB;
@@ -474,33 +491,45 @@ public:
 
 		fence = 0;
 		Triangle rotatedTri(tri);
+		Triangle rotatedTri2(tri2);
 
 		Rotate(rotatedTri.vertices[0].x, rotatedTri.vertices[0].y, rotation);
 		Rotate(rotatedTri.vertices[1].x, rotatedTri.vertices[1].y, rotation);
 		Rotate(rotatedTri.vertices[2].x, rotatedTri.vertices[2].y, rotation);
+
+		Rotate(rotatedTri2.vertices[0].x, rotatedTri2.vertices[0].y, rotation);
+		Rotate(rotatedTri2.vertices[1].x, rotatedTri2.vertices[1].y, rotation);
+		Rotate(rotatedTri2.vertices[2].x, rotatedTri2.vertices[2].y, rotation);
 
 
 		pixelMode.Clear(game::Colors::Black);
 		//threadPool.Queue(std::bind(&Game::DrawColored<false,true>, this, std::ref(tri)));
 		//DrawWireFrame(tri, game::Colors::White);
 
-		for (int s = 0; s < tris.size(); s++)
-		{
-			threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
-		}
-
-		while(fence < tris.size())
-		{
-			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
-		}
-		//Game::DrawColored<w, true>(rotatedTri);
-		//switch (state)
+		//for (int s = 0; s < tris.size(); s++)
 		//{
-		//case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
-		//case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
-		//case FillMode::FilledColor: DrawColored<false, true>(rotatedTri); break;
-		//default: break;
+		//	threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
 		//}
+
+		//while(fence < tris.size())
+		//{
+		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		//}
+		//Game::DrawColored<w, true>(rotatedTri);
+		switch (state)
+		{
+		case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
+		case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
+		case FillMode::FilledColor: DrawColored<false, true>(rotatedTri); break;
+		default: break;
+		}
+		switch (state)
+		{
+		case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri2); break;
+		case FillMode::WireFrame: DrawColored<true, false>(rotatedTri2); break;
+		case FillMode::FilledColor: DrawColored<false, true>(rotatedTri2); break;
+		default: break;
+		}
 		//DrawColored<w,true>(rotatedTri);
 		//DrawColored<false,true>(rotatedTri);
 		//DrawColoredBlock(rotatedTri);
