@@ -64,8 +64,6 @@ public:
 
 	FillMode state = FillMode::WireFrameFilled;
 
-//#include "Header.h"
-
 	Game() : game::Engine()
 	{
 		ZeroMemory(&tri, sizeof(Triangle));
@@ -84,24 +82,24 @@ public:
 		//tl
 		clip[0].x = 0;
 		clip[0].y = 0;
-		clip[0].right = 640 / 2 - 1;
-		clip[0].bottom = 360 / 2 - 1;
+		clip[0].right = (640-1) / 2;
+		clip[0].bottom = (360 - 1) / 2;
 
 		// tr
-		clip[1].x = 640 / 2 - 1;
+		clip[1].x = (640 - 1) / 2;
 		clip[1].y = 0;
 		clip[1].right = 640 - 1;
-		clip[1].bottom = 360 / 2 - 1;
+		clip[1].bottom = (360 - 1) / 2;
 
 		// bl
 		clip[2].x = 0;
-		clip[2].y = 360 / 2 - 1;
-		clip[2].right = 640 / 2 - 1;
+		clip[2].y = (360 - 1) / 2;
+		clip[2].right = (640 - 1) / 2;
 		clip[2].bottom = 360 - 1;
 
 		// br
-		clip[3].x = 640 / 2 -1;
-		clip[3].y = 360 / 2 - 1;
+		clip[3].x = (640 - 1) / 2;
+		clip[3].y = (360 - 1) / 2;
 		clip[3].right = 640 - 1;
 		clip[3].bottom = 360 - 1;
 	}
@@ -205,7 +203,7 @@ public:
 		float_t c;
 		bool fillRule;
 
-		EdgeEquation(const game::Vector2f& v0, const game::Vector2f& v1)
+		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
@@ -287,16 +285,13 @@ public:
 	template<bool wireFrame, bool filled>
 	void DrawColored(const Triangle& tri)
 	{
-		game::Vector2f v0(tri.vertices[0].x, tri.vertices[0].y);
-		game::Vector2f v1(tri.vertices[1].x, tri.vertices[1].y);
-		game::Vector2f v2(tri.vertices[2].x, tri.vertices[2].y);
+		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0.0f);
+		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0.0f);
+		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0.0f);
 
 		bool foundTriangle(false);
 		uint32_t videoBufferPos(0);
 		uint32_t videoBufferStride(pixelMode.GetPixelFrameBufferSize().x);
-
-
-		fence++;
 
 		EdgeEquation e0(v1, v2);
 		EdgeEquation e1(v2, v0);
@@ -306,6 +301,7 @@ public:
 		float area(e0.c + e1.c + e2.c);
 		if (area < 0)
 		{
+			fence++;
 			return;
 		}
 
@@ -314,10 +310,12 @@ public:
 
 		// Screen clipping
 		// Offscreen completely
-		if (boundingBox.right < 0) return;
-		if (boundingBox.x > pixelMode.GetPixelFrameBufferSize().width - 1) return;
-		if (boundingBox.bottom < 0) return;
-		if (boundingBox.y > pixelMode.GetPixelFrameBufferSize().height - 1) return;
+		if ((boundingBox.right < 0) || (boundingBox.x > pixelMode.GetPixelFrameBufferSize().width - 1) ||
+			(boundingBox.bottom < 0) || (boundingBox.y > pixelMode.GetPixelFrameBufferSize().height - 1))
+		{
+			fence++;
+			return;
+		}
 
 		// Partial offscreen
 		if (boundingBox.x < 0)
@@ -457,6 +455,7 @@ public:
 			}
 			videoBufferPos += videoBufferStride - xLoopCount;
 		}
+		fence++;
 	}
 
 	inline float_t distanceFromPointToLineSq(const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx, const float_t denominator)
@@ -485,23 +484,23 @@ public:
 		//threadPool.Queue(std::bind(&Game::DrawColored<false,true>, this, std::ref(tri)));
 		//DrawWireFrame(tri, game::Colors::White);
 
-		//for (int s = 0; s < tris.size(); s++)
-		//{
-		//	threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
-		//}
-
-		//while(fence < tris.size())
-		//{
-		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
-		//}
-		//Game::DrawColored<w, true>(rotatedTri);
-		switch (state)
+		for (int s = 0; s < tris.size(); s++)
 		{
-		case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
-		case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
-		case FillMode::FilledColor: DrawColored<false, true>(rotatedTri); break;
-		default: break;
+			threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
 		}
+
+		while(fence < tris.size())
+		{
+			//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
+		}
+		//Game::DrawColored<w, true>(rotatedTri);
+		//switch (state)
+		//{
+		//case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri); break;
+		//case FillMode::WireFrame: DrawColored<true, false>(rotatedTri); break;
+		//case FillMode::FilledColor: DrawColored<false, true>(rotatedTri); break;
+		//default: break;
+		//}
 		//DrawColored<w,true>(rotatedTri);
 		//DrawColored<false,true>(rotatedTri);
 		//DrawColoredBlock(rotatedTri);
