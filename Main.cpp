@@ -13,9 +13,7 @@ public:
 	game::PixelMode pixelMode;
 	game::Triangle tri;
 	game::Triangle tri2;
-	game::ThreadPool threadPool;
 	game::Software3D software3D;
-	std::atomic<uint64_t> fence;
 
 	game::Recti clip[4];
 	std::vector<game::Triangle> tris;
@@ -26,7 +24,6 @@ public:
 	Game() : game::Engine()
 	{
 		ZeroMemory(&tri, sizeof(game::Triangle));
-		fence = 0;
 	}
 
 	void Initialize()
@@ -71,7 +68,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize()))
+		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),16))
 		{
 			geLogLastError();
 		}
@@ -79,9 +76,6 @@ public:
 		game::Random rnd;
 
 		rnd.NewSeed();
-
-		// Start the threads up
-		threadPool.Start();
 
 		// Clockwise vertex winding
 		// tl
@@ -131,7 +125,7 @@ public:
 
 	void Shutdown()
 	{
-		threadPool.Stop();
+
 	}
 
 	void Update(const float_t msElapsed)
@@ -149,6 +143,7 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_W))
 		{
 			state++;
+			software3D.SetState(0, (uint32_t)state);
 		}
 	}
 
@@ -158,9 +153,7 @@ public:
 		float_t y_new = (x - 320) * sin(-theta) + (y - 180) * cos(-theta);
 		x = x_new + 320.0f;
 		y = y_new + 180.0f;
-	}
-
-	
+	}	
 
 	// For clipping only need znear so a lot can be precalc for plane
 	// make sure plane is normalized
@@ -176,7 +169,6 @@ public:
 		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		fence = 0;
 		game::Triangle rotatedTri(tri);
 		game::Triangle rotatedTri2(tri2);
 
@@ -195,28 +187,40 @@ public:
 
 		//for (int s = 0; s < tris.size(); s++)
 		//{
-		//	threadPool.Queue(std::bind(&Game::DrawColored<true,true>, this, std::ref(tris[s])));
+		//	threadPool.Queue(std::bind(&game::Software3D::DrawColored<true,true>, &software3D, std::ref(tris[s])));
 		//}
 
-		//while(fence < tris.size())
-		//{
-		//	//std::cout << fence << "  != " << tris.size()*4 -1 << "\n";
-		//}
+		//software3D.Flush(tris.size());
+
+		
 		//Game::DrawColored<w, true>(rotatedTri);
-		switch (state)
-		{
-		case game::FillMode::WireFrameFilled: software3D.DrawColored<true, true>(rotatedTri); break;
-		case game::FillMode::WireFrame: software3D.DrawColored<true, false>(rotatedTri); break;
-		case game::FillMode::FilledColor: software3D.DrawColored<false, true>(rotatedTri); break;
-		default: break;
-		}
+
+		std::vector<game::Triangle> quad;
+
+		quad.emplace_back(rotatedTri);
+		quad.emplace_back(rotatedTri2);
+
+		software3D.Render(quad);
+		software3D.Flush(quad.size());
+		//software3D.Render(tris);
+		//software3D.Flush(tris.size());
+		
 		//switch (state)
 		//{
-		//case FillMode::WireFrameFilled: DrawColored<true, true>(rotatedTri2); break;
-		//case FillMode::WireFrame: DrawColored<true, false>(rotatedTri2); break;
-		//case FillMode::FilledColor: DrawColored<false, true>(rotatedTri2); break;
+		//case game::FillMode::WireFrameFilled: software3D.DrawColored<true, true>(rotatedTri); break;
+		//case game::FillMode::WireFrame: software3D.DrawColored<true, false>(rotatedTri); break;
+		//case game::FillMode::FilledColor: software3D.DrawColored<false, true>(rotatedTri); break;
 		//default: break;
 		//}
+		//switch (state)
+		//{
+		//case game::FillMode::WireFrameFilled: software3D.DrawColored<true, true>(rotatedTri2); break;
+		//case game::FillMode::WireFrame: software3D.DrawColored<true, false>(rotatedTri2); break;
+		//case game::FillMode::FilledColor: software3D.DrawColored<false, true>(rotatedTri2); break;
+		//default: break;
+		//}
+		
+
 		//DrawColored<w,true>(rotatedTri);
 		//DrawColored<false,true>(rotatedTri);
 		//DrawColoredBlock(rotatedTri);

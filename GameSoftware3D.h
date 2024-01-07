@@ -1,172 +1,131 @@
 #if !defined(GAMESOFTWARE3D_H)
 #define GAMESOFTWARE3D_H
 
+#include <vector>
 #include "GameMath.h"
 #include "GameColor.h"
 #include "GamePixelMode.h"
+#include "GameSoftware3D_Data.h"
+#include "GameThreadPool.h"
+
 
 namespace game
 {
-	// GameSoftwareRenderer.h
-	struct Triangle
-	{
-		game::Vector3f vertices[3];
-		game::Vector3f clippedVertices[3];
-		game::Color color[3];
-		game::Vector3f faceNormal;
-		game::Vector3f normals[3];
-		game::Vector2f uvs[3];
-	};
-
-	enum class FillMode
-	{
-		WireFrame,
-		FilledColor,
-		WireFrameFilled,
-		//AffineTextureMapped,
-		//WireFrameAffTexture,
-		//ProjectionTextureMapped,
-		//WireFrameProjTexture,
-		None
-	};
-	//FillMode& operator++ (RasterMode& rmode, int);
-	//std::ostream& operator<< (std::ostream& stm, FillMode rmode);
-	static FillMode& operator++ (FillMode& rmode, int)
-	{
-		rmode = static_cast<FillMode>((int)rmode + 1);
-		if (rmode == FillMode::None) rmode = static_cast<FillMode>(0);
-		return rmode;
-	}
-	static std::ostream& operator<< (std::ostream& stream, FillMode rmode)
-	{
-		switch (rmode)
-		{
-		case FillMode::WireFrame: return stream << "WireFrame";
-		case FillMode::FilledColor: return stream << "Filled Color";
-		case FillMode::WireFrameFilled: return stream << "WireFrame Filled";
-			//case FillMode::AffineTextureMapped: return stream << "Affine Texture Mapped";
-			//case FillMode::WireFrameAffTexture: return stream << "WireFrame Affine Texture Mapped";
-			//case FillMode::ProjectionTextureMapped: return stream << "Projection Correct Texture Mapped";
-			//case FillMode::WireFrameProjTexture: return stream << "WireFrame Projection Correct Texture Mapped";
-		default: return stream << "Unknown Enumerator";
-		}
-	}
-
-	struct EdgeEquation {
-		float_t a;
-		float_t b;
-		float_t c;
-		bool fillRule;
-
-		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
-		{
-			a = v0.y - v1.y;
-			b = v1.x - v0.x;
-			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
-			fillRule = a != 0 ? a > 0 : b > 0;
-		}
-
-		// Evaluate the edge equation for the given point.
-		float_t evaluate(const float_t x, const float_t y) const noexcept
-		{
-			return a * x + b * y + c;
-		}
-
-		// Test if the given point is inside the edge.
-		bool test(const float_t x, const float_t y) const noexcept
-		{
-			return test(evaluate(x, y));
-		}
-
-		// Test for a given evaluated value.
-		bool test(const float_t v) const noexcept
-		{
-			return (v < 0 || v == 0 && fillRule);
-		}
-
-		// Step the equation value v to the x direction.
-		float_t stepX(const float_t v) const noexcept
-		{
-			return v + a;
-		}
-
-		// Step the equation value v to the x direction.
-		float_t stepX(const float_t v, const float_t stepSize) const noexcept
-		{
-			return v + a * stepSize;
-		}
-
-		// Step the equation value v to the y direction.
-		float_t stepY(const float_t v) const noexcept
-		{
-			return v + b;
-		}
-
-		// Step the equation value vto the y direction.
-		float_t stepY(const float_t v, const float_t stepSize) const noexcept
-		{
-			return v + b * stepSize;
-		}
-	};
-
-	struct ParameterEquation {
-		float_t a;
-		float_t b;
-		float_t c;
-
-		ParameterEquation(
-			const float_t p0,
-			const float_t p1,
-			const float_t p2,
-			const EdgeEquation& e0,
-			const EdgeEquation& e1,
-			const EdgeEquation& e2,
-			float_t area)
-		{
-			float_t factor = 1.0f / area;
-
-			a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
-			b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
-			c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
-		}
-
-		// Evaluate the parameter equation for the given point.
-		float_t evaluate(const float_t x, const float_t y) const noexcept
-		{
-			return a * x + b * y + c;
-		}
-	};
-
 	class Software3D
 	{
 	public:
 		Software3D();
-		bool Initialize(uint32_t* frameBuffer, const Pointi& size);
+		~Software3D();
+		bool Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads);
+		int32_t SetState(const uint32_t state, const uint32_t value);
+		void Flush(uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) noexcept;
+		void Render(std::vector<Triangle>& tris);
 		template<bool wireFrame, bool filled>
 		void DrawColored(const Triangle& tri);
+		std::atomic<uint32_t> fence;
 	private:
+		template<bool threaded>
+		void _Render(std::vector<Triangle>& tris);
+		bool _multiThreaded;
+		ThreadPool _threadPool;
+		int32_t _threads;
 		uint32_t* _frameBuffer;
 		int32_t _frameBufferWidth;
 		int32_t _frameBufferHeight;
-		std::atomic<uint32_t> fence;
+		HANDLE _fenceEvent;
+		FillMode _FillMode;
 	};
 
 	Software3D::Software3D()
 	{
 		_frameBuffer = nullptr;
+		_fenceEvent = nullptr;
 		fence = 0;
 		_frameBufferWidth = 0;
 		_frameBufferHeight = 0;
+		_multiThreaded = false;
+		_threads = -1;
+		_FillMode = FillMode::WireFrameFilled;
 	}
 
-	inline bool Software3D::Initialize(uint32_t* frameBuffer, const Pointi& size)
+	Software3D::~Software3D()
+	{
+		CloseHandle(_fenceEvent);
+		_fenceEvent = nullptr;
+		_threadPool.Stop();
+	}
+
+	inline void Software3D::Flush(uint64_t fenceValue) noexcept
+	{
+		while (fence < fenceValue) {};
+		fence = 0;
+	}
+
+	inline int32_t Software3D::SetState(const uint32_t state, const uint32_t value)
+	{
+		if (state == 0)
+		{
+			_FillMode = (FillMode)value;
+		}
+		return 0;
+	}
+
+	inline bool Software3D::Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads = -1)
 	{
 		_frameBuffer = frameBuffer;
 		fence = 0;
 		_frameBufferWidth = size.width;
 		_frameBufferHeight = size.height;
+		if (threads < 0)
+		{
+			_multiThreaded = false;
+		}
+		else
+		{
+			_multiThreaded = true;
+			_threads = threads;
+			_threadPool.Start(threads);
+		}
 		return true;
+	}
+
+	inline void Software3D::Render(std::vector<Triangle>& tris)
+	{
+		if (_multiThreaded)
+		{
+			_Render<true>(tris);
+		}
+		else
+		{
+			_Render<false>(tris);
+		}
+	}
+
+	template<bool threaded>
+	inline void Software3D::_Render(std::vector<Triangle>& tris)
+	{
+		std::function<void(Triangle)> renderer;
+
+		switch (_FillMode)
+		{
+		case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true>, this, std::placeholders::_1); break;
+		case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false>, this, std::placeholders::_1); break;
+		case game::FillMode::FilledColor: renderer = std::bind(&Software3D::DrawColored<false, true>, this, std::placeholders::_1); break;
+		default: break;
+		}
+
+		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
+		{
+			if (threaded)
+			{
+				_threadPool.Queue(std::bind(renderer,(tris[triangleCount])));
+			}
+			else
+			{
+				renderer(tris[triangleCount]);
+			}
+		}
 	}
 
 	inline const Recti Software3D::TriangleBoundingBox(const Triangle& tri) noexcept
@@ -188,8 +147,6 @@ namespace game
 		return boundingBox;
 	}
 
-
-
 	template<bool wireFrame, bool filled>
 	inline void Software3D::DrawColored(const Triangle& tri)
 	{
@@ -198,7 +155,6 @@ namespace game
 		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0.0f);
 
 		bool foundTriangle(false);
-		uint32_t videoBufferPos(0);
 		uint32_t videoBufferStride(_frameBufferWidth);
 
 		EdgeEquation e0(v1, v2);
@@ -242,7 +198,7 @@ namespace game
 
 		// Wireframe precalcs
 		float_t d[3] = {};
-		float_t minDistSq = 0.0f;
+		float_t minDistSq(0.0f);
 		float_t yy[3] = {}; //y2 - y1;
 		float_t xx[3] = {}; //x2 - x1;
 		float_t xy[3] = {}; //x2 * y1 then xy - yx
@@ -276,8 +232,7 @@ namespace game
 
 		// jitters with floats, maybe a pixel with floats for subpixel? It is slower 
 		// with just floats no subpixel
-		videoBufferPos = (boundingBox.y * videoBufferStride + boundingBox.x);
-		uint32_t* buffer = _frameBuffer;
+		uint32_t* buffer = _frameBuffer + (boundingBox.y * videoBufferStride + boundingBox.x);
 		uint32_t xLoopCount = 0;
 		// added the = last night below
 		for (int32_t j = boundingBox.y; j <= boundingBox.bottom; ++j)
@@ -293,13 +248,13 @@ namespace game
 				{
 					if (foundTriangle)
 					{
-						++videoBufferPos;
+						++buffer;
 						break;
 					}
 					else
 					{
 						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
-						++videoBufferPos;
+						++buffer;
 						continue;
 					}
 				}
@@ -307,13 +262,13 @@ namespace game
 				{
 					if (foundTriangle)
 					{
-						++videoBufferPos;
+						++buffer;
 						break;
 					}
 					else
 					{
 						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
-						++videoBufferPos;
+						++buffer;
 						continue;
 					}
 				}
@@ -321,18 +276,19 @@ namespace game
 				{
 					if (foundTriangle)
 					{
-						++videoBufferPos;
+						++buffer;
 						break;
 					}
 					else
 					{
 						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
-						++videoBufferPos;
+						++buffer;
 						continue;
 					}
 				}
 				foundTriangle = true;
-
+				
+				// Wireframe
 				if (wireFrame)
 				{
 					auto distanceFromPointToLineSq = [&](const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx, const float_t denominator)
@@ -341,7 +297,7 @@ namespace game
 							float_t numerator = num * num;
 							return (numerator * denominator);
 						};
-					// Wireframe
+
 					for (uint32_t dist = 0; dist < 3; dist++)
 					{
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
@@ -349,21 +305,21 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1)
 					{
-						buffer[videoBufferPos] = game::Colors::White.packedARGB;
-						++videoBufferPos;
+						*buffer = game::Colors::White.packedARGB;
+						++buffer;
 						continue;
 					}
 				}
 
-				// Calculates the color
+				// Filled
 				if (filled)
 				{
 					game::Color color(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
-					buffer[videoBufferPos] = color.packedARGB;
+					*buffer = color.packedARGB;
 				}
-				++videoBufferPos;
+				++buffer;
 			}
-			videoBufferPos += videoBufferStride - xLoopCount;
+			buffer += videoBufferStride - xLoopCount;
 		}
 		fence++;
 	}
