@@ -13,6 +13,7 @@ public:
 	game::PixelMode pixelMode;
 	game::Triangle tri;
 	game::Triangle tri2;
+	game::Triangle htri;
 	game::Software3D software3D;
 
 	game::Recti clip[4];
@@ -77,6 +78,7 @@ public:
 
 		rnd.NewSeed();
 
+
 		// Clockwise vertex winding
 		// tl
 		tri.vertices[0].x = 270;
@@ -92,6 +94,18 @@ public:
 		tri.vertices[2].x = 270;
 		tri.vertices[2].y = 230;
 		tri.color[2] = game::Colors::Green;
+
+
+		//htri.vertices[0] = Projecttoh(tri.vertices[0]);
+		//htri.vertices[1] = Projecttoh(tri.vertices[1]);
+		//htri.vertices[2] = Projecttoh(tri.vertices[2]);
+
+		//for (int i = 0; i < 3; i++)
+		//{
+		//	htri.vertices[i] = Projecttoh(tri.vertices[i]);
+		//	std::cout << htri.vertices[i].x << "," << htri.vertices[i].y << "\n";
+		//}
+
 
 		// Clockwise vertex winding
 		// tr
@@ -165,12 +179,42 @@ public:
 		y = y_new + 180.0f;
 	}	
 
+	void Rotateh(float_t& x, float_t& y, const float_t theta)
+	{
+		float_t x_new = (x) * cos(theta) - (y) * sin(theta);
+		float_t y_new = (x) * sin(theta) + (y) * cos(theta);
+		x = x_new;
+		y = y_new;
+	}
+
 	// For clipping only need znear so a lot can be precalc for plane
 	// make sure plane is normalized
 	// precal 
 	// plane normal dot plane point
-
 	// store c
+
+	game::Triangle Projecttoh(const game::Triangle vertex)
+	{
+		game::Triangle ret(vertex);
+		for (int i = 0; i < 3; i++)
+		{
+			ret.vertices[i].x = (vertex.vertices[i].x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
+			ret.vertices[i].y = (vertex.vertices[i].y * 2.0f / (float_t)pixelMode.GetPixelFrameBufferSize().y) -1.0f;
+		}
+
+		return ret;
+	}
+
+	game::Triangle Project(const game::Triangle vertex)
+	{
+		game::Triangle ret(vertex);
+		for (int i = 0; i < 3; i++)
+		{
+			ret.vertices[i].x = ((vertex.vertices[i].x + 1.0f) * 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
+			ret.vertices[i].y = (((vertex.vertices[i].y + 1.0f) * 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y));// 1.0f - (vertex.y * 2.0f / (float_t)pixelMode.GetPixelFrameBufferSize().y);
+		}
+		return ret;
+	}
 
 	void Render(const float_t msElapsed)
 	{
@@ -195,8 +239,19 @@ public:
 
 		std::vector<game::Triangle> quad;
 
-		quad.emplace_back(rotatedTri);
+		//quad.emplace_back(rotatedTri);
 		quad.emplace_back(rotatedTri2);
+
+		game::Triangle test;
+
+		htri = Projecttoh(rotatedTri);
+		Rotateh(test.vertices[0].x, test.vertices[0].y, rotation);
+		Rotateh(test.vertices[1].x, test.vertices[1].y, rotation);
+		Rotateh(test.vertices[2].x, test.vertices[2].y, rotation);
+
+		test = Project(htri);
+		quad.emplace_back(test);
+
 
 		software3D.Render(quad);
 		software3D.Fence(quad.size());
