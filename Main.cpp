@@ -38,7 +38,7 @@ public:
 		//tl
 		clip[0].x = 0;
 		clip[0].y = 0;
-		clip[0].right = (640-1) / 2;
+		clip[0].right = (640 - 1) / 2;
 		clip[0].bottom = (360 - 1) / 2;
 
 		// tr
@@ -143,7 +143,17 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_W))
 		{
 			state++;
-			software3D.SetState(0, (uint32_t)state);
+			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, (uint32_t)state);
+		}
+
+		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
+		{
+			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, -1);
+		}
+
+		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
+		{
+			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 2);
 		}
 	}
 
@@ -182,18 +192,6 @@ public:
 
 
 		pixelMode.Clear(game::Colors::Black);
-		//threadPool.Queue(std::bind(&Game::DrawColored<false,true>, this, std::ref(tri)));
-		//DrawWireFrame(tri, game::Colors::White);
-
-		//for (int s = 0; s < tris.size(); s++)
-		//{
-		//	threadPool.Queue(std::bind(&game::Software3D::DrawColored<true,true>, &software3D, std::ref(tris[s])));
-		//}
-
-		//software3D.Flush(tris.size());
-
-		
-		//Game::DrawColored<w, true>(rotatedTri);
 
 		std::vector<game::Triangle> quad;
 
@@ -201,34 +199,16 @@ public:
 		quad.emplace_back(rotatedTri2);
 
 		software3D.Render(quad);
-		software3D.Flush(quad.size());
+		software3D.Fence(quad.size());
 		//software3D.Render(tris);
-		//software3D.Flush(tris.size());
-		
-		//switch (state)
-		//{
-		//case game::FillMode::WireFrameFilled: software3D.DrawColored<true, true>(rotatedTri); break;
-		//case game::FillMode::WireFrame: software3D.DrawColored<true, false>(rotatedTri); break;
-		//case game::FillMode::FilledColor: software3D.DrawColored<false, true>(rotatedTri); break;
-		//default: break;
-		//}
-		//switch (state)
-		//{
-		//case game::FillMode::WireFrameFilled: software3D.DrawColored<true, true>(rotatedTri2); break;
-		//case game::FillMode::WireFrame: software3D.DrawColored<true, false>(rotatedTri2); break;
-		//case game::FillMode::FilledColor: software3D.DrawColored<false, true>(rotatedTri2); break;
-		//default: break;
-		//}
+		//software3D.Fence(tris.size());
 		
 
-		//DrawColored<w,true>(rotatedTri);
-		//DrawColored<false,true>(rotatedTri);
-		//DrawColoredBlock(rotatedTri);
-
-		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
+		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
 		std::stringstream ss;
 		ss << "Fill Mode: " << state;
-		pixelMode.TextClip(ss.str(), 0, 10, game::Colors::Yellow, 1);
+		pixelMode.Text(ss.str(), 0, 10, game::Colors::Yellow, 1);
+		pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 20, game::Colors::Yellow, 1);
 
 
 		pixelMode.Render();

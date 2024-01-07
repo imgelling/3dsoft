@@ -8,28 +8,31 @@
 #include "GameSoftware3D_Data.h"
 #include "GameThreadPool.h"
 
+#define GAME_SOFTWARE3D_STATE_FILL_MODE 0
+#define GAME_SOFTWARE3D_STATE_THREADED 1
 
 namespace game
 {
+
 	class Software3D
 	{
 	public:
 		Software3D();
 		~Software3D();
 		bool Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads);
-		int32_t SetState(const uint32_t state, const uint32_t value);
-		void Flush(uint64_t fenceValue) noexcept;
+		int32_t SetState(const uint32_t state, const int32_t value);
+		void Fence(uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) noexcept;
 		void Render(std::vector<Triangle>& tris);
 		template<bool wireFrame, bool filled>
 		void DrawColored(const Triangle& tri);
 		std::atomic<uint32_t> fence;
+		uint32_t NumberOfThreads() { return _threadPool.NumberOfThreads(); }
 	private:
 		template<bool threaded>
 		void _Render(std::vector<Triangle>& tris);
 		bool _multiThreaded;
 		ThreadPool _threadPool;
-		int32_t _threads;
 		uint32_t* _frameBuffer;
 		int32_t _frameBufferWidth;
 		int32_t _frameBufferHeight;
@@ -45,7 +48,6 @@ namespace game
 		_frameBufferWidth = 0;
 		_frameBufferHeight = 0;
 		_multiThreaded = false;
-		_threads = -1;
 		_FillMode = FillMode::WireFrameFilled;
 	}
 
@@ -56,19 +58,40 @@ namespace game
 		_threadPool.Stop();
 	}
 
-	inline void Software3D::Flush(uint64_t fenceValue) noexcept
+	inline void Software3D::Fence(uint64_t fenceValue) noexcept
 	{
 		while (fence < fenceValue) {};
 		fence = 0;
 	}
 
-	inline int32_t Software3D::SetState(const uint32_t state, const uint32_t value)
+	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
 	{
-		if (state == 0)
+		if (state == GAME_SOFTWARE3D_STATE_FILL_MODE)
 		{
+			if ((value < (int32_t)FillMode::WireFrame) || (value >= (int32_t)FillMode::None))
+			{
+				return false;
+			}
 			_FillMode = (FillMode)value;
+			return true;
 		}
-		return 0;
+
+		if (state == GAME_SOFTWARE3D_STATE_THREADED)
+		{
+			if (value >= 0)
+			{
+				_multiThreaded = true;
+				_threadPool.Stop();
+				_threadPool.Start(value);
+			}
+			else
+			{
+				_multiThreaded = false;
+				_threadPool.Stop();
+			}
+		}
+
+		return false;
 	}
 
 	inline bool Software3D::Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads = -1)
@@ -84,7 +107,6 @@ namespace game
 		else
 		{
 			_multiThreaded = true;
-			_threads = threads;
 			_threadPool.Start(threads);
 		}
 		return true;
@@ -192,6 +214,7 @@ namespace game
 			boundingBox.bottom = _frameBufferHeight - 1;
 
 		// Color parameter
+		Color color;
 		ParameterEquation r(tri.color[0].rf, tri.color[1].rf, tri.color[2].rf, e0, e1, e2, area);
 		ParameterEquation g(tri.color[0].gf, tri.color[1].gf, tri.color[2].gf, e0, e1, e2, area);
 		ParameterEquation b(tri.color[0].bf, tri.color[1].bf, tri.color[2].bf, e0, e1, e2, area);
@@ -314,7 +337,7 @@ namespace game
 				// Filled
 				if (filled)
 				{
-					game::Color color(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
+					color.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					*buffer = color.packedARGB;
 				}
 				++buffer;
