@@ -169,7 +169,7 @@ namespace game
 		return boundingBox;
 	}
 
-	template<bool wireFrame, bool filled>
+	template<bool wireFrame, bool color>
 	inline void Software3D::DrawColored(const Triangle& tri)
 	{
 		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0.0f);
@@ -214,7 +214,7 @@ namespace game
 			boundingBox.bottom = _frameBufferHeight - 1;
 
 		// Color parameter
-		Color color;
+		Color colorAtPixel;
 		ParameterEquation r(tri.color[0].rf, tri.color[1].rf, tri.color[2].rf, e0, e1, e2, area);
 		ParameterEquation g(tri.color[0].gf, tri.color[1].gf, tri.color[2].gf, e0, e1, e2, area);
 		ParameterEquation b(tri.color[0].bf, tri.color[1].bf, tri.color[2].bf, e0, e1, e2, area);
@@ -334,11 +334,11 @@ namespace game
 					}
 				}
 
-				// Filled
-				if (filled)
+				// Color filled
+				if (color)
 				{
-					color.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
-					*buffer = color.packedARGB;
+					colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
+					*buffer = colorAtPixel.packedARGB;
 				}
 				++buffer;
 			}

@@ -27,17 +27,15 @@ namespace game
 		//WireFrameProjTexture,
 		None
 	};
-	//FillMode& operator++ (RasterMode& rmode, int);
-	//std::ostream& operator<< (std::ostream& stm, FillMode rmode);
-	static FillMode& operator++ (FillMode& rmode, int)
+	static FillMode& operator++ (FillMode& rmode, int32_t)
 	{
 		rmode = static_cast<FillMode>((int)rmode + 1);
 		if (rmode == FillMode::None) rmode = static_cast<FillMode>(0);
 		return rmode;
 	}
-	static std::ostream& operator<< (std::ostream& stream, FillMode rmode)
+	static std::ostream& operator<< (std::ostream& stream, FillMode mode)
 	{
-		switch (rmode)
+		switch (mode)
 		{
 		case FillMode::WireFrame: return stream << "WireFrame";
 		case FillMode::FilledColor: return stream << "Filled Color";
