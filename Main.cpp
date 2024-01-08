@@ -21,11 +21,14 @@ public:
 	std::vector<game::Triangle> tris;
 	std::vector<game::Triangle> clippedTris;
 
+	uint32_t maxFPS;
+
 	game::FillMode state = game::FillMode::WireFrameFilled;
 
 	Game() : game::Engine()
 	{
 		ZeroMemory(&tri, sizeof(game::Triangle));
+		maxFPS = 0;
 	}
 
 	void Initialize()
@@ -36,6 +39,8 @@ public:
 		attributes.VsyncOn = false;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
 		geSetAttributes(attributes);
+
+		//geSetFrameLock(60);
 
 		//tl
 		clip[0].x = 0;
@@ -157,8 +162,10 @@ public:
 			for (uint32_t v = 0; v < 3; v++)
 			{
 				temp.vertices[v].x = (float_t)rnd.RndRange(0, 640);
+				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 640.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 360);
-				temp.vertices[v].z = (float_t)rnd.RndRange(0, 360);
+				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 360.0f - 1.0f;
+				temp.vertices[v].z = 0.0f;// (float_t)rnd.RndRange(0, 0);
 			}
 			tris.emplace_back(temp);
 		}
@@ -214,52 +221,71 @@ public:
 		y = y_new;
 	}
 
-	game::Triangle RotateTrihZ(const game::Triangle& tri, const float_t theta)
+	inline game::Triangle RotateTrihZ(const game::Triangle& tri, const float_t theta)
 	{
 		game::Triangle ret(tri);
-
-		for (int i = 0; i < 3; i++)
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+		//for (int i = 0; i < 3; i++)
 		{
-			ret.vertices[i].x = (tri.vertices[i].x) * cos(theta) - (tri.vertices[i].y) * sin(theta);
-			ret.vertices[i].y = (tri.vertices[i].x) * sin(theta) + (tri.vertices[i].y) * cos(theta);
+			ret.vertices[0].x = (tri.vertices[0].x) * ctheta - (tri.vertices[0].y) * stheta;
+			ret.vertices[0].y = (tri.vertices[0].x) * stheta + (tri.vertices[0].y) * ctheta;
+			ret.vertices[1].x = (tri.vertices[1].x) * ctheta - (tri.vertices[1].y) * stheta;
+			ret.vertices[1].y = (tri.vertices[1].x) * stheta + (tri.vertices[1].y) * ctheta;
+			ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
+			ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
 		}
 		return ret;
 	}
 
-	game::Triangle RotateTrihX(const game::Triangle& tri, const float_t theta)
+	inline game::Triangle RotateTrihX(const game::Triangle& tri, const float_t theta)
 	{
 		game::Triangle ret(tri);
-
-		for (int i = 0; i < 3; i++)
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+		//for (int i = 0; i < 3; i++)
 		{
-			ret.vertices[i].y = (tri.vertices[i].y) * cos(theta) - (tri.vertices[i].z) * sin(theta);
-			ret.vertices[i].z = (tri.vertices[i].y) * sin(theta) +(tri.vertices[i].z) * cos(theta);
-			//ret.vertices[i].z -= 5.0f; //translate
+			ret.vertices[0].y = (tri.vertices[0].y) * ctheta - (tri.vertices[0].z) * stheta;
+			ret.vertices[0].z = (tri.vertices[0].y) * stheta + (tri.vertices[0].z) * ctheta;
+			ret.vertices[1].y = (tri.vertices[1].y) * ctheta - (tri.vertices[1].z) * stheta;
+			ret.vertices[1].z = (tri.vertices[1].y) * stheta + (tri.vertices[1].z) * ctheta;
+			ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
+			ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
 		}
 		return ret;
 	}
 
-	game::Triangle RotateTrihY(const game::Triangle& tri, const float_t theta)
+	inline game::Triangle RotateTrihY(const game::Triangle& tri, const float_t theta)
 	{
 		game::Triangle ret(tri);
-
-		for (int i = 0; i < 3; i++)
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+		//for (int i = 0; i < 3; i++)
 		{
-			ret.vertices[i].x = (tri.vertices[i].x) * cos(theta) + (tri.vertices[i].z) * sin(theta);
-			ret.vertices[i].z = (tri.vertices[i].x) * -sin(theta) + (tri.vertices[i].z) * cos(theta);
-			//ret.vertices[i].z -= 5.0f; //translate
+			ret.vertices[0].x = (tri.vertices[0].x) * ctheta + (tri.vertices[0].z) * stheta;
+			ret.vertices[0].z = (tri.vertices[0].x) * -stheta + (tri.vertices[0].z) * ctheta;
+			ret.vertices[1].x = (tri.vertices[1].x) * ctheta + (tri.vertices[1].z) * stheta;
+			ret.vertices[1].z = (tri.vertices[1].x) * -stheta + (tri.vertices[1].z) * ctheta;
+			ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
+			ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
 		}
 		return ret;
 	}
 
-	game::Triangle Translate(const game::Triangle& tri, const float_t _x, const float_t _y, const float_t _z)
+	inline game::Triangle TranslateTri(const game::Triangle& tri, const float_t _x, const float_t _y, const float_t _z)
 	{
 		game::Triangle ret(tri);
-		for (int i = 0; i < 3; i++)
+		//for (int i = 0; i < 3; i++)
 		{
-			ret.vertices[i].x += _x;
-			ret.vertices[i].y += _y;
-			ret.vertices[i].z += _z;
+			ret.vertices[0].x += _x;
+			ret.vertices[0].y += _y;
+			ret.vertices[0].z += _z;
+			ret.vertices[1].x += _x;
+			ret.vertices[1].y += _y;
+			ret.vertices[1].z += _z;
+			ret.vertices[2].x += _x;
+			ret.vertices[2].y += _y;
+			ret.vertices[2].z += _z;
 		}
 		return ret;
 	}
@@ -270,20 +296,8 @@ public:
 	// plane normal dot plane point
 	// store c
 
-	game::Triangle Projecttoh(const game::Triangle vertex)
-	{
-		game::Triangle ret(vertex);
-		for (int i = 0; i < 3; i++)
-		{
-			ret.vertices[i].x = (vertex.vertices[i].x * 2.0f / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
-			ret.vertices[i].y = (vertex.vertices[i].y * 2.0f / (float_t)pixelMode.GetPixelFrameBufferSize().y) - 1.0f;
-		}
 
-		return ret;
-	}
-
-
-	game::Triangle Project(const game::Triangle vertex) const
+	inline game::Triangle Project(const game::Triangle vertex) const
 	{
 		game::Triangle ret(vertex);
 
@@ -309,8 +323,7 @@ public:
 				// this scale is not really part of projection
 				ret.vertices[i].y *= 1.0f / ret.vertices[i].z;
 				ret.vertices[i].y += 1.0f;
-				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;
-				
+				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
 		}
 		return ret;
@@ -348,19 +361,30 @@ public:
 		//Rotateh(htri.vertices[0].x, htri.vertices[0].y, rotation);
 		//Rotateh(htri.vertices[1].x, htri.vertices[1].y, rotation);
 		//Rotateh(htri.vertices[2].x, htri.vertices[2].y, rotation);
-		test = RotateTrihY(htri, rotation);
-		test = RotateTrihX(test, -rotation);
-		test = RotateTrihZ(test, rotation * 0.5f);
-		test = Translate(test, 0.0f, 0.0f, -5.0f);
-		test = Project(test);
-		quad.emplace_back(test);
+		//test = RotateTrihY(htri, rotation);
+		//test = RotateTrihX(test, -rotation);
+		//test = RotateTrihZ(test, rotation * 0.5f);
+		//test = TranslateTri(test, 0.0f, 0.0f, 2.0f);
+		//test = Project(test);
+		//quad.emplace_back(test);
 
-		test = RotateTrihY(htri2, rotation);
-		test = RotateTrihX(test, -rotation);
-		test = RotateTrihZ(test, rotation * 0.5f);
-		test = Translate(test, 0.0f, 0.0f, -5.0f);
-		test = Project(test);
-		quad.emplace_back(test);
+		//test = RotateTrihY(htri2, rotation);
+		//test = RotateTrihX(test, -rotation);
+		//test = RotateTrihZ(test, rotation * 0.5f);
+		//test = TranslateTri(test, 0.0f, 0.0f, 2.0f);
+		//test = Project(test);
+		//quad.emplace_back(test);
+
+		for (int i = 0; i < tris.size(); i++)
+		{
+			test = RotateTrihY(tris[i], rotation);
+			test = RotateTrihX(test, -rotation);
+			test = RotateTrihZ(test, rotation * 0.5f);
+			test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+			test = Project(test);
+			quad.emplace_back(test);
+		}
+		
 
 		//quad.emplace_back(rotatedTri);
 		//quad.emplace_back(rotatedTri2);
@@ -373,10 +397,12 @@ public:
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
+		if (geGetFramesPerSecond() > maxFPS) maxFPS = geGetFramesPerSecond();
+		pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Yellow, 1);
 		std::stringstream ss;
 		ss << "Fill Mode: " << state;
-		pixelMode.Text(ss.str(), 0, 10, game::Colors::Yellow, 1);
-		pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 20, game::Colors::Yellow, 1);
+		pixelMode.Text(ss.str(), 0, 20, game::Colors::Yellow, 1);
+		pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Yellow, 1);
 
 
 		pixelMode.Render();
