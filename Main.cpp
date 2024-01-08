@@ -70,7 +70,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),2))
+		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),-1))
 		{
 			geLogLastError();
 		}
@@ -196,8 +196,8 @@ public:
 
 	void Rotate(float_t& x, float_t& y, const float_t theta)
 	{
-		float_t x_new = (x - 320) * cos(-theta) - (y - 180) * sin(-theta);
-		float_t y_new = (x - 320) * sin(-theta) + (y - 180) * cos(-theta);
+		float_t x_new = (x - 320) * cos(theta) - (y - 180) * sin(theta);
+		float_t y_new = (x - 320) * sin(theta) + (y - 180) * cos(theta);
 		x = x_new + 320.0f;
 		y = y_new + 180.0f;
 	}	
@@ -240,22 +240,27 @@ public:
 		return ret;
 	}
 
-	game::Triangle Project(const game::Triangle vertex)
+	game::Triangle Project(const game::Triangle vertex) const
 	{
 		game::Triangle ret(vertex);
 		float aspect = 16.0f / 9.0f;
 		float D2R = 3.14f / 180.0f;
-		float yScale = 1.0f / (float)tan(D2R * 45.0 / 2);
+		float yScale = 1.0f / (float)tan(D2R * 90.0 / 2);
 		float xScale = yScale / aspect;
 		for (int i = 0; i < 3; i++)
 		{
 			ret.vertices[i].x = ((vertex.vertices[i].x) * xScale);
-			ret.vertices[i].x += 1.0f;
-			ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
+			{
+				// this scale is not really part of projection
+				ret.vertices[i].x += 1.0f;
+				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
+			}
 			ret.vertices[i].y = ((vertex.vertices[i].y) * yScale);
-			ret.vertices[i].y += 1.0f;
-			ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;
-			//ret.vertices[i].y = ((vertex.vertices[i].y) * yScale);// 1.0f - (vertex.y * 2.0f / (float_t)pixelMode.GetPixelFrameBufferSize().y);
+			{
+				// this scale is not really part of projection
+				ret.vertices[i].y += 1.0f;
+				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;
+			}
 		}
 		return ret;
 	}
@@ -292,11 +297,11 @@ public:
 		//Rotateh(htri.vertices[0].x, htri.vertices[0].y, rotation);
 		//Rotateh(htri.vertices[1].x, htri.vertices[1].y, rotation);
 		//Rotateh(htri.vertices[2].x, htri.vertices[2].y, rotation);
-		test = RotateTrihZ(htri, -rotation);
+		test = RotateTrihZ(htri, rotation);
 		test = Project(test);
 		quad.emplace_back(test);
 
-		test = RotateTrihZ(htri2, -rotation);
+		test = RotateTrihZ(htri2, rotation);
 		test = Project(test);
 		quad.emplace_back(test);
 
