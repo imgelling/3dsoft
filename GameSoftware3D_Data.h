@@ -9,11 +9,11 @@ namespace game
 	struct Triangle
 	{
 		game::Vector3f vertices[3];
-		game::Vector3f clippedVertices[3];
+		//game::Vector3f clippedVertices[3];
 		game::Color color[3];
-		game::Vector3f faceNormal;
-		game::Vector3f normals[3];
-		game::Vector2f uvs[3];
+		//game::Vector3f faceNormal;
+		//game::Vector3f normals[3];
+		//game::Vector2f uvs[3];
 	};
 
 	enum class FillMode

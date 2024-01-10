@@ -23,19 +23,21 @@ namespace game
 		int32_t SetState(const uint32_t state, const int32_t value);
 		void Fence(uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) noexcept;
-		void Render(std::vector<Triangle>& tris);
+		void Render(std::vector<Triangle>& tris, const Recti& clip);
 		template<bool wireFrame, bool filled>
-		void DrawColored(const Triangle& tri);
+		void DrawColored(const Triangle& tri, const Recti& clip);
 		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() { return _threadPool.NumberOfThreads(); }
+		void ClearDepth();
 	private:
 		template<bool threaded>
-		void _Render(std::vector<Triangle>& tris);
+		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
 		ThreadPool _threadPool;
 		uint32_t* _frameBuffer;
 		int32_t _frameBufferWidth;
 		int32_t _frameBufferHeight;
+		float_t* _depth;
 		HANDLE _fenceEvent;
 		FillMode _FillMode;
 	};
@@ -48,6 +50,7 @@ namespace game
 		_frameBufferWidth = 0;
 		_frameBufferHeight = 0;
 		_multiThreaded = false;
+		_depth = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
 	}
 
@@ -56,12 +59,19 @@ namespace game
 		CloseHandle(_fenceEvent);
 		_fenceEvent = nullptr;
 		_threadPool.Stop();
+		delete[] _depth;
+		_depth = nullptr;
 	}
 
 	inline void Software3D::Fence(uint64_t fenceValue) noexcept
 	{
 		while (fence < fenceValue) {};
 		fence = 0;
+	}
+
+	inline void Software3D::ClearDepth()
+	{
+		std::fill_n(_depth, _frameBufferWidth * _frameBufferHeight, 1000.0f);
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -109,31 +119,32 @@ namespace game
 			_multiThreaded = true;
 			_threadPool.Start(threads);
 		}
+		_depth = new float[size.width * size.height];
 		return true;
 	}
 
-	inline void Software3D::Render(std::vector<Triangle>& tris)
+	inline void Software3D::Render(std::vector<Triangle>& tris, const Recti& clip)
 	{
 		if (_multiThreaded)
 		{
-			_Render<true>(tris);
+			_Render<true>(tris,clip);
 		}
 		else
 		{
-			_Render<false>(tris);
+			_Render<false>(tris,clip);
 		}
 	}
 
 	template<bool threaded>
-	inline void Software3D::_Render(std::vector<Triangle>& tris)
+	inline void Software3D::_Render(std::vector<Triangle>& tris, const Recti& clip)
 	{
 		std::function<void(Triangle)> renderer;
 
 		switch (_FillMode)
 		{
-		case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true>, this, std::placeholders::_1); break;
-		case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false>, this, std::placeholders::_1); break;
-		case game::FillMode::FilledColor: renderer = std::bind(&Software3D::DrawColored<false, true>, this, std::placeholders::_1); break;
+		case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true>, this, std::placeholders::_1, clip); break;
+		case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false>, this, std::placeholders::_1, clip); break;
+		case game::FillMode::FilledColor: renderer = std::bind(&Software3D::DrawColored<false, true>, this, std::placeholders::_1, clip); break;
 		default: break;
 		}
 
@@ -170,7 +181,7 @@ namespace game
 	}
 
 	template<bool wireFrame, bool color>
-	inline void Software3D::DrawColored(const Triangle& tri)
+	inline void Software3D::DrawColored(const Triangle& tri, const Recti& clip)
 	{
 		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0.0f);
 		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0.0f);
@@ -196,34 +207,46 @@ namespace game
 
 		// Screen clipping
 		// Offscreen completely
-		if ((boundingBox.right < 0) || (boundingBox.x > _frameBufferWidth - 1) ||
-			(boundingBox.bottom < 0) || (boundingBox.y > _frameBufferHeight - 1))
+		if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
+			(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
 		{
 			fence++;
 			return;
 		}
 
 		// Partial offscreen
-		if (boundingBox.x < 0)
-			boundingBox.x = 0;
-		if (boundingBox.right > _frameBufferWidth - 1)
-			boundingBox.right = _frameBufferWidth - 1;
-		if (boundingBox.y < 0)
-			boundingBox.y = 0;
-		if (boundingBox.bottom > _frameBufferHeight - 1)
-			boundingBox.bottom = _frameBufferHeight - 1;
+		if (boundingBox.x < clip.x)
+			boundingBox.x = clip.x;
+		if (boundingBox.right > clip.right)
+			boundingBox.right = clip.right;
+		if (boundingBox.y < clip.y)
+			boundingBox.y = clip.y;
+		if (boundingBox.bottom > clip.bottom)
+			boundingBox.bottom = clip.bottom;
 
 		// Color parameter
 		Color colorAtPixel;
-		ParameterEquation r(tri.color[0].rf, tri.color[1].rf, tri.color[2].rf, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf, tri.color[1].gf, tri.color[2].gf, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf, tri.color[1].bf, tri.color[2].bf, e0, e1, e2, area);
+		ParameterEquation r(tri.color[0].rf/tri.vertices[0].z, tri.color[1].rf/tri.vertices[1].z, tri.color[2].rf/tri.vertices[2].z, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf/tri.vertices[0].z, tri.color[1].gf/tri.vertices[1].z, tri.color[2].gf/tri.vertices[2].z, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf/tri.vertices[0].z, tri.color[1].bf/tri.vertices[1].z, tri.color[2].bf/tri.vertices[2].z, e0, e1, e2, area);
+
+		// zclip
+		if ((tri.vertices[0].z < 0.1f) ||
+			(tri.vertices[1].z < 0.1f) ||
+			(tri.vertices[2].z < 0.1f))
+		{
+			fence++;
+			return;
+		}
 		
 		//// Depth test
 		//float xd = 1.0f / tri.vertices[0].z;// / 2.0f;
 		//float yd = 1.0f / tri.vertices[1].z;// / 2.0f;
 		//float zd = 1.0f / tri.vertices[2].z;// / 2.0f;
-		//ParameterEquation depth(xd, yd, zd, e0, e1, e2, area);
+		float xd = tri.vertices[0].z;// / 2.0f;
+		float yd = tri.vertices[1].z;// / 2.0f;
+		float zd = tri.vertices[2].z;// / 2.0f;
+		ParameterEquation depth(xd, yd, zd, e0, e1, e2, area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -316,6 +339,19 @@ namespace game
 					}
 				}
 				foundTriangle = true;
+
+				// depth buffer test
+				float dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
+				//std::cout << dd << "\n";
+				if (dd < _depth[j * _frameBufferWidth + i])
+				{
+					_depth[j * _frameBufferWidth + i] = dd;
+				}
+				else
+				{
+					++buffer;
+					continue;
+				}
 				
 				// Wireframe
 				if (wireFrame)
@@ -343,16 +379,15 @@ namespace game
 				// Color filled
 				if (color)
 				{
-					colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
+					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
-					//float dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
-					////std::cout << dd << "\n";
-					//dd = (dd / 1.5f);
-					//if (dd > 1.0f)dd = 1.0f;
-					//float_t rd = r.evaluate(pixelOffset.x, pixelOffset.y) * dd;
-					//float_t gd = g.evaluate(pixelOffset.x, pixelOffset.y) * dd;
-					//float_t bd = b.evaluate(pixelOffset.x, pixelOffset.y) * dd;
-					//colorAtPixel.Set(rd, gd, bd, 1.0f);
+					dd /= 2.5f;
+					if (dd > 1.0f) dd = 1.0f;
+					dd = 1.0f - dd;
+					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y),1.0f) * dd;
+					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y),1.0f) * dd;
+					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y),1.0f) * dd;
+					colorAtPixel.Set(rd, gd, bd, 1.0f);
 					*buffer = colorAtPixel.packedARGB;
 				}
 				++buffer;
