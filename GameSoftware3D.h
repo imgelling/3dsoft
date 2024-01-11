@@ -175,9 +175,19 @@ namespace game
 	template<bool wireFrame, bool color>
 	inline void Software3D::DrawColored(const Triangle& tri, const Recti& clip)
 	{
-		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, tri.vertices[0].z);
-		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, tri.vertices[1].z);
-		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, tri.vertices[2].z);
+		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0);// , tri.vertices[0].z);
+		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0);// tri.vertices[1].z);
+		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0);// tri.vertices[2].z);
+
+
+		//// zclip
+		//if ((tri.vertices[0].z < 0.1f) ||
+		//	(tri.vertices[1].z < 0.1f) ||
+		//	(tri.vertices[2].z < 0.1f))
+		//{
+		//	fence++;
+		//	return;
+		//}
 
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_frameBufferWidth);
@@ -192,19 +202,23 @@ namespace game
 		{
 			fence++;
 			return;
+			//std::swap(v1, v2);
+			//e0.Set(v1, v2);
+			//e1.Set(v2, v0);
+			//e2.Set(v0, v1);
 		}
 
 		game::Recti boundingBox = TriangleBoundingBox(tri);
 		game::Vector2f pixelOffset;
 
-		// Screen clipping
-		// Offscreen completely
-		if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
-			(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
-		{
-			fence++;
-			return;
-		}
+		//// Screen clipping
+		//// Offscreen completely
+		//if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
+		//	(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
+		//{
+		//	fence++;
+		//	return;
+		//}
 
 		// Partial offscreen
 		if (boundingBox.x < clip.x)
@@ -216,14 +230,6 @@ namespace game
 		if (boundingBox.bottom > clip.bottom)
 			boundingBox.bottom = clip.bottom;
 
-		// zclip
-		if ((tri.vertices[0].z < 0.1f) ||
-			(tri.vertices[1].z < 0.1f) ||
-			(tri.vertices[2].z < 0.1f))
-		{
-			fence++;
-			return;
-		}
 
 		// Color parameter
 		Color colorAtPixel;
@@ -336,11 +342,11 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				float dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
+				float dd = 1.0f / depth.evaluate(pixelOffset.x, pixelOffset.y);
 				//std::cout << dd << "\n";
-				if (1.0f / dd <= *zbuffer)
+				if (dd < *zbuffer)
 				{
-					*zbuffer = 1.0f / dd;
+					*zbuffer = dd;
 				}
 				else
 				{
@@ -366,6 +372,14 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1)
 					{
+						//*zbuffer = dd;
+						//float pre = dd;
+						//dd -= 0.5f;// 3.5f;
+						//if (dd > 1.0f) dd = 1.0f;
+						//dd = 1.0f - dd;
+						//pre *= dd;
+						//colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
+						//*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
 						*buffer = game::Colors::White.packedARGB;
 						++buffer;
 						++zbuffer;
@@ -376,15 +390,20 @@ namespace game
 				// Color filled
 				if (color)
 				{
+					//*zbuffer = dd;
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
 					float pre = dd;
-					dd /= 2.5f;
-					if (dd > 1.0f) dd = 1.0f;
+					dd = 1.0f / dd;// /= 2.5f;
+					if (dd > 1.0f) 
+						dd = 1.0f;
+					if (dd < 0.0f) 
+						dd = 0.0f;
+					
 					//dd = 1.0f - dd;
-					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
-					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
-					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
+					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
+					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
+					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
 					*buffer = colorAtPixel.packedARGB;
 				}

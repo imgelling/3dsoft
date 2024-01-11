@@ -16,6 +16,7 @@ public:
 	game::Software3D software3D;
 
 	game::Recti clip[16];
+	std::vector<game::Triangle> clippedTris[16];
 	float_t projMat[16];
 	std::vector<game::Triangle> tris;
 
@@ -160,28 +161,6 @@ public:
 		rnd.NewSeed();
 
 		float z = 0.0f;
-		//// Clockwise vertex winding
-		//// tl
-		//tri.vertices[0].x = 270;
-		//tri.vertices[0].y = 130;
-		//tri.vertices[0].z = z;
-		//tri.color[0] = game::Colors::Red;
-
-		//// br
-		//tri.vertices[1].x = 370;
-		//tri.vertices[1].y = 230;
-		//tri.vertices[1].z = z;
-		//tri.color[1] = game::Colors::Blue;
-
-		//// bl
-		//tri.vertices[2].x = 270;
-		//tri.vertices[2].y = 230;
-		//tri.vertices[2].z = z;
-		//tri.color[2] = game::Colors::Green;
-
-
-		//htri = tri;
-
 		float size = 1.0f;
 
 		// tl
@@ -232,13 +211,14 @@ public:
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
-				temp.vertices[v].z = i / 100.0f;
+				temp.vertices[v].z = i / 1000.0f;
 			}
 			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
 			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
 			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
 
 			float area(e0.c + e1.c + e2.c);
+			// wrong winding
 			if (area < 0)
 			{
 				std::swap(temp.vertices[1], temp.vertices[2]);
@@ -334,6 +314,16 @@ public:
 		return ret;
 	}
 
+	inline game::Triangle RotateTrihXYZ(const game::Triangle& tri, const float thetaX, const float thetaY, const float thetaZ)
+	{
+		game::Triangle ret(tri);
+		ret = RotateTrihX(ret, thetaX);
+		ret = RotateTrihY(ret, thetaY);
+		ret = RotateTrihZ(ret, thetaZ);
+
+		return ret;
+	}
+
 	inline game::Triangle TranslateTri(const game::Triangle& tri, const float_t _x, const float_t _y, const float_t _z)
 	{
 		game::Triangle ret(tri);
@@ -349,6 +339,25 @@ public:
 			ret.vertices[2].y += _y;
 			ret.vertices[2].z += _z;
 		}
+		return ret;
+	}
+
+	inline game::Triangle TranslateTri(const game::Triangle& tri, game::Vector3f& translate)
+	{
+		game::Triangle ret(tri);
+		ret.vertices[0] += translate; //130
+		ret.vertices[1] += translate;
+		ret.vertices[2] += translate;
+	
+		//ret.vertices[0].x += translate.x; // 122
+		//ret.vertices[0].y += translate.y;
+		//ret.vertices[0].z += translate.z;
+		//ret.vertices[1].x += translate.x;
+		//ret.vertices[1].y += translate.y;
+		//ret.vertices[1].z += translate.z;
+		//ret.vertices[2].x += translate.x;
+		//ret.vertices[2].y += translate.y;
+		//ret.vertices[2].z += translate.z;
 		return ret;
 	}
 
@@ -394,22 +403,22 @@ public:
 	inline game::Triangle Project(const game::Triangle vertex) const
 	{
 		game::Triangle ret(vertex);
-		float aspect = 16.0f / 9.0f;
-		float D2R = 3.14f / 180.0f;
-		float yScale = 1.0f / (float)tan(D2R * 90.0 / 2);
-		float xScale = yScale / aspect;
+		//float aspect = 16.0f / 9.0f;
+		//float D2R = 3.14f / 180.0f;
+		//float yScale = 1.0f / (float)tan(D2R * 90.0 / 2);
+		//float xScale = yScale / aspect;
 
 		for (int i = 0; i < 3; i++)
 		{
 			//game::Vector3f ret;
-			ret.vertices[i].x = (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
-			ret.vertices[i].y = (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
-			ret.vertices[i].z = (ret.vertices[i].x * projMat[2] + ret.vertices[i].y * projMat[6] + ret.vertices[i].z * projMat[10] + ret.vertices[i].w * projMat[14]);
-			ret.vertices[i].w = (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
+			ret.vertices[i].x *= projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
+			ret.vertices[i].y *= projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
+			ret.vertices[i].z = (ret.vertices[i].z * projMat[10] + ret.vertices[i].w * projMat[14]);
+			ret.vertices[i].w = ret.vertices[i].z;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
 			//ret.vertices[i].x = ((vertex.vertices[i].x) * xScale);
 			{
 				// this scale is not really part of projection
-				ret.vertices[i].x *= 1.0f / ret.vertices[i].z;
+				ret.vertices[i].x *= 1.0f / ret.vertices[i].w;
 				ret.vertices[i].x += 1.0f;
 				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
 				
@@ -417,7 +426,7 @@ public:
 			//ret.vertices[i].y = ((vertex.vertices[i].y) * yScale);
 			{
 				// this scale is not really part of projection
-				ret.vertices[i].y *= 1.0f / ret.vertices[i].z;
+				ret.vertices[i].y *= 1.0f / ret.vertices[i].w;
 				ret.vertices[i].y += 1.0f;
 				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
@@ -425,6 +434,45 @@ public:
 			//std::cout << ret.vertices[i].z << "\n";
 		}
 		return ret;
+	}
+
+	void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out)
+	{
+		out.clear();
+		for (int tri = 0; tri < in.size(); tri++)
+		{
+			// Near Z clip
+			if ((in[tri].vertices[0].w < 0.1f) ||
+				(in[tri].vertices[1].w < 0.1f) ||
+				(in[tri].vertices[2].w < 0.1f))
+			{
+				continue;
+			}
+
+			game::Recti boundingBox = software3D.TriangleBoundingBox(in[tri]);
+
+			// Screen clipping
+			// Offscreen completely
+			if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
+				(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
+			{
+				continue;
+			}
+
+			// Partial offscreen
+			if (boundingBox.x < clip.x)
+			{
+				boundingBox.x = clip.x;
+					
+			}
+			if (boundingBox.right > clip.right)
+				boundingBox.right = clip.right;
+			if (boundingBox.y < clip.y)
+				boundingBox.y = clip.y;
+			if (boundingBox.bottom > clip.bottom)
+				boundingBox.bottom = clip.bottom;
+			out.emplace_back(in[tri]);
+		}
 	}
 
 	void Render(const float_t msElapsed)
@@ -440,51 +488,81 @@ public:
 		std::vector<game::Triangle> quad;
 		game::Triangle test;
 
-		//test = RotateTrihY(htri, rotation);
-		//test = RotateTrihX(test, -rotation);
-		//test = RotateTrihZ(test, rotation * 0.5f);
-		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		//game::Vector3f t(0.0f, 0.0f, 2.0f);
+		////test = RotateTrihY(htri, rotation);
+		////test = RotateTrihX(test, -rotation);
+		////test = RotateTrihZ(test, rotation * 0.5f);
+		//test = RotateTrihXYZ(htri, -rotation, rotation, rotation * 0.5f);
+		//test = TranslateTri(test, t);// 0.0f, 0.0f, 2.0f);
 		//test = Project(test);
 		//quad.emplace_back(test);
 
-		//test = RotateTrihY(htri2, rotation);
-		//test = RotateTrihX(test, -rotation);
-		//test = RotateTrihZ(test, rotation * 0.5f);
-		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		////test = RotateTrihY(htri2, rotation);
+		////test = RotateTrihX(test, -rotation);
+		////test = RotateTrihZ(test, rotation * 0.5f);
+		//test = RotateTrihXYZ(htri2, -rotation, rotation, rotation * 0.5f);
+		//test = TranslateTri(test, t);// 0.0f, 0.0f, 2.0f);
 		//test = Project(test);
 		//quad.emplace_back(test);
 
+		game::Vector3f t(0.0f, 0.0f, 1.5f);
 		for (int i = 0; i < tris.size(); i++)
 		{
-			test = RotateTrihY(tris[i], rotation);
-			test = RotateTrihX(test, -rotation);
-			test = RotateTrihZ(test, rotation * 0.5f);
-			test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+			//test = RotateTrihY(tris[i], rotation);
+			//test = RotateTrihX(test, -rotation);
+			//test = RotateTrihZ(test, rotation * 0.5f);
+			test = RotateTrihXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+			//test = TranslateTri(test, 0.0f, 0.0f, 1.5f); // 122
+			test = TranslateTri(test, t);
 			test = Project(test);
 			quad.emplace_back(test);
 		}
 		
+		//max 38
 
-		//game::Recti f(0, 0, 639, 359);
-		software3D.Render(quad, clip[0]);
-		software3D.Render(quad, clip[1]);
-		software3D.Render(quad, clip[2]);
-		software3D.Render(quad, clip[3]);
-		software3D.Render(quad, clip[4]);
-		software3D.Render(quad, clip[5]);
-		software3D.Render(quad, clip[6]);
-		software3D.Render(quad, clip[7]);
-		software3D.Render(quad, clip[8]);
-		software3D.Render(quad, clip[9]);
-		software3D.Render(quad, clip[10]);
-		software3D.Render(quad, clip[11]);
-		software3D.Render(quad, clip[12]);
-		software3D.Render(quad, clip[13]);
-		software3D.Render(quad, clip[14]);
-		software3D.Render(quad, clip[15]);
+		// max 1487
+		uint32_t fenceCount = 0;
+		for (int c = 0; c < 16; c++)
+		{
+			Clip(quad, clip[c], clippedTris[c]);
+			//std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
+			//	{
+			//		float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+			//		float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+			//		return az < bz;
+			//	});
 
+			if (clippedTris[c].size()) software3D.Render(clippedTris[c], clip[c]);
+			fenceCount += (uint32_t)clippedTris[c].size();
+			//std::cout << c << ": " << clippedTris[c].size() << "\n";
+		}
+		//std::cout << "quad * 16 = " << quad.size() * 16 << " clipped quad : " << fenceCount << "\n";
+		software3D.Fence(fenceCount);
+
+		//// max 1052
+		//software3D.Render(quad, clip[0]);
+		//software3D.Render(quad, clip[1]);
+		//software3D.Render(quad, clip[2]);
+		//software3D.Render(quad, clip[3]);
+		//software3D.Render(quad, clip[4]);
+		//software3D.Render(quad, clip[5]);
+		//software3D.Render(quad, clip[6]);
+		//software3D.Render(quad, clip[7]);
+		//software3D.Render(quad, clip[8]);
+		//software3D.Render(quad, clip[9]);
+		//software3D.Render(quad, clip[10]);
+		//software3D.Render(quad, clip[11]);
+		//software3D.Render(quad, clip[12]);
+		//software3D.Render(quad, clip[13]);
+		//software3D.Render(quad, clip[14]);
+		//software3D.Render(quad, clip[15]);
+		//software3D.Fence(quad.size() * 16);// fenceCount);
+
+		//// max 480fps
+		//game::Recti f(0, 0, 1279, 719);
 		//software3D.Render(quad, f);
-		software3D.Fence(quad.size() * 16);
+		//software3D.Fence(quad.size());
+
 		//for (int i = 0; i < 16; i++)
 			//pixelMode.Rect(clip[i], game::Colors::Yellow);
 		

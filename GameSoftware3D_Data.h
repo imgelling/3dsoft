@@ -9,7 +9,7 @@ namespace game
 	struct Triangle
 	{
 		game::Vector3f vertices[3];
-		//game::Vector3f clippedVertices[3];
+		game::Vector3f clippedVertices[3];
 		game::Color color[3];
 		//game::Vector3f faceNormal;
 		//game::Vector3f normals[3];
@@ -55,6 +55,14 @@ namespace game
 		bool fillRule;
 
 		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
+		{
+			a = v0.y - v1.y;
+			b = v1.x - v0.x;
+			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
+			fillRule = a != 0 ? a > 0 : b > 0;
+		}
+
+		void Set(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
