@@ -9,14 +9,14 @@ namespace game
 	struct Triangle
 	{
 		game::Vector3f vertices[3];
-		game::Vector3f clippedVertices[3];
+		//game::Vector3f clippedVertices[3];
 		game::Color color[3];
 		//game::Vector3f faceNormal;
 		//game::Vector3f normals[3];
 		//game::Vector2f uvs[3];
 	};
 
-	enum class FillMode
+	enum FillMode
 	{
 		WireFrame,
 		FilledColor,
@@ -62,7 +62,7 @@ namespace game
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
-		void Set(const game::Vector3f& v0, const game::Vector3f& v1)
+		inline void Set(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
@@ -71,7 +71,7 @@ namespace game
 		}
 
 		// Evaluate the edge equation for the given point.
-		float_t evaluate(const float_t x, const float_t y) const noexcept
+		inline float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
 			return a * x + b * y + c;
 		}
@@ -83,7 +83,7 @@ namespace game
 		}
 
 		// Test for a given evaluated value.
-		bool test(const float_t v) const noexcept
+		inline bool test(const float_t v) const noexcept
 		{
 			return (v < 0 || v == 0 && fillRule);
 		}

@@ -249,7 +249,7 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_W))
 		{
 			state++;
-			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, (uint32_t)state);
+			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, game::FillMode::FilledColor);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
@@ -263,7 +263,7 @@ public:
 		}
 	}
 
-	inline game::Triangle RotateTrihZ(const game::Triangle& tri, const float_t theta)
+	inline game::Triangle RotateTrihZ(const game::Triangle& tri, const float_t theta) const noexcept
 	{
 		game::Triangle ret(tri);
 		float_t ctheta = cos(theta);
@@ -280,7 +280,7 @@ public:
 		return ret;
 	}
 
-	inline game::Triangle RotateTrihX(const game::Triangle& tri, const float_t theta)
+	inline game::Triangle RotateTrihX(const game::Triangle& tri, const float_t theta) const noexcept
 	{
 		game::Triangle ret(tri);
 		float_t ctheta = cos(theta);
@@ -297,7 +297,7 @@ public:
 		return ret;
 	}
 
-	inline game::Triangle RotateTrihY(const game::Triangle& tri, const float_t theta)
+	inline game::Triangle RotateTrihY(const game::Triangle& tri, const float_t theta) const noexcept
 	{
 		game::Triangle ret(tri);
 		float_t ctheta = cos(theta);
@@ -314,7 +314,7 @@ public:
 		return ret;
 	}
 
-	inline game::Triangle RotateTrihXYZ(const game::Triangle& tri, const float thetaX, const float thetaY, const float thetaZ)
+	inline game::Triangle RotateTrihXYZ(const game::Triangle& tri, const float thetaX, const float thetaY, const float thetaZ) const noexcept
 	{
 		game::Triangle ret(tri);
 		ret = RotateTrihX(ret, thetaX);
@@ -324,7 +324,7 @@ public:
 		return ret;
 	}
 
-	inline game::Triangle TranslateTri(const game::Triangle& tri, const float_t _x, const float_t _y, const float_t _z)
+	inline game::Triangle TranslateTri(const game::Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept
 	{
 		game::Triangle ret(tri);
 		//for (int i = 0; i < 3; i++)
@@ -342,7 +342,7 @@ public:
 		return ret;
 	}
 
-	inline game::Triangle TranslateTri(const game::Triangle& tri, game::Vector3f& translate)
+	inline game::Triangle TranslateTri(const game::Triangle& tri, game::Vector3f& translate) const noexcept
 	{
 		game::Triangle ret(tri);
 		ret.vertices[0] += translate; //130
@@ -382,7 +382,7 @@ public:
 		memcpy(mret, m, sizeof(float_t) * 16);
 	}
 
-	static void my_PerspectiveFOV2(float_t fov, float_t aspect, float_t nearz, float_t farz, float_t (&mret)[16]) {
+	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, float_t (&mret)[16]) {
 		float_t D2R = 3.14f / 180.0f;
 		float_t yScale = 1.0f / tan(D2R * fov / 2.0f);
 		float_t xScale = yScale / aspect;
@@ -400,7 +400,7 @@ public:
 
 	
 
-	inline game::Triangle Project(const game::Triangle vertex) const
+	inline game::Triangle Project(const game::Triangle vertex) const noexcept
 	{
 		game::Triangle ret(vertex);
 		//float aspect = 16.0f / 9.0f;
@@ -410,12 +410,10 @@ public:
 
 		for (int i = 0; i < 3; i++)
 		{
-			//game::Vector3f ret;
 			ret.vertices[i].x *= projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
 			ret.vertices[i].y *= projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
 			ret.vertices[i].z = (ret.vertices[i].z * projMat[10] + ret.vertices[i].w * projMat[14]);
 			ret.vertices[i].w = ret.vertices[i].z;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
-			//ret.vertices[i].x = ((vertex.vertices[i].x) * xScale);
 			{
 				// this scale is not really part of projection
 				ret.vertices[i].x *= 1.0f / ret.vertices[i].w;
@@ -423,20 +421,17 @@ public:
 				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
 				
 			}
-			//ret.vertices[i].y = ((vertex.vertices[i].y) * yScale);
 			{
 				// this scale is not really part of projection
 				ret.vertices[i].y *= 1.0f / ret.vertices[i].w;
 				ret.vertices[i].y += 1.0f;
 				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
-			//ret.vertices[i].z = (ret.vertices[i].z * zScale - 1.0f) * zScale2;
-			//std::cout << ret.vertices[i].z << "\n";
 		}
 		return ret;
 	}
 
-	void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out)
+	void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
 	{
 		out.clear();
 		for (int tri = 0; tri < in.size(); tri++)
@@ -518,21 +513,23 @@ public:
 			quad.emplace_back(test);
 		}
 		
-		//max 38
+		//max 39  tris, 40 with sort
 
-		// max 1487
+		// max 1759 htris
 		uint32_t fenceCount = 0;
 		for (int c = 0; c < 16; c++)
 		{
 			Clip(quad, clip[c], clippedTris[c]);
-			//std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
-			//	{
-			//		float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-			//		float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-			//		return az < bz;
-			//	});
+			if (!clippedTris[c].size()) continue;
+			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
+				{
+					float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+					float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+					return az < bz;
+				});
 
-			if (clippedTris[c].size()) software3D.Render(clippedTris[c], clip[c]);
+			//if (clippedTris[c].size()) 
+			software3D.Render(clippedTris[c], clip[c]);
 			fenceCount += (uint32_t)clippedTris[c].size();
 			//std::cout << c << ": " << clippedTris[c].size() << "\n";
 		}

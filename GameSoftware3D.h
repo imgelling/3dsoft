@@ -10,6 +10,8 @@
 
 #define GAME_SOFTWARE3D_STATE_FILL_MODE 0
 #define GAME_SOFTWARE3D_STATE_THREADED 1
+#define GAME_SOFTWARE3D_WIREFRAME_THICKNESS 2
+
 
 namespace game
 {
@@ -22,15 +24,14 @@ namespace game
 		bool Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
 		void Fence(uint64_t fenceValue) noexcept;
-		const Recti TriangleBoundingBox(const Triangle& tri) noexcept;
-		void Render(std::vector<Triangle>& tris, const Recti& clip);
+		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
+		void Render(std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled>
 		void DrawColored(const Triangle& tri, const Recti& clip);
 		std::atomic<uint32_t> fence;
-		uint32_t NumberOfThreads() { return _threadPool.NumberOfThreads(); }
+		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth();
 	private:
-		//template<bool threaded>
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
 		ThreadPool _threadPool;
@@ -123,7 +124,7 @@ namespace game
 		return true;
 	}
 
-	inline void Software3D::Render(std::vector<Triangle>& tris, const Recti& clip)
+	inline void Software3D::Render(std::vector<Triangle>& tris, const Recti& clip) noexcept
 	{
 		if (_multiThreaded)
 		{
@@ -153,7 +154,7 @@ namespace game
 		}
 	}
 
-	inline const Recti Software3D::TriangleBoundingBox(const Triangle& tri) noexcept
+	inline const Recti Software3D::TriangleBoundingBox(const Triangle& tri) const noexcept
 	{
 		Recti boundingBox;
 
