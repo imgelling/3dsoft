@@ -413,17 +413,17 @@ public:
 			ret.vertices[i].x *= projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
 			ret.vertices[i].y *= projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
 			ret.vertices[i].z = (ret.vertices[i].z * projMat[10] + ret.vertices[i].w * projMat[14]);
-			ret.vertices[i].w = ret.vertices[i].z;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
+			ret.vertices[i].w = 1.0f / ret.vertices[i].z;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
 			{
 				// this scale is not really part of projection
-				ret.vertices[i].x *= 1.0f / ret.vertices[i].w;
+				ret.vertices[i].x *= ret.vertices[i].w;// 1.0f / ret.vertices[i].w;
 				ret.vertices[i].x += 1.0f;
 				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
 				
 			}
 			{
 				// this scale is not really part of projection
-				ret.vertices[i].y *= 1.0f / ret.vertices[i].w;
+				ret.vertices[i].y *= ret.vertices[i].w;//1.0f / ret.vertices[i].w;
 				ret.vertices[i].y += 1.0f;
 				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
@@ -521,12 +521,13 @@ public:
 		{
 			Clip(quad, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
-			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
-				{
-					float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-					float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-					return az < bz;
-				});
+			// sorting messes up wireframe only
+			//std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
+			//	{
+			//		float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+			//		float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+			//		return az > bz;
+			//	});
 
 			//if (clippedTris[c].size()) 
 			software3D.Render(clippedTris[c], clip[c]);

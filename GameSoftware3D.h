@@ -233,16 +233,19 @@ namespace game
 
 
 		// Color parameter
+		//Color colorAtPixel;
+		//ParameterEquation r(tri.color[0].rf/tri.vertices[0].w, tri.color[1].rf/tri.vertices[1].w, tri.color[2].rf/tri.vertices[2].w, e0, e1, e2, area);
+		//ParameterEquation g(tri.color[0].gf/tri.vertices[0].w, tri.color[1].gf/tri.vertices[1].w, tri.color[2].gf/tri.vertices[2].w, e0, e1, e2, area);
+		//ParameterEquation b(tri.color[0].bf/tri.vertices[0].w, tri.color[1].bf/tri.vertices[1].w, tri.color[2].bf/tri.vertices[2].w, e0, e1, e2, area);
 		Color colorAtPixel;
-		ParameterEquation r(tri.color[0].rf/tri.vertices[0].w, tri.color[1].rf/tri.vertices[1].w, tri.color[2].rf/tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf/tri.vertices[0].w, tri.color[1].gf/tri.vertices[1].w, tri.color[2].gf/tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf/tri.vertices[0].w, tri.color[1].bf/tri.vertices[1].w, tri.color[2].bf/tri.vertices[2].w, e0, e1, e2, area);
-
+		ParameterEquation r(tri.color[0].rf * tri.vertices[0].w, tri.color[1].rf * tri.vertices[1].w, tri.color[2].rf * tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf * tri.vertices[0].w, tri.color[1].gf * tri.vertices[1].w, tri.color[2].gf * tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf * tri.vertices[0].w, tri.color[1].bf * tri.vertices[1].w, tri.color[2].bf * tri.vertices[2].w, e0, e1, e2, area);
 		
 		// Depth parameter
-		float xd = 1.0f / tri.vertices[0].w;
-		float yd = 1.0f / tri.vertices[1].w;
-		float zd = 1.0f / tri.vertices[2].w;
+		float xd = tri.vertices[0].w;//1.0f / tri.vertices[0].w;
+		float yd = tri.vertices[1].w;// 1.0f / tri.vertices[1].w;
+		float zd = tri.vertices[2].w;// 1.0f / tri.vertices[2].w;
 		ParameterEquation depth(xd, yd, zd, e0, e1, e2, area);
 
 		// Wireframe precalcs
@@ -374,14 +377,14 @@ namespace game
 					if (minDistSq < 1)
 					{
 						//*zbuffer = dd;
-						//float pre = dd;
-						//dd -= 0.5f;// 3.5f;
-						//if (dd > 1.0f) dd = 1.0f;
-						//dd = 1.0f - dd;
-						//pre *= dd;
-						//colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
-						//*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
-						*buffer = game::Colors::White.packedARGB;
+						float pre = dd;
+						dd -= 0.5f;// 3.5f;
+						if (dd > 1.0f) dd = 1.0f;
+						dd = 1.0f - dd;
+						pre *= dd;
+						colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
+						*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
+						//*buffer = game::Colors::White.packedARGB;
 						++buffer;
 						++zbuffer;
 						continue;
