@@ -151,7 +151,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),16))
+		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),0))
 		{
 			geLogLastError();
 		}
@@ -259,7 +259,7 @@ public:
 
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
-			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 2);
+			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 0);
 		}
 	}
 
