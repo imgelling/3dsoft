@@ -226,9 +226,9 @@ namespace game
 
 		// Color parameter
 		Color colorAtPixel;
-		ParameterEquation r(tri.color[0].rf/tri.vertices[0].z, tri.color[1].rf/tri.vertices[1].z, tri.color[2].rf/tri.vertices[2].z, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf/tri.vertices[0].z, tri.color[1].gf/tri.vertices[1].z, tri.color[2].gf/tri.vertices[2].z, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf/tri.vertices[0].z, tri.color[1].bf/tri.vertices[1].z, tri.color[2].bf/tri.vertices[2].z, e0, e1, e2, area);
+		ParameterEquation r(tri.color[0].rf/tri.vertices[0].w, tri.color[1].rf/tri.vertices[1].w, tri.color[2].rf/tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf/tri.vertices[0].w, tri.color[1].gf/tri.vertices[1].w, tri.color[2].gf/tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf/tri.vertices[0].w, tri.color[1].bf/tri.vertices[1].w, tri.color[2].bf/tri.vertices[2].w, e0, e1, e2, area);
 
 		// zclip
 		if ((tri.vertices[0].z < 0.1f) ||
@@ -243,9 +243,9 @@ namespace game
 		//float xd = 1.0f / tri.vertices[0].z;// / 2.0f;
 		//float yd = 1.0f / tri.vertices[1].z;// / 2.0f;
 		//float zd = 1.0f / tri.vertices[2].z;// / 2.0f;
-		float xd = tri.vertices[0].z;// / 2.0f;
-		float yd = tri.vertices[1].z;// / 2.0f;
-		float zd = tri.vertices[2].z;// / 2.0f;
+		float xd = 1.0f / tri.vertices[0].w;// / 2.0f;
+		float yd = 1.0f / tri.vertices[1].w;// / 2.0f;
+		float zd = 1.0f / tri.vertices[2].w;// / 2.0f;
 		ParameterEquation depth(xd, yd, zd, e0, e1, e2, area);
 
 		// Wireframe precalcs
@@ -343,9 +343,9 @@ namespace game
 				// depth buffer test
 				float dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
 				//std::cout << dd << "\n";
-				if (dd < _depth[j * _frameBufferWidth + i])
+				if (1.0f / dd <= _depth[j * _frameBufferWidth + i])
 				{
-					_depth[j * _frameBufferWidth + i] = dd;
+					_depth[j * _frameBufferWidth + i] = 1.0f / dd;
 				}
 				else
 				{
@@ -381,12 +381,13 @@ namespace game
 				{
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
+					float pre = dd;
 					dd /= 2.5f;
 					if (dd > 1.0f) dd = 1.0f;
-					dd = 1.0f - dd;
-					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y),1.0f) * dd;
-					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y),1.0f) * dd;
-					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y),1.0f) * dd;
+					//dd = 1.0f - dd;
+					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
+					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
+					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
 					*buffer = colorAtPixel.packedARGB;
 				}

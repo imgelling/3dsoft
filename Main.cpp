@@ -235,7 +235,7 @@ public:
 			}
 			tris.emplace_back(temp);
 		}
-		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 1000.0f, projMat);
+		my_PerspectiveFOV(90.0f, 16.0f / 9.0f, 0.1f, 1000.0f, projMat);
 
 	}
 
@@ -384,6 +384,10 @@ public:
 	inline game::Triangle Project(const game::Triangle vertex) const
 	{
 		game::Triangle ret(vertex);
+		float aspect = 16.0f / 9.0f;
+		float D2R = 3.14f / 180.0f;
+		float yScale = 1.0f / (float)tan(D2R * 90.0 / 2);
+		float xScale = yScale / aspect;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -429,14 +433,14 @@ public:
 		test = RotateTrihY(htri, rotation);
 		test = RotateTrihX(test, -rotation);
 		test = RotateTrihZ(test, rotation * 0.5f);
-		test = TranslateTri(test, 0.0f, 0.0f, 2.0f);
+		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
 		test = Project(test);
 		quad.emplace_back(test);
 
 		test = RotateTrihY(htri2, rotation);
 		test = RotateTrihX(test, -rotation);
 		test = RotateTrihZ(test, rotation * 0.5f);
-		test = TranslateTri(test, 0.0f, 0.0f, 2.0f);
+		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
 		test = Project(test);
 		quad.emplace_back(test);
 
@@ -449,7 +453,7 @@ public:
 		//	test = Project(test);
 		//	quad.emplace_back(test);
 		//}
-		//
+		
 
 		//game::Recti f(0, 0, 639, 359);
 		software3D.Render(quad, clip[0]);
