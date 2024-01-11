@@ -454,18 +454,18 @@ public:
 				continue;
 			}
 
-			// Partial offscreen
-			if (boundingBox.x < clip.x)
-			{
-				boundingBox.x = clip.x;
-					
-			}
-			if (boundingBox.right > clip.right)
-				boundingBox.right = clip.right;
-			if (boundingBox.y < clip.y)
-				boundingBox.y = clip.y;
-			if (boundingBox.bottom > clip.bottom)
-				boundingBox.bottom = clip.bottom;
+			//// Partial offscreen
+			//if (boundingBox.x < clip.x)
+			//{
+			//	boundingBox.x = clip.x;
+			//		
+			//}
+			//if (boundingBox.right > clip.right)
+			//	boundingBox.right = clip.right;
+			//if (boundingBox.y < clip.y)
+			//	boundingBox.y = clip.y;
+			//if (boundingBox.bottom > clip.bottom)
+			//	boundingBox.bottom = clip.bottom;
 			out.emplace_back(in[tri]);
 		}
 	}
