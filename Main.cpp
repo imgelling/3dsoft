@@ -228,10 +228,10 @@ public:
 			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 1000);
 			for (uint32_t v = 0; v < 3; v++)
 			{
-				temp.vertices[v].x = (float_t)rnd.RndRange(0, 640);
-				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 640.0f - 1.0f;
-				temp.vertices[v].y = (float_t)rnd.RndRange(0, 360);
-				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 360.0f - 1.0f;
+				temp.vertices[v].x = (float_t)rnd.RndRange(0, 1280);
+				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
+				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
+				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
 				temp.vertices[v].z = i / 100.0f;
 			}
 			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
@@ -440,29 +440,29 @@ public:
 		std::vector<game::Triangle> quad;
 		game::Triangle test;
 
-		//test = RotateTrihY(htri, rotation);
-		//test = RotateTrihX(test, -rotation);
-		//test = RotateTrihZ(test, rotation * 0.5f);
-		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		//test = Project(test);
-		//quad.emplace_back(test);
+		test = RotateTrihY(htri, rotation);
+		test = RotateTrihX(test, -rotation);
+		test = RotateTrihZ(test, rotation * 0.5f);
+		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		test = Project(test);
+		quad.emplace_back(test);
 
-		//test = RotateTrihY(htri2, rotation);
-		//test = RotateTrihX(test, -rotation);
-		//test = RotateTrihZ(test, rotation * 0.5f);
-		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		//test = Project(test);
-		//quad.emplace_back(test);
+		test = RotateTrihY(htri2, rotation);
+		test = RotateTrihX(test, -rotation);
+		test = RotateTrihZ(test, rotation * 0.5f);
+		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		test = Project(test);
+		quad.emplace_back(test);
 
-		for (int i = 0; i < tris.size(); i++)
-		{
-			test = RotateTrihY(tris[i], rotation);
-			test = RotateTrihX(test, -rotation);
-			test = RotateTrihZ(test, rotation * 0.5f);
-			test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-			test = Project(test);
-			quad.emplace_back(test);
-		}
+		//for (int i = 0; i < tris.size(); i++)
+		//{
+		//	test = RotateTrihY(tris[i], rotation);
+		//	test = RotateTrihX(test, -rotation);
+		//	test = RotateTrihZ(test, rotation * 0.5f);
+		//	test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		//	test = Project(test);
+		//	quad.emplace_back(test);
+		//}
 		
 
 		//game::Recti f(0, 0, 639, 359);

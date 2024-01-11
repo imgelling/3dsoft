@@ -30,7 +30,7 @@ namespace game
 		uint32_t NumberOfThreads() { return _threadPool.NumberOfThreads(); }
 		void ClearDepth();
 	private:
-		template<bool threaded>
+		//template<bool threaded>
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
 		ThreadPool _threadPool;
@@ -127,15 +127,40 @@ namespace game
 	{
 		if (_multiThreaded)
 		{
-			_Render<true>(tris,clip);
+			_threadPool.Queue(std::bind(&Software3D::_Render, this, tris,clip));
 		}
 		else
 		{
-			_Render<false>(tris,clip);
+			_Render(tris,clip);
 		}
 	}
 
-	template<bool threaded>
+	//template<bool threaded>
+	//inline void Software3D::_Render(std::vector<Triangle>& tris, const Recti& clip)
+	//{
+	//	std::function<void(Triangle)> renderer;
+
+	//	switch (_FillMode)
+	//	{
+	//	case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true>, this, std::placeholders::_1, clip); break;
+	//	case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false>, this, std::placeholders::_1, clip); break;
+	//	case game::FillMode::FilledColor: renderer = std::bind(&Software3D::DrawColored<false, true>, this, std::placeholders::_1, clip); break;
+	//	default: break;
+	//	}
+
+	//	for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
+	//	{
+	//		if (threaded)
+	//		{
+	//			_threadPool.Queue(std::bind(renderer,(tris[triangleCount])));
+	//		}
+	//		else
+	//		{
+	//			renderer(tris[triangleCount]);
+	//		}
+	//	}
+	//}
+
 	inline void Software3D::_Render(std::vector<Triangle>& tris, const Recti& clip)
 	{
 		std::function<void(Triangle)> renderer;
@@ -150,14 +175,7 @@ namespace game
 
 		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
 		{
-			if (threaded)
-			{
-				_threadPool.Queue(std::bind(renderer,(tris[triangleCount])));
-			}
-			else
-			{
 				renderer(tris[triangleCount]);
-			}
 		}
 	}
 
@@ -385,9 +403,9 @@ namespace game
 					dd /= 2.5f;
 					if (dd > 1.0f) dd = 1.0f;
 					//dd = 1.0f - dd;
-					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
-					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
-					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
+					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f);// *dd;
+					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f);// *dd;
+					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f);// *dd;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
 					*buffer = colorAtPixel.packedARGB;
 				}
