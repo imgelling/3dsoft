@@ -249,7 +249,7 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_W))
 		{
 			state++;
-			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, game::FillMode::FilledColor);
+			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))

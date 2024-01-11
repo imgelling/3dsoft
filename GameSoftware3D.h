@@ -343,7 +343,7 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				float dd = 1.0f / depth.evaluate(pixelOffset.x, pixelOffset.y);
+				float_t dd = 1.0f / depth.evaluate(pixelOffset.x, pixelOffset.y);
 				//std::cout << dd << "\n";
 				if (dd < *zbuffer)
 				{
