@@ -225,17 +225,27 @@ public:
 		for (uint32_t i = 0; i < 1000; i++)
 		{
 			game::Triangle temp(htri);
+			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 1000);
 			for (uint32_t v = 0; v < 3; v++)
 			{
 				temp.vertices[v].x = (float_t)rnd.RndRange(0, 640);
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 640.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 360);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 360.0f - 1.0f;
-				temp.vertices[v].z = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1,1000);
+				temp.vertices[v].z = i / 100.0f;
+			}
+			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
+			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
+			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
+
+			float area(e0.c + e1.c + e2.c);
+			if (area < 0)
+			{
+				std::swap(temp.vertices[1], temp.vertices[2]);
 			}
 			tris.emplace_back(temp);
 		}
-		my_PerspectiveFOV(90.0f, 16.0f / 9.0f, 0.1f, 1000.0f, projMat);
+		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 1000.0f, projMat);
 
 	}
 
@@ -430,29 +440,29 @@ public:
 		std::vector<game::Triangle> quad;
 		game::Triangle test;
 
-		test = RotateTrihY(htri, rotation);
-		test = RotateTrihX(test, -rotation);
-		test = RotateTrihZ(test, rotation * 0.5f);
-		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		test = Project(test);
-		quad.emplace_back(test);
+		//test = RotateTrihY(htri, rotation);
+		//test = RotateTrihX(test, -rotation);
+		//test = RotateTrihZ(test, rotation * 0.5f);
+		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		//test = Project(test);
+		//quad.emplace_back(test);
 
-		test = RotateTrihY(htri2, rotation);
-		test = RotateTrihX(test, -rotation);
-		test = RotateTrihZ(test, rotation * 0.5f);
-		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		test = Project(test);
-		quad.emplace_back(test);
+		//test = RotateTrihY(htri2, rotation);
+		//test = RotateTrihX(test, -rotation);
+		//test = RotateTrihZ(test, rotation * 0.5f);
+		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		//test = Project(test);
+		//quad.emplace_back(test);
 
-		//for (int i = 0; i < tris.size(); i++)
-		//{
-		//	test = RotateTrihY(tris[i], rotation);
-		//	test = RotateTrihX(test, -rotation);
-		//	test = RotateTrihZ(test, rotation * 0.5f);
-		//	test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		//	test = Project(test);
-		//	quad.emplace_back(test);
-		//}
+		for (int i = 0; i < tris.size(); i++)
+		{
+			test = RotateTrihY(tris[i], rotation);
+			test = RotateTrihX(test, -rotation);
+			test = RotateTrihZ(test, rotation * 0.5f);
+			test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+			test = Project(test);
+			quad.emplace_back(test);
+		}
 		
 
 		//game::Recti f(0, 0, 639, 359);
@@ -476,7 +486,7 @@ public:
 		//software3D.Render(quad, f);
 		software3D.Fence(quad.size() * 16);
 		//for (int i = 0; i < 16; i++)
-		//	pixelMode.Rect(clip[i], game::Colors::Yellow);
+			//pixelMode.Rect(clip[i], game::Colors::Yellow);
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
