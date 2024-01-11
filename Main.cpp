@@ -484,17 +484,11 @@ public:
 		game::Triangle test;
 
 		//game::Vector3f t(0.0f, 0.0f, 2.0f);
-		////test = RotateTrihY(htri, rotation);
-		////test = RotateTrihX(test, -rotation);
-		////test = RotateTrihZ(test, rotation * 0.5f);
 		//test = RotateTrihXYZ(htri, -rotation, rotation, rotation * 0.5f);
 		//test = TranslateTri(test, t);// 0.0f, 0.0f, 2.0f);
 		//test = Project(test);
 		//quad.emplace_back(test);
 
-		////test = RotateTrihY(htri2, rotation);
-		////test = RotateTrihX(test, -rotation);
-		////test = RotateTrihZ(test, rotation * 0.5f);
 		//test = RotateTrihXYZ(htri2, -rotation, rotation, rotation * 0.5f);
 		//test = TranslateTri(test, t);// 0.0f, 0.0f, 2.0f);
 		//test = Project(test);
@@ -522,12 +516,12 @@ public:
 			Clip(quad, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
 			// sorting messes up wireframe only
-			//std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
-			//	{
-			//		float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-			//		float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-			//		return az > bz;
-			//	});
+			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
+				{
+					float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+					float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+					return az > bz;
+				});
 
 			//if (clippedTris[c].size()) 
 			software3D.Render(clippedTris[c], clip[c]);
@@ -563,6 +557,30 @@ public:
 
 		//for (int i = 0; i < 16; i++)
 			//pixelMode.Rect(clip[i], game::Colors::Yellow);
+
+		// show depth buffer
+		// proj is making depth -1 to 1 (like it should, but dont like)
+		if (geKeyboard.IsKeyHeld(geK_D))
+		{
+
+			game::Color dColor;
+			float de = 0.0f;
+			float* bpos = software3D.GetDepth();
+			for (int y = 0; y < pixelMode.GetPixelFrameBufferSize().y; y++)
+			{
+				for (int x = 0; x < pixelMode.GetPixelFrameBufferSize().x; x++)
+				{
+					de = *bpos;
+					bpos++;
+					de += 1.0f;
+					de = 1.0f / de;
+					dColor.Set(1.0f * de, 1.0f * de, 1.0f * de, 1.0f);
+					pixelMode.Pixel(x, y, dColor);
+				}
+				
+			}
+			pixelMode.Text("Showing Depth buffer.", 0, 40, game::Colors::Yellow, 1);
+		}
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);

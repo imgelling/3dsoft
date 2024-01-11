@@ -31,6 +31,7 @@ namespace game
 		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth();
+		float* GetDepth() const noexcept { return _depth; }
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -378,13 +379,13 @@ namespace game
 					{
 						//*zbuffer = dd;
 						float pre = dd;
-						dd -= 0.5f;// 3.5f;
-						if (dd > 1.0f) dd = 1.0f;
-						dd = 1.0f - dd;
-						pre *= dd;
-						colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
-						*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
-						//*buffer = game::Colors::White.packedARGB;
+						//dd -= 0.5f;// 3.5f;
+						//if (dd > 1.0f) dd = 1.0f;
+						//dd = 1.0f - dd;
+						//pre *= dd;
+						//colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
+						//*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
+						*buffer = game::Colors::White.packedARGB;
 						++buffer;
 						++zbuffer;
 						continue;
@@ -398,13 +399,13 @@ namespace game
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
 					float pre = dd;
-					dd = 1.0f / dd;// /= 2.5f;
+					dd -= 0.5f;// = 1.0f / dd;// /= 2.5f;
 					if (dd > 1.0f) 
 						dd = 1.0f;
 					if (dd < 0.0f) 
 						dd = 0.0f;
 					
-					//dd = 1.0f - dd;
+					dd = 1.0f - dd;
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
