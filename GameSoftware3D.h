@@ -135,32 +135,6 @@ namespace game
 		}
 	}
 
-	//template<bool threaded>
-	//inline void Software3D::_Render(std::vector<Triangle>& tris, const Recti& clip)
-	//{
-	//	std::function<void(Triangle)> renderer;
-
-	//	switch (_FillMode)
-	//	{
-	//	case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true>, this, std::placeholders::_1, clip); break;
-	//	case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false>, this, std::placeholders::_1, clip); break;
-	//	case game::FillMode::FilledColor: renderer = std::bind(&Software3D::DrawColored<false, true>, this, std::placeholders::_1, clip); break;
-	//	default: break;
-	//	}
-
-	//	for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
-	//	{
-	//		if (threaded)
-	//		{
-	//			_threadPool.Queue(std::bind(renderer,(tris[triangleCount])));
-	//		}
-	//		else
-	//		{
-	//			renderer(tris[triangleCount]);
-	//		}
-	//	}
-	//}
-
 	inline void Software3D::_Render(std::vector<Triangle>& tris, const Recti& clip)
 	{
 		std::function<void(Triangle)> renderer;
@@ -242,12 +216,6 @@ namespace game
 		if (boundingBox.bottom > clip.bottom)
 			boundingBox.bottom = clip.bottom;
 
-		// Color parameter
-		Color colorAtPixel;
-		ParameterEquation r(tri.color[0].rf/tri.vertices[0].w, tri.color[1].rf/tri.vertices[1].w, tri.color[2].rf/tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf/tri.vertices[0].w, tri.color[1].gf/tri.vertices[1].w, tri.color[2].gf/tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf/tri.vertices[0].w, tri.color[1].bf/tri.vertices[1].w, tri.color[2].bf/tri.vertices[2].w, e0, e1, e2, area);
-
 		// zclip
 		if ((tri.vertices[0].z < 0.1f) ||
 			(tri.vertices[1].z < 0.1f) ||
@@ -256,14 +224,18 @@ namespace game
 			fence++;
 			return;
 		}
+
+		// Color parameter
+		Color colorAtPixel;
+		ParameterEquation r(tri.color[0].rf/tri.vertices[0].w, tri.color[1].rf/tri.vertices[1].w, tri.color[2].rf/tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf/tri.vertices[0].w, tri.color[1].gf/tri.vertices[1].w, tri.color[2].gf/tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf/tri.vertices[0].w, tri.color[1].bf/tri.vertices[1].w, tri.color[2].bf/tri.vertices[2].w, e0, e1, e2, area);
+
 		
-		//// Depth test
-		//float xd = 1.0f / tri.vertices[0].z;// / 2.0f;
-		//float yd = 1.0f / tri.vertices[1].z;// / 2.0f;
-		//float zd = 1.0f / tri.vertices[2].z;// / 2.0f;
-		float xd = 1.0f / tri.vertices[0].w;// / 2.0f;
-		float yd = 1.0f / tri.vertices[1].w;// / 2.0f;
-		float zd = 1.0f / tri.vertices[2].w;// / 2.0f;
+		// Depth parameter
+		float xd = 1.0f / tri.vertices[0].w;
+		float yd = 1.0f / tri.vertices[1].w;
+		float zd = 1.0f / tri.vertices[2].w;
 		ParameterEquation depth(xd, yd, zd, e0, e1, e2, area);
 
 		// Wireframe precalcs
@@ -300,9 +272,8 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		// jitters with floats, maybe a pixel with floats for subpixel? It is slower 
-		// with just floats no subpixel
 		uint32_t* buffer = _frameBuffer + (boundingBox.y * videoBufferStride + boundingBox.x);
+		float* zbuffer = _depth + (boundingBox.y * videoBufferStride + boundingBox.x);
 		uint32_t xLoopCount = 0;
 		// added the = last night below
 		for (int32_t j = boundingBox.y; j <= boundingBox.bottom; ++j)
@@ -319,12 +290,14 @@ namespace game
 					if (foundTriangle)
 					{
 						++buffer;
+						++zbuffer;
 						break;
 					}
 					else
 					{
 						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
 						++buffer;
+						++zbuffer;
 						continue;
 					}
 				}
@@ -333,12 +306,14 @@ namespace game
 					if (foundTriangle)
 					{
 						++buffer;
+						++zbuffer;
 						break;
 					}
 					else
 					{
 						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
 						++buffer;
+						++zbuffer;
 						continue;
 					}
 				}
@@ -347,12 +322,14 @@ namespace game
 					if (foundTriangle)
 					{
 						++buffer;
+						++zbuffer;
 						break;
 					}
 					else
 					{
 						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
 						++buffer;
+						++zbuffer;
 						continue;
 					}
 				}
@@ -361,13 +338,14 @@ namespace game
 				// depth buffer test
 				float dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
 				//std::cout << dd << "\n";
-				if (1.0f / dd <= _depth[j * _frameBufferWidth + i])
+				if (1.0f / dd <= *zbuffer)
 				{
-					_depth[j * _frameBufferWidth + i] = 1.0f / dd;
+					*zbuffer = 1.0f / dd;
 				}
 				else
 				{
 					++buffer;
+					++zbuffer;
 					continue;
 				}
 				
@@ -390,6 +368,7 @@ namespace game
 					{
 						*buffer = game::Colors::White.packedARGB;
 						++buffer;
+						++zbuffer;
 						continue;
 					}
 				}
@@ -403,15 +382,17 @@ namespace game
 					dd /= 2.5f;
 					if (dd > 1.0f) dd = 1.0f;
 					//dd = 1.0f - dd;
-					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f);// *dd;
-					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f);// *dd;
-					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f);// *dd;
+					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
+					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
+					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) / pre, 1.0f) *dd;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
 					*buffer = colorAtPixel.packedARGB;
 				}
 				++buffer;
+				++zbuffer;
 			}
 			buffer += videoBufferStride - xLoopCount;
+			zbuffer += videoBufferStride - xLoopCount;
 		}
 		fence++;
 	}

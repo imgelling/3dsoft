@@ -440,29 +440,29 @@ public:
 		std::vector<game::Triangle> quad;
 		game::Triangle test;
 
-		test = RotateTrihY(htri, rotation);
-		test = RotateTrihX(test, -rotation);
-		test = RotateTrihZ(test, rotation * 0.5f);
-		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		test = Project(test);
-		quad.emplace_back(test);
+		//test = RotateTrihY(htri, rotation);
+		//test = RotateTrihX(test, -rotation);
+		//test = RotateTrihZ(test, rotation * 0.5f);
+		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		//test = Project(test);
+		//quad.emplace_back(test);
 
-		test = RotateTrihY(htri2, rotation);
-		test = RotateTrihX(test, -rotation);
-		test = RotateTrihZ(test, rotation * 0.5f);
-		test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		test = Project(test);
-		quad.emplace_back(test);
+		//test = RotateTrihY(htri2, rotation);
+		//test = RotateTrihX(test, -rotation);
+		//test = RotateTrihZ(test, rotation * 0.5f);
+		//test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+		//test = Project(test);
+		//quad.emplace_back(test);
 
-		//for (int i = 0; i < tris.size(); i++)
-		//{
-		//	test = RotateTrihY(tris[i], rotation);
-		//	test = RotateTrihX(test, -rotation);
-		//	test = RotateTrihZ(test, rotation * 0.5f);
-		//	test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
-		//	test = Project(test);
-		//	quad.emplace_back(test);
-		//}
+		for (int i = 0; i < tris.size(); i++)
+		{
+			test = RotateTrihY(tris[i], rotation);
+			test = RotateTrihX(test, -rotation);
+			test = RotateTrihZ(test, rotation * 0.5f);
+			test = TranslateTri(test, 0.0f, 0.0f, 1.5f);
+			test = Project(test);
+			quad.emplace_back(test);
+		}
 		
 
 		//game::Recti f(0, 0, 639, 359);
