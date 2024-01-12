@@ -2,10 +2,6 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
-
-
-// end GameSoftwareRenderer.h
-
 class Game : public game::Engine
 {
 
@@ -22,12 +18,15 @@ public:
 
 	uint32_t maxFPS;
 
+	uint32_t scene;
+
 	game::FillMode state = game::FillMode::WireFrameFilled;
 
 	Game() : game::Engine()
 	{
 		ZeroMemory(&projMat, sizeof(float_t)*16);
 		maxFPS = 0;
+		scene = 0;
 	}
 
 	void Initialize()
@@ -261,6 +260,16 @@ public:
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 0);
 		}
+
+		if (geKeyboard.WasKeyPressed(geK_1))
+		{
+			scene = 0;
+		}
+
+		if (geKeyboard.WasKeyPressed(geK_2))
+		{
+			scene = 1;
+		}
 	}
 
 	inline game::Triangle RotateZ(const game::Triangle& tri, const float_t theta) const noexcept
@@ -471,28 +480,34 @@ public:
 		std::vector<game::Triangle> quad;
 		game::Triangle test;
 
-		//game::Vector3f t(0.0f, 0.0f, 2.0f);
-		//test = RotateTrihXYZ(htri, -rotation, rotation, rotation * 0.5f);
-		//test = TranslateTri(test, t);// 0.0f, 0.0f, 2.0f);
-		//test = Project(test);
-		//quad.emplace_back(test);
-
-		//test = RotateTrihXYZ(htri2, -rotation, rotation, rotation * 0.5f);
-		//test = TranslateTri(test, t);// 0.0f, 0.0f, 2.0f);
-		//test = Project(test);
-		//quad.emplace_back(test);
-
-		game::Vector3f t(0.0f, 0.0f, 1.5f);
-		for (int i = 0; i < tris.size(); i++)
+		if (scene == 0)
 		{
-			//test = RotateTrihY(tris[i], rotation);
-			//test = RotateTrihX(test, -rotation);
-			//test = RotateTrihZ(test, rotation * 0.5f);
-			test = RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
-			//test = TranslateTri(test, 0.0f, 0.0f, 1.5f); // 122
-			test = Translate(test, t);
+			game::Vector3f t(0.0f, 0.0f, 2.0f);
+			test = RotateXYZ(htri, -rotation, rotation, rotation * 0.5f);
+			test = Translate(test, t);// 0.0f, 0.0f, 2.0f);
 			test = Project(test);
 			quad.emplace_back(test);
+
+			test = RotateXYZ(htri2, -rotation, rotation, rotation * 0.5f);
+			test = Translate(test, t);// 0.0f, 0.0f, 2.0f);
+			test = Project(test);
+			quad.emplace_back(test);
+		}
+
+		if (scene == 1)
+		{
+			game::Vector3f t(0.0f, 0.0f, 1.5f);
+			for (int i = 0; i < tris.size(); i++)
+			{
+				//test = RotateTrihY(tris[i], rotation);
+				//test = RotateTrihX(test, -rotation);
+				//test = RotateTrihZ(test, rotation * 0.5f);
+				test = RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+				//test = TranslateTri(test, 0.0f, 0.0f, 1.5f); // 122
+				test = Translate(test, t);
+				test = Project(test);
+				quad.emplace_back(test);
+			}
 		}
 		
 		//max 39  tris, 40 with sort
@@ -560,7 +575,7 @@ public:
 				depth = *zbuffer;
 				zbuffer++;
 				depth += 1.0f;
-				depth = 2.0f / depth;
+				depth = 1.0f / depth;
 				dColor.Set(1.0f * depth, 1.0f * depth, 1.0f * depth, 1.0f);
 				*vbuffer = dColor.packedARGB;
 				vbuffer++;
