@@ -15,3 +15,6 @@ D - Show depth buffer, hold down
 
 ] = Turns on multithreading
 
+1 - Quad scene
+
+2 - 1000 triangle scene
