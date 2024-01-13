@@ -289,7 +289,8 @@ namespace game
 		}
 
 		uint32_t* buffer = _frameBuffer + (boundingBox.y * videoBufferStride + boundingBox.x);
-		float* zbuffer = _depth + (boundingBox.y * videoBufferStride + boundingBox.x);
+		float_t* zbuffer = _depth + (boundingBox.y * videoBufferStride + boundingBox.x);
+		float_t dd(0.0f);
 		uint32_t xLoopCount = 0;
 		// added the = last night below
 		for (int32_t j = boundingBox.y; j <= boundingBox.bottom; ++j)
@@ -311,7 +312,6 @@ namespace game
 					}
 					else
 					{
-						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
 						++buffer;
 						++zbuffer;
 						continue;
@@ -327,7 +327,6 @@ namespace game
 					}
 					else
 					{
-						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
 						++buffer;
 						++zbuffer;
 						continue;
@@ -343,7 +342,6 @@ namespace game
 					}
 					else
 					{
-						//pixelMode.videoBuffer[videoBufferPos] = game::Colors::Magenta.packedARGB;
 						++buffer;
 						++zbuffer;
 						continue;
@@ -352,8 +350,7 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				float_t dd = 1.0f / depth.evaluate(pixelOffset.x, pixelOffset.y);
-				//std::cout << dd << "\n";
+				dd = 1.0f / depth.evaluate(pixelOffset.x, pixelOffset.y);
 				if (dd < *zbuffer)
 				{
 					*zbuffer = dd;
