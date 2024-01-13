@@ -32,6 +32,11 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth();
 		float* GetDepth() const noexcept { return _depth; }
+
+		// No matrix math
+
+		Triangle Translate(const Triangle& tri, Vector3f& translate) const noexcept;
+
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -377,7 +382,6 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1)
 					{
-						//*zbuffer = dd;
 						float pre = dd;
 						//dd -= 0.5f;// 3.5f;
 						//if (dd > 1.0f) dd = 1.0f;
@@ -395,22 +399,16 @@ namespace game
 				// Color filled
 				if (color)
 				{
-					//*zbuffer = dd;
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
 					float pre = dd;
-					dd -= 0.5f;// = 1.0f / dd;// /= 2.5f;
-					if (dd > 1.0f) 
-						dd = 1.0f;
-					if (dd < 0.0f) 
-						dd = 0.0f;
-					
-					dd = 1.0f - dd;
+					dd += 1.0f;
+					dd = 1.0f / dd;
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
-					*buffer = colorAtPixel.packedARGB;
+					*buffer = colorAtPixel.packedABGR;
 				}
 				++buffer;
 				++zbuffer;
@@ -420,7 +418,19 @@ namespace game
 		}
 		fence++;
 	}
+// No Matrix Math
+	inline Triangle Software3D::Translate(const Triangle& tri, Vector3f& translate) const noexcept
+	{
+		Triangle ret(tri);
+
+		ret.vertices[0] += translate;
+		ret.vertices[1] += translate;
+		ret.vertices[2] += translate;
+
+		return ret;
+	}
 
 }
+
 
 #endif

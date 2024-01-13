@@ -6,11 +6,14 @@ class Game : public game::Engine
 {
 
 public:
+	// Pixel renderers
 	game::PixelMode pixelMode;
-	game::Triangle htri;
-	game::Triangle htri2;
 	game::Software3D software3D;
 
+
+	// 3D stuff
+	game::Triangle topLeftTri;
+	game::Triangle bottomRightTri;
 	game::Recti clip[16];
 	std::vector<game::Triangle> clippedTris[16];
 	float_t projMat[16];
@@ -39,6 +42,12 @@ public:
 		geSetAttributes(attributes);
 
 		//geSetFrameLock(60);
+
+		// tl
+		// x = rectx
+		// y = recty
+		// right = 
+		// check the webpage
 
 		//tl
 		clip[0].x = 0;
@@ -163,46 +172,47 @@ public:
 		float size = 1.0f;
 
 		// tl
-		htri.vertices[0].x = -size;
-		htri.vertices[0].y = -size;
-		htri.vertices[0].z = z;
-		htri.color[0] = game::Colors::Red;
+		topLeftTri.vertices[0].x = -size;
+		topLeftTri.vertices[0].y = -size;
+		topLeftTri.vertices[0].z = z;
+		topLeftTri.color[0] = game::Colors::Red;
 
-		// br
-		htri.vertices[1].x = size;
-		htri.vertices[1].y = size;
-		htri.vertices[1].z = z;
-		htri.color[1] = game::Colors::Blue;
+		// tr
+		topLeftTri.vertices[1].x = size;
+		topLeftTri.vertices[1].y = -size;
+		topLeftTri.vertices[1].z = z;
+		topLeftTri.color[1] = game::Colors::Green;
 
 		// bl
-		htri.vertices[2].x = -size;
-		htri.vertices[2].y = size;
-		htri.vertices[2].z = z;
-		htri.color[2] = game::Colors::Green;
+		topLeftTri.vertices[2].x = -size;
+		topLeftTri.vertices[2].y = size;
+		topLeftTri.vertices[2].z = z;
+		topLeftTri.color[2] = game::Colors::Blue;
 
 
 		// tr
-		htri2.vertices[0].x = size;
-		htri2.vertices[0].y = -size;
-		htri2.vertices[0].z = z;
-		htri2.color[0] = game::Colors::White;
+		bottomRightTri.vertices[0].x = size;
+		bottomRightTri.vertices[0].y = -size;
+		bottomRightTri.vertices[0].z = z;
+		bottomRightTri.color[0] = game::Colors::Green;
 
 		// br
-		htri2.vertices[1].x = size;
-		htri2.vertices[1].y = size;
-		htri2.vertices[1].z = z;
-		htri2.color[1] = game::Colors::Blue;
+		bottomRightTri.vertices[1].x = size;
+		bottomRightTri.vertices[1].y = size;
+		bottomRightTri.vertices[1].z = z;
+		bottomRightTri.color[1] = game::Colors::White;
 
-		// tl
-		htri2.vertices[2].x = -size;
-		htri2.vertices[2].y = -size;
-		htri2.vertices[2].z = z;
-		htri2.color[2] = game::Colors::Red;
+		// bl
+		bottomRightTri.vertices[2].x = -size;
+		bottomRightTri.vertices[2].y = size;
+		bottomRightTri.vertices[2].z = z;
+		bottomRightTri.color[2] = game::Colors::Blue;
 
 
+		// Generate a 1000 tris
 		for (uint32_t i = 0; i < 1000; i++)
 		{
-			game::Triangle temp(htri);
+			game::Triangle temp(topLeftTri);
 			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 1000);
 			for (uint32_t v = 0; v < 3; v++)
 			{
@@ -210,21 +220,23 @@ public:
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
-				temp.vertices[v].z = i / 1000.0f;
+				temp.vertices[v].z = tz;// i / 1000.0f;
 			}
 			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
 			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
 			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
 
 			float area(e0.c + e1.c + e2.c);
-			// wrong winding
+			// If area is negative, it means wrong winding
 			if (area < 0)
 			{
 				std::swap(temp.vertices[1], temp.vertices[2]);
 			}
 			tris.emplace_back(temp);
 		}
-		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projMat);
+
+		// Pre calc projection matrix
+		my_PerspectiveFOV(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projMat);
 
 	}
 
@@ -348,22 +360,6 @@ public:
 		return ret;
 	}
 
-	inline game::Triangle Translate(const game::Triangle& tri, game::Vector3f& translate) const noexcept
-	{
-		game::Triangle ret(tri);
-
-		ret.vertices[0] += translate; 
-		ret.vertices[1] += translate;
-		ret.vertices[2] += translate;
-
-		return ret;
-	}
-
-	// For clipping only need znear so a lot can be precalc for plane
-	// make sure plane is normalized
-	// precal 
-	// plane normal dot plane point
-	// store c
 
 	// gl
 	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, float_t* mret) {
@@ -380,7 +376,7 @@ public:
 		memcpy(mret, m, sizeof(float_t) * 16);
 	}
 
-	// left handed
+	// left handed (D3DXFovLH)
 	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, float_t (&mret)[16]) {
 		float_t D2R = 3.14159f / 180.0f;
 		float_t yScale = 1.0f / tan(D2R * fov / 2.0f);
@@ -428,6 +424,7 @@ public:
 		return ret;
 	}
 
+	// For clipping only need znear so a lot can be precalc for plane
 	void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
 	{
 		out.clear();
@@ -483,13 +480,13 @@ public:
 		if (scene == 0)
 		{
 			game::Vector3f t(0.0f, 0.0f, 2.0f);
-			test = RotateXYZ(htri, -rotation, rotation, rotation * 0.5f);
-			test = Translate(test, t);// 0.0f, 0.0f, 2.0f);
+			test = RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
+			test = software3D.Translate(test, t);
 			test = Project(test);
 			quad.emplace_back(test);
 
-			test = RotateXYZ(htri2, -rotation, rotation, rotation * 0.5f);
-			test = Translate(test, t);// 0.0f, 0.0f, 2.0f);
+			test = RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
+			test = software3D.Translate(test, t);
 			test = Project(test);
 			quad.emplace_back(test);
 		}
@@ -499,12 +496,8 @@ public:
 			game::Vector3f t(0.0f, 0.0f, 1.5f);
 			for (int i = 0; i < tris.size(); i++)
 			{
-				//test = RotateTrihY(tris[i], rotation);
-				//test = RotateTrihX(test, -rotation);
-				//test = RotateTrihZ(test, rotation * 0.5f);
 				test = RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
-				//test = TranslateTri(test, 0.0f, 0.0f, 1.5f); // 122
-				test = Translate(test, t);
+				test = software3D.Translate(test, t);
 				test = Project(test);
 				quad.emplace_back(test);
 			}
@@ -525,13 +518,9 @@ public:
 					float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
 					return az > bz;
 				});
-
-			//if (clippedTris[c].size()) 
 			software3D.Render(clippedTris[c], clip[c]);
 			fenceCount += (uint32_t)clippedTris[c].size();
-			//std::cout << c << ": " << clippedTris[c].size() << "\n";
 		}
-		//std::cout << "quad * 16 = " << quad.size() * 16 << " clipped quad : " << fenceCount << "\n";
 		software3D.Fence(fenceCount);
 
 		//// max 1052
@@ -577,7 +566,7 @@ public:
 				depth += 1.0f;
 				depth = 1.0f / depth;
 				dColor.Set(1.0f * depth, 1.0f * depth, 1.0f * depth, 1.0f);
-				*vbuffer = dColor.packedARGB;
+				*vbuffer = dColor.packedABGR;
 				vbuffer++;
 			}
 			pixelMode.Text("Showing Depth buffer.", 0, 40, game::Colors::Yellow, 1);
