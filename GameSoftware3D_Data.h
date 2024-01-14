@@ -48,7 +48,8 @@ namespace game
 		}
 	}
 
-	struct EdgeEquation {
+	struct EdgeEquation 
+	{
 		float_t a;
 		float_t b;
 		float_t c;
@@ -113,7 +114,8 @@ namespace game
 		}
 	};
 
-	struct ParameterEquation {
+	struct ParameterEquation 
+	{
 		float_t a;
 		float_t b;
 		float_t c;
@@ -139,6 +141,14 @@ namespace game
 		{
 			return a * x + b * y + c;
 		}
+	};
+
+	struct Projection {
+		float_t a;
+		float_t b;
+		float_t c;
+		float_t d;
+		float_t e;
 	};
 }
 

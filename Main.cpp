@@ -16,7 +16,8 @@ public:
 	game::Triangle bottomRightTri;
 	game::Recti clip[16];
 	std::vector<game::Triangle> clippedTris[16];
-	float_t projMat[16];
+	//float_t projMat[16];
+	game::Projection projection;
 	std::vector<game::Triangle> tris;
 
 	uint32_t maxFPS;
@@ -27,9 +28,9 @@ public:
 
 	Game() : game::Engine()
 	{
-		ZeroMemory(&projMat, sizeof(float_t)*16);
+		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 1;
+		scene = 0;
 	}
 
 	void Initialize()
@@ -168,7 +169,7 @@ public:
 
 		rnd.NewSeed();
 
-		float z = 0.0f;
+		float z = 0.1f;// 100.0f;
 		float size = 1.0f;
 
 		// tl
@@ -236,7 +237,7 @@ public:
 		}
 
 		// Pre calc projection matrix
-		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projMat);
+		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projection);
 	}
 
 	void Shutdown()
@@ -284,47 +285,159 @@ public:
 	}
 
 	// left handed -1 to 1
-	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, float_t* mret)
+	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, game::Projection& proj)
 	{
 		float_t D2R = 3.14159f / 180.0f;
 		float_t yScale = 1.0f / tan(D2R * fov / 2);
 		float_t xScale = yScale / aspect;
 		float_t nearmfar = farz - nearz;
-		float_t m[] = {
-			xScale, 0,      0,                           0,
-			0,      yScale, 0,                           0,
-			0,      0,      (farz + nearz) / nearmfar,   1,
-			0,      0,      (2 * farz * nearz) / nearmfar, 0
-		};
-		memcpy(mret, m, sizeof(float_t) * 16);
+		//float_t m[] = {
+		//	xScale, 0,      0,                           0,
+		//	0,      yScale, 0,                           0,
+		//	0,      0,      (farz + nearz) / nearmfar,   1,
+		//	0,      0,      (2 * farz * nearz) / nearmfar, 0
+		//};
+		//memcpy(mret, m, sizeof(float_t) * 16);
+		proj.a = xScale;
+		proj.b = yScale;
+		proj.c = (farz + nearz) / nearmfar;
+		proj.d = 1.0f;
+		proj.e = (2.0f * farz * nearz) / nearmfar;
 	}
 
 	// left handed (D3DXFovLH) 0 to +1
-	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, float_t (&mret)[16])
+	////		float_t m[] = {
+	//  xScale, 0, 0, 0,
+	//	0, yScale, 0, 0,
+	//	0, 0, farz / (farz - nearz), 1,
+	//	0, 0, -(nearz * farz) / (farz - nearz), 0
+	//	};
+	//	//
+	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, game::Projection& proj)
 	{
 		float_t D2R = 3.14159f / 180.0f;
-		float_t yScale = 1.0f / tan(D2R * fov / 2.0f);
-		float_t xScale = yScale / aspect;
-		float_t nearmfar = farz - nearz;
+
+		float_t halfFOV = tan(0.25f / 2.0f);
+		float_t yScale = 1.0f / halfFOV;
+		float_t xScale = 1.0f / (aspect * halfFOV);
+		//  float_t m[] = {
+		//  xScale, 0,      0,                           0,
+		//  0,      yScale, 0,                           0,
+		//  0,      0,      farz / (farz - nearz),			 1,
+		//  0,      0,		-(nearz * farz) / (farz - nearz),	 0
+		//  	};
+		proj.a = xScale;
+		proj.b = yScale;
+		proj.c = farz / (farz - nearz);
+		proj.d = 1.0f;
+		proj.e = -(nearz * farz) / (farz - nearz);
+	}
+
+	static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
+	{
+		float_t halfFOV = tan(0.25f / 2.0f);
+		float_t yScale = 1.0f / halfFOV;// 1.0f / tan(0.25 / 2.0f);
+		float_t xScale = 1.0f / (aspect * halfFOV);//yScale / aspect;
+		float_t m[] = {
+			xScale, 0,      0,                                         0,
+			0,      yScale, 0,                                         0,
+			0,      0,      (farz + nearz) / (farz - nearz),    	 1.0f,
+			0,      0,		(2.0f * farz * nearz) / (farz - nearz),    0
+		};
+		//proj.a = xScale;
+		//proj.b = yScale;
+		//proj.c = farz / nearmfar;
+		//proj.d = 1.0f;
+		//proj.e = -(nearz * farz) / nearmfar;
+		//memcpy(&mret, m, sizeof(float_t) * 16);
+		int e = 0;
+		game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
+		game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
+		game::Vector3f ret;
+		ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+		ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+		ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+		ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+		ret /= ret.w;
+		e += (ret.z != -1.0f);
+		std::cout << "\nFOV -1 to +1\n";
+		std::cout << "Nz = " << ret.z << "\n";
+		std::cout << "error = " << e << "\n";
+
+
+		N = F;
+		ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+		ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+		ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+		ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+		ret /= ret.w;
+		e += (ret.z != 1.0f);
+		std::cout << "Fz = " << ret.z << "\n";
+		std::cout << "error = " << e << "\n";
+
+	}
+
+	static void testmy_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
+	{
+		float_t halfFOV = tan(0.25f / 2.0f);
+		float_t yScale = 1.0f / halfFOV;// 1.0f / tan(0.25 / 2.0f);
+		float_t xScale = 1.0f / (aspect * halfFOV);//yScale / aspect;
+		
 		float_t m[] = {
 			xScale, 0,      0,                           0,
 			0,      yScale, 0,                           0,
-			0,      0,      farz / nearmfar,			 1,
-			0,      0,		-(nearz * farz) / nearmfar,	 0
+			0,      0,      farz / (farz - nearz),			 1,
+			0,      0,		-(nearz * farz) / (farz - nearz),	 0
 		};
-		memcpy(&mret, m, sizeof(float_t) * 16);
+		//proj.a = xScale;
+		//proj.b = yScale;
+		//proj.c = farz / nearmfar;
+		//proj.d = 1.0f;
+		//proj.e = -(nearz * farz) / nearmfar;
+		//memcpy(&mret, m, sizeof(float_t) * 16);
+		int e = 0;
+		game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
+		game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
+		game::Vector3f ret;
+		//ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+		//ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+		//ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+		//ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+		ret.x = (N.x * m[0]);// +N.y * m[4] + N.z * m[8] + N.w * m[12]);
+		ret.y = N.y * m[5];// (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+		ret.z = /*(N.x * m[2] + N.y * m[6] + */(N.z * m[10] + N.w * m[14]);
+		ret.w = /*(N.x * m[3] + N.y * m[7] + */ N.z * m[11];// +N.w * m[15]);
+		ret /= ret.w;
+		e += (ret.z != 0);
+		std::cout << "\nFOV2 0 to +1\n";
+		std::cout << "Nz = " << ret.z << "\n";
+		std::cout << "error = " << e << "\n";
+
+
+		N = F;
+		ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+		ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+		ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+		ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+		ret /= ret.w;
+		e += (ret.z != 1);
+		std::cout << "Fz = " << ret.z << "\n";
+		std::cout << "error = " << e << "\n";
+
 	}
 
-	inline game::Triangle Project(const game::Triangle vertex) const noexcept
+	inline game::Triangle Project(const game::Triangle& vertex, const game::Projection& proj) const noexcept
 	{
-		game::Triangle ret(vertex);
+		game::Triangle ret;
 
 		for (int i = 0; i < 3; i++)
 		{
-			ret.vertices[i].x *= projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
-			ret.vertices[i].y *= projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
-			ret.vertices[i].z = (ret.vertices[i].z * projMat[10] + ret.vertices[i].w * projMat[14]);
-			ret.vertices[i].w = 1.0f / ret.vertices[i].z;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
+			ret.vertices[i].x = vertex.vertices[i].x * proj.a;// projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
+			ret.vertices[i].y = vertex.vertices[i].y * proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
+			ret.vertices[i].z = (vertex.vertices[i].z * proj.c) + (vertex.vertices[i].w * proj.e);// projMat[10] + ret.vertices[i].w * projMat[14]);
+			ret.vertices[i].w = vertex.vertices[i].z;// *proj.d;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
+			ret.vertices[i] /= ret.vertices[i].w;
+			std::cout << ret.vertices[i].z;
 			{
 				// this scale is not really part of projection
 				ret.vertices[i].x *= ret.vertices[i].w;// 1.0f / ret.vertices[i].w;
@@ -338,11 +451,12 @@ public:
 				ret.vertices[i].y += 1.0f;
 				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
+			// needed?
+			ret.vertices[i].z = 1.0f;// ret.vertices[i].w;
 		}
+		std::cout << "\n";
 		return ret;
 	}
-
-
 
 	void Render(const float_t msElapsed)
 	{
@@ -360,15 +474,15 @@ public:
 		if (scene == 0)
 		{
 			game::Vector3f t(0.0f, 0.0f, 2.0f);
-			test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
-			test = software3D.Translate(test, t);
-			test = Project(test);
+			//test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
+			//test = software3D.Translate(test, t);
+			test = Project(topLeftTri,projection);
 			quad.emplace_back(test);
 
-			test = software3D.RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
-			test = software3D.Translate(test, t);
-			test = Project(test);
-			quad.emplace_back(test);
+			//test = software3D.RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
+			//test = software3D.Translate(test, t);
+			//test = Project(test, projection);
+			//quad.emplace_back(test);
 		}
 
 		if (scene == 1)
@@ -378,7 +492,7 @@ public:
 			{
 				test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
 				test = software3D.Translate(test, t);
-				test = Project(test);
+				test = Project(test, projection);
 				quad.emplace_back(test);
 			}
 		}
@@ -471,6 +585,9 @@ int32_t main()
 	Game engine;
 	engine.geSetLogger(&logger);
 
+	engine.testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+	engine.testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+
 	// Create the needed bits for the engine
 	if (!engine.geCreate())
 	{
@@ -480,6 +597,26 @@ int32_t main()
 
 	// Start the engine
 	engine.geStartEngine();
+
+
+	//game::Projection proj(engine.projection);
+	//game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
+	//game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
+	//N.x *= proj.a;// projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
+	//N.y *= proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
+	//N.z = (N.z * proj.c) + N.w * proj.e;// projMat[10] + ret.vertices[i].w * projMat[14]);
+	//N.w = N.z;
+	//N /= N.w;
+
+	//F.x *= proj.a;// projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
+	//F.y *= proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
+	//F.z = (F.z * proj.c) + F.w * proj.e;// projMat[10] + ret.vertices[i].w * projMat[14]);
+	//F.w = F.z;
+	//F /= F.w;
+	//std::cout << "Nz = " << N.z << "\n";
+	//std::cout << "Fz = " << F.z << "\n";
+	//Error += glm::notEqual(N.z, -1.f, Eps);
+	//Error += glm::notEqual(F.z, 1.f, Eps);
 
 	return EXIT_SUCCESS;
 }
