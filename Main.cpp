@@ -23,6 +23,7 @@ public:
 	uint32_t maxFPS;
 
 	uint32_t scene;
+	float_t tz;
 
 	game::FillMode state = game::FillMode::WireFrameFilled;
 
@@ -30,7 +31,8 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 0;
+		scene = 1;
+		tz = 0.0f;
 	}
 
 	void Initialize()
@@ -169,7 +171,7 @@ public:
 
 		rnd.NewSeed();
 
-		float z = 0.1f;// 100.0f;
+		float z = 0.0f;// 100.0f;
 		float size = 1.0f;
 
 		// tl
@@ -211,7 +213,7 @@ public:
 
 
 		// Generate a 1000 tris
-		for (uint32_t i = 0; i < 1000; i++)
+		for (uint32_t i = 0; i < 2; i++)
 		{
 			game::Triangle temp(topLeftTri);
 			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 1000);
@@ -221,18 +223,24 @@ public:
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
-				temp.vertices[v].z = tz;// i / 1000.0f;
+				temp.vertices[v].z = 0.0f;// -(float_t)i;// / 100.0f;
+				if (i)
+				{
+					temp.color[v] = game::Colors::Magenta;
+					temp.vertices[v].z += 0.1f;
+				}
 			}
-			//game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
-			//game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
-			//game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
 
-			//float area(e0.c + e1.c + e2.c);
-			//// If area is negative, it means wrong winding
-			//if (area < 0)
-			//{
-			//	std::swap(temp.vertices[1], temp.vertices[2]);
-			//}
+			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
+			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
+			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
+
+			float area(e0.c + e1.c + e2.c);
+			// If area is negative, it means wrong winding
+			if (area < 0)
+			{
+				std::swap(temp.vertices[1], temp.vertices[2]);
+			}
 			tris.emplace_back(temp);
 		}
 
@@ -281,6 +289,16 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_2))
 		{
 			scene = 1;
+		}
+
+		if (geKeyboard.IsKeyHeld(geK_UP))
+		{
+			tz -= 0.1f;
+		}
+
+		if (geKeyboard.IsKeyHeld(geK_DOWN))
+		{
+			tz += 0.1f;
 		}
 	}
 
@@ -436,25 +454,27 @@ public:
 			ret.vertices[i].y = vertex.vertices[i].y * proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
 			ret.vertices[i].z = (vertex.vertices[i].z * proj.c) + (vertex.vertices[i].w * proj.e);// projMat[10] + ret.vertices[i].w * projMat[14]);
 			ret.vertices[i].w = vertex.vertices[i].z;// *proj.d;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
+			
+			// Projection divide
 			ret.vertices[i] /= ret.vertices[i].w;
-			std::cout << ret.vertices[i].z;
+			//std::cout << ret.vertices[i].z;
 			{
 				// this scale is not really part of projection
-				ret.vertices[i].x *= ret.vertices[i].w;// 1.0f / ret.vertices[i].w;
+				//ret.vertices[i].x *= ret.vertices[i].w;// 1.0f / ret.vertices[i].w;
 				ret.vertices[i].x += 1.0f;
 				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
 				
 			}
 			{
 				// this scale is not really part of projection
-				ret.vertices[i].y *= ret.vertices[i].w;//1.0f / ret.vertices[i].w;
+				//ret.vertices[i].y *= ret.vertices[i].w;//1.0f / ret.vertices[i].w;
 				ret.vertices[i].y += 1.0f;
 				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
 			// needed?
-			ret.vertices[i].z = 1.0f;// ret.vertices[i].w;
+			//ret.vertices[i].z = 1.0f;// ret.vertices[i].w;
+			ret.color[i] = vertex.color[i];
 		}
-		std::cout << "\n";
 		return ret;
 	}
 
@@ -473,25 +493,25 @@ public:
 
 		if (scene == 0)
 		{
-			game::Vector3f t(0.0f, 0.0f, 2.0f);
-			//test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
-			//test = software3D.Translate(test, t);
-			test = Project(topLeftTri,projection);
+			game::Vector3f t(0.0f, 0.0f, 1000.0f+tz);
+			test = software3D.RotateXYZ(topLeftTri, -0, 0, 0 * 0.5f);
+			test = software3D.Translate(test, t);
+			test = Project(test,projection);
 			quad.emplace_back(test);
 
-			//test = software3D.RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
-			//test = software3D.Translate(test, t);
-			//test = Project(test, projection);
-			//quad.emplace_back(test);
+			test = software3D.RotateXYZ(bottomRightTri, -0, 0, 0 * 0.5f);
+			test = software3D.Translate(test, t);
+			test = Project(test, projection);
+			quad.emplace_back(test);
 		}
 
 		if (scene == 1)
 		{
-			game::Vector3f t(0.0f, 0.0f, 1.5f);
+			game::Vector3f t(0.0f, 0.0f, 10.5f + tz);
 			for (int i = 0; i < tris.size(); i++)
 			{
-				test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
-				test = software3D.Translate(test, t);
+				//test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+				test = software3D.Translate(tris[i], t);
 				test = Project(test, projection);
 				quad.emplace_back(test);
 			}
@@ -556,7 +576,7 @@ public:
 			{
 				depth = *zbuffer;
 				zbuffer++;
-				depth += 1.0f;
+				//depth += 1.0f;
 				depth = 1.0f / depth;
 				dColor.Set(1.0f * depth, 1.0f * depth, 1.0f * depth, 1.0f);
 				*vbuffer = dColor.packedABGR;

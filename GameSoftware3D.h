@@ -236,6 +236,7 @@ namespace game
 		// Depth parameter
 		float_t dd(0.0f);
 		ParameterEquation depth(tri.vertices[0].w, tri.vertices[1].w, tri.vertices[2].w, e0, e1, e2, area);
+		if (tri.color[0].packedABGR == Colors::Magenta.packedABGR) std::cout << tri.vertices[0].w << "\n";
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -332,7 +333,8 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				dd = 1.0f / depth.evaluate(pixelOffset.x, pixelOffset.y);
+				dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
+				//std::cout << dd << "\n";
 				if (dd < *zbuffer)
 				{
 					*zbuffer = dd;
@@ -380,9 +382,9 @@ namespace game
 				{
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
-					float pre = dd;
+					float pre = 1.0f/ dd;
 					dd += 1.0f;
-					dd = 1.0f / dd;
+					dd = 1.0f;// / dd;
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
