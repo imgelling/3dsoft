@@ -216,14 +216,14 @@ public:
 		for (uint32_t i = 0; i < 1000; i++)
 		{
 			game::Triangle temp(topLeftTri);
-			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 1000);
+			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 10);
 			for (uint32_t v = 0; v < 3; v++)
 			{
 				temp.vertices[v].x = (float_t)rnd.RndRange(0, 1280);
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
-				temp.vertices[v].z = (float_t)i * 0.5;// tz;// 0.0f;// -(float_t)i;// / 100.0f;
+				temp.vertices[v].z = tz;// 0.0f;// -(float_t)i;// / 100.0f;
 			}
 
 			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
@@ -481,7 +481,7 @@ public:
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
-		software3D.ClearDepth();
+		software3D.ClearDepth(100.0f);
 
 		std::vector<game::Triangle> quad;
 		game::Triangle test;
@@ -559,7 +559,6 @@ public:
 			//pixelMode.Rect(clip[i], game::Colors::Yellow);
 
 		// show depth buffer
-		// proj is making depth -1 to 1 (like it should, but dont like)
 		if (geKeyboard.IsKeyHeld(geK_D))
 		{
 

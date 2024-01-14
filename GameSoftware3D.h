@@ -30,7 +30,7 @@ namespace game
 		void DrawColored(const Triangle& tri, const Recti& clip);
 		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
-		void ClearDepth();
+		void ClearDepth(const float_t depth);
 		float* GetDepth() const noexcept { return _depth; }
 
 		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
@@ -82,9 +82,9 @@ namespace game
 		fence = 0;
 	}
 
-	inline void Software3D::ClearDepth()
+	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		std::fill_n(_depth, _frameBufferWidth * _frameBufferHeight, 100.0f);
+		std::fill_n(_depth, _frameBufferWidth * _frameBufferHeight, depth);
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -412,6 +412,14 @@ namespace game
 			if ((in[tri].vertices[0].w < 0.1f) ||
 				(in[tri].vertices[1].w < 0.1f) ||
 				(in[tri].vertices[2].w < 0.1f))
+			{
+				continue;
+			}
+
+			// Far Z clip
+			if ((in[tri].vertices[0].w > 100.0f) ||
+				(in[tri].vertices[1].w > 100.0f) ||
+				(in[tri].vertices[2].w > 100.0f))
 			{
 				continue;
 			}
