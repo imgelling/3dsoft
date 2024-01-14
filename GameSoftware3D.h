@@ -188,9 +188,9 @@ namespace game
 	template<bool wireFrame, bool color>
 	inline void Software3D::DrawColored(const Triangle& tri, const Recti& clip)
 	{
-		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0);// , tri.vertices[0].z);
-		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0);// tri.vertices[1].z);
-		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0);// tri.vertices[2].z);
+		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0);
+		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0);
+		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0);
 
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_frameBufferWidth);
@@ -338,6 +338,7 @@ namespace game
 				if (dd < *zbuffer)
 				{
 					*zbuffer = dd;
+					//std::cout << dd << "\n";
 				}
 				else
 				{
@@ -382,7 +383,7 @@ namespace game
 				{
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
-					float pre = 1.0f/ dd;
+					float pre = 1.0f / dd;
 					dd += 1.0f;
 					dd = 1.0f;// / dd;
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;

@@ -213,7 +213,7 @@ public:
 
 
 		// Generate a 1000 tris
-		for (uint32_t i = 0; i < 2; i++)
+		for (uint32_t i = 0; i < 1000; i++)
 		{
 			game::Triangle temp(topLeftTri);
 			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 1000);
@@ -223,12 +223,7 @@ public:
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
-				temp.vertices[v].z = 0.0f;// -(float_t)i;// / 100.0f;
-				if (i)
-				{
-					temp.color[v] = game::Colors::Magenta;
-					temp.vertices[v].z += 0.1f;
-				}
+				temp.vertices[v].z = (float_t)i * 0.5;// tz;// 0.0f;// -(float_t)i;// / 100.0f;
 			}
 
 			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
@@ -493,13 +488,13 @@ public:
 
 		if (scene == 0)
 		{
-			game::Vector3f t(0.0f, 0.0f, 1000.0f+tz);
-			test = software3D.RotateXYZ(topLeftTri, -0, 0, 0 * 0.5f);
+			game::Vector3f t(0.0f, 0.0f, 10.0f+tz);
+			test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
 			test = software3D.Translate(test, t);
 			test = Project(test,projection);
 			quad.emplace_back(test);
 
-			test = software3D.RotateXYZ(bottomRightTri, -0, 0, 0 * 0.5f);
+			test = software3D.RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
 			test = software3D.Translate(test, t);
 			test = Project(test, projection);
 			quad.emplace_back(test);
@@ -507,11 +502,11 @@ public:
 
 		if (scene == 1)
 		{
-			game::Vector3f t(0.0f, 0.0f, 10.5f + tz);
+			game::Vector3f t(0.0f, 0.0f, 10.0f + tz);
 			for (int i = 0; i < tris.size(); i++)
 			{
-				//test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
-				test = software3D.Translate(tris[i], t);
+				test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+				test = software3D.Translate(test, t);
 				test = Project(test, projection);
 				quad.emplace_back(test);
 			}
@@ -577,13 +572,14 @@ public:
 				depth = *zbuffer;
 				zbuffer++;
 				//depth += 1.0f;
-				depth = 1.0f / depth;
+				depth = 1.0f/depth;
 				dColor.Set(1.0f * depth, 1.0f * depth, 1.0f * depth, 1.0f);
 				*vbuffer = dColor.packedABGR;
 				vbuffer++;
 			}
 			pixelMode.Text("Showing Depth buffer.", 0, 40, game::Colors::Yellow, 1);
 		}
+		pixelMode.Text("Translate X : " + std::to_string(tz), 0, 50, game::Colors::Yellow, 1);
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
@@ -617,26 +613,6 @@ int32_t main()
 
 	// Start the engine
 	engine.geStartEngine();
-
-
-	//game::Projection proj(engine.projection);
-	//game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
-	//game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
-	//N.x *= proj.a;// projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
-	//N.y *= proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
-	//N.z = (N.z * proj.c) + N.w * proj.e;// projMat[10] + ret.vertices[i].w * projMat[14]);
-	//N.w = N.z;
-	//N /= N.w;
-
-	//F.x *= proj.a;// projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
-	//F.y *= proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
-	//F.z = (F.z * proj.c) + F.w * proj.e;// projMat[10] + ret.vertices[i].w * projMat[14]);
-	//F.w = F.z;
-	//F /= F.w;
-	//std::cout << "Nz = " << N.z << "\n";
-	//std::cout << "Fz = " << F.z << "\n";
-	//Error += glm::notEqual(N.z, -1.f, Eps);
-	//Error += glm::notEqual(F.z, 1.f, Eps);
 
 	return EXIT_SUCCESS;
 }
