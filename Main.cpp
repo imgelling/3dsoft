@@ -236,8 +236,7 @@ public:
 		}
 
 		// Pre calc projection matrix
-		my_PerspectiveFOV(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projMat);
-
+		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projMat);
 	}
 
 	void Shutdown()
@@ -361,8 +360,9 @@ public:
 	}
 
 
-	// gl
-	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, float_t* mret) {
+	// left handed -1 to 1
+	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, float_t* mret)
+	{
 		float_t D2R = 3.14159f / 180.0f;
 		float_t yScale = 1.0f / tan(D2R * fov / 2);
 		float_t xScale = yScale / aspect;
@@ -371,13 +371,14 @@ public:
 			xScale, 0,      0,                           0,
 			0,      yScale, 0,                           0,
 			0,      0,      (farz + nearz) / nearmfar,   1,
-			0,      0,      2 * farz * nearz / nearmfar, 0
+			0,      0,      (2 * farz * nearz) / nearmfar, 0
 		};
 		memcpy(mret, m, sizeof(float_t) * 16);
 	}
 
-	// left handed (D3DXFovLH)
-	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, float_t (&mret)[16]) {
+	// left handed (D3DXFovLH) 0 to +1
+	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, float_t (&mret)[16])
+	{
 		float_t D2R = 3.14159f / 180.0f;
 		float_t yScale = 1.0f / tan(D2R * fov / 2.0f);
 		float_t xScale = yScale / aspect;
@@ -386,20 +387,14 @@ public:
 			xScale, 0,      0,                           0,
 			0,      yScale, 0,                           0,
 			0,      0,      farz / nearmfar,			 1,
-			0,      0,		-nearz * farz / nearmfar,	 0
+			0,      0,		-(nearz * farz) / nearmfar,	 0
 		};
 		memcpy(&mret, m, sizeof(float_t) * 16);
 	}
 
-	
-
 	inline game::Triangle Project(const game::Triangle vertex) const noexcept
 	{
 		game::Triangle ret(vertex);
-		//float aspect = 16.0f / 9.0f;
-		//float D2R = 3.14f / 180.0f;
-		//float yScale = 1.0f / (float)tan(D2R * 90.0 / 2);
-		//float xScale = yScale / aspect;
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -437,6 +432,8 @@ public:
 			{
 				continue;
 			}
+
+			// backface here maybe
 
 			game::Recti boundingBox = software3D.TriangleBoundingBox(in[tri]);
 

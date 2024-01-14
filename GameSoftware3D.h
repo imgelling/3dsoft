@@ -78,7 +78,7 @@ namespace game
 
 	inline void Software3D::ClearDepth()
 	{
-		std::fill_n(_depth, _frameBufferWidth * _frameBufferHeight, 1000.0f);
+		std::fill_n(_depth, _frameBufferWidth * _frameBufferHeight, 100.0f);
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -186,16 +186,6 @@ namespace game
 		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0);// tri.vertices[1].z);
 		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0);// tri.vertices[2].z);
 
-
-		//// zclip
-		//if ((tri.vertices[0].z < 0.1f) ||
-		//	(tri.vertices[1].z < 0.1f) ||
-		//	(tri.vertices[2].z < 0.1f))
-		//{
-		//	fence++;
-		//	return;
-		//}
-
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_frameBufferWidth);
 
@@ -218,14 +208,7 @@ namespace game
 		game::Recti boundingBox = TriangleBoundingBox(tri);
 		game::Vector2f pixelOffset;
 
-		//// Screen clipping
-		//// Offscreen completely
-		//if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
-		//	(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
-		//{
-		//	fence++;
-		//	return;
-		//}
+		// Screen clipping
 
 		// Partial offscreen
 		if (boundingBox.x < clip.x)
@@ -238,21 +221,15 @@ namespace game
 			boundingBox.bottom = clip.bottom;
 
 
-		// Color parameter
-		//Color colorAtPixel;
-		//ParameterEquation r(tri.color[0].rf/tri.vertices[0].w, tri.color[1].rf/tri.vertices[1].w, tri.color[2].rf/tri.vertices[2].w, e0, e1, e2, area);
-		//ParameterEquation g(tri.color[0].gf/tri.vertices[0].w, tri.color[1].gf/tri.vertices[1].w, tri.color[2].gf/tri.vertices[2].w, e0, e1, e2, area);
-		//ParameterEquation b(tri.color[0].bf/tri.vertices[0].w, tri.color[1].bf/tri.vertices[1].w, tri.color[2].bf/tri.vertices[2].w, e0, e1, e2, area);
+		// Color parameter	
 		Color colorAtPixel;
 		ParameterEquation r(tri.color[0].rf * tri.vertices[0].w, tri.color[1].rf * tri.vertices[1].w, tri.color[2].rf * tri.vertices[2].w, e0, e1, e2, area);
 		ParameterEquation g(tri.color[0].gf * tri.vertices[0].w, tri.color[1].gf * tri.vertices[1].w, tri.color[2].gf * tri.vertices[2].w, e0, e1, e2, area);
 		ParameterEquation b(tri.color[0].bf * tri.vertices[0].w, tri.color[1].bf * tri.vertices[1].w, tri.color[2].bf * tri.vertices[2].w, e0, e1, e2, area);
 		
 		// Depth parameter
-		float xd = tri.vertices[0].w;//1.0f / tri.vertices[0].w;
-		float yd = tri.vertices[1].w;// 1.0f / tri.vertices[1].w;
-		float zd = tri.vertices[2].w;// 1.0f / tri.vertices[2].w;
-		ParameterEquation depth(xd, yd, zd, e0, e1, e2, area);
+		float_t dd(0.0f);
+		ParameterEquation depth(tri.vertices[0].w, tri.vertices[1].w, tri.vertices[2].w, e0, e1, e2, area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -290,9 +267,8 @@ namespace game
 
 		uint32_t* buffer = _frameBuffer + (boundingBox.y * videoBufferStride + boundingBox.x);
 		float_t* zbuffer = _depth + (boundingBox.y * videoBufferStride + boundingBox.x);
-		float_t dd(0.0f);
 		uint32_t xLoopCount = 0;
-		// added the = last night below
+
 		for (int32_t j = boundingBox.y; j <= boundingBox.bottom; ++j)
 		{
 			foundTriangle = false;
