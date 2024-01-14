@@ -334,11 +334,9 @@ namespace game
 
 				// depth buffer test
 				dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
-				//std::cout << dd << "\n";
 				if (dd < *zbuffer)
 				{
 					*zbuffer = dd;
-					//std::cout << dd << "\n";
 				}
 				else
 				{

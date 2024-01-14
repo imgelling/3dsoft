@@ -2,6 +2,8 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
+
+
 class Game : public game::Engine
 {
 
@@ -19,6 +21,7 @@ public:
 	//float_t projMat[16];
 	game::Projection projection;
 	std::vector<game::Triangle> tris;
+	game::Mesh model;
 
 	uint32_t maxFPS;
 
@@ -31,7 +34,7 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 1;
+		scene = 2;
 		tz = 0.0f;
 	}
 
@@ -167,6 +170,11 @@ public:
 			geLogLastError();
 		}
 
+		if (!Load("Content/monkeysmooth.obj", model))
+		{
+			std::cout << "Could not load model\n";
+		}
+
 		game::Random rnd;
 
 		rnd.NewSeed();
@@ -284,6 +292,11 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_2))
 		{
 			scene = 1;
+		}
+
+		if (geKeyboard.WasKeyPressed(geK_3))
+		{
+			scene = 2;
 		}
 
 		if (geKeyboard.IsKeyHeld(geK_UP))
@@ -511,8 +524,18 @@ public:
 				quad.emplace_back(test);
 			}
 		}
-		
-		//max 39  tris, 40 with sort
+
+		if (scene == 2)
+		{
+			game::Vector3f t(0.0f, 0.0f, 10.0f + tz);
+			for (int i = 0; i < model.tris.size(); i++)
+			{
+				test = software3D.RotateXYZ(model.tris[i], -rotation, rotation, rotation * 0.5f);
+				test = software3D.Translate(test, t);
+				test = Project(test, projection);
+				quad.emplace_back(test);
+			}
+		}
 
 		// max 1759 htris
 		uint32_t fenceCount = 0;
@@ -578,7 +601,7 @@ public:
 			}
 			pixelMode.Text("Showing Depth buffer.", 0, 40, game::Colors::Yellow, 1);
 		}
-		pixelMode.Text("Translate X : " + std::to_string(tz), 0, 50, game::Colors::Yellow, 1);
+		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 50, game::Colors::Yellow, 1);
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
@@ -591,6 +614,197 @@ public:
 
 
 		pixelMode.Render();
+	}
+
+	bool Load(std::string file, game::Mesh& mesh)
+	{
+		std::ifstream f(file.c_str());
+		std::vector<game::Vector3f> verts;
+		std::vector<game::Vector3f> norms;
+		std::vector<float> vcount;
+		std::vector<game::Vector3i> fcount;
+		std::vector<game::Vector3f> vnorms;
+
+		std::vector<game::Vector2f> uvs;
+		game::Vector3f vert;
+		bool hasNormals = false;
+		bool hasUVs = false;
+		char line[256];
+
+		// Check to see if file has normals
+		if (f.is_open())
+		{
+			while (!f.eof())
+			{
+				f.getline(line, 256);
+				if (line[0] == 'v' && line[1] == 'n') hasNormals = true;
+				if (line[0] == 'v' && line[1] == 't') hasUVs = true;
+			}
+		}
+		// Reset file
+		f.clear();
+		f.seekg(0);
+
+		// Parse the file
+		if (f.is_open())
+		{
+			unsigned char junk = 0;
+			unsigned int p1 = 0, p2 = 0, p3 = 0;
+			unsigned int n1 = 0, n2 = 0, n3 = 0;
+			unsigned int uv1 = 0, uv2 = 0, uv3 = 0;
+			while (!f.eof())
+			{
+				junk = 0;
+				f.getline(line, 256);
+				std::stringstream ss;
+				ss << line;
+
+				if (line[0] == 'v')
+				{
+					if (line[1] == 'n') // Vertex normals
+					{
+						ss >> junk >> junk >> vert.x >> vert.y >> vert.z;
+						norms.emplace_back(vert);
+						continue;
+					}
+					else if (line[1] == 't')  // texture uvs
+					{
+						ss >> junk >> junk >> vert.x >> vert.y;
+						uvs.emplace_back(game::Vector2f(vert.x, vert.y));
+						continue;
+					}
+					else
+					{
+						ss >> junk >> vert.x >> vert.y >> vert.z;
+						// added new
+						vert.y = vert.y * -1;
+						vert.z = vert.z * -1;
+						//vert.x = vert.x * -1;
+						// Also swapped ps and ns 2 and 3 for winding
+						verts.emplace_back(vert);
+						// start counting verts
+						vcount.emplace_back(1.0f);
+						// if it has no normals make temporary ones
+						if (!hasNormals)
+						{
+							norms.emplace_back(game::Vector3f(0, 0, 0));
+						}
+						continue;
+					}
+				}
+				if (line[0] == 'f')
+				{
+					if (hasUVs && hasNormals)
+					{
+						ss >> junk >> p1 >> junk >> uv1 >> junk >> n1;
+						ss >> p2 >> junk >> uv2 >> junk >> n2;
+						ss >> p3 >> junk >> uv3 >> junk >> n3;
+					}
+					else if (hasNormals)
+					{
+						ss >> junk >> p1 >> junk >> junk >> n1;
+						ss >> p2 >> junk >> junk >> n2;
+						ss >> p3 >> junk >> junk >> n3;
+					}
+					else if (hasUVs)
+					{
+						// may have to get rid of the ns as junk
+						ss >> junk >> p1 >> junk >> uv1 >> junk >> n1;
+						ss >> p2 >> junk >> uv2 >> junk >> n2;
+						ss >> p3 >> junk >> uv3 >> junk >> n3;
+					}
+					else
+					{
+						ss >> junk >> p1 >> p2 >> p3;
+					}
+					game::Triangle tri;
+					// Vertices
+					tri.vertices[0] = verts[p1 - 1];
+					tri.vertices[1] = verts[p3 - 1];
+					tri.vertices[2] = verts[p2 - 1];
+					// UV (texture) coords
+					if (hasUVs)
+					{
+						tri.uvs[0] = uvs[uv1 - 1];// Vector2d(uvs[uv1 - 1].x, uvs[uv1 - 1].y);
+						tri.uvs[1] = uvs[uv3 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
+						tri.uvs[2] = uvs[uv2 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
+					}
+					else
+					{
+						tri.uvs[0] = game::Vector2f(0, 0);
+						tri.uvs[1] = game::Vector2f(0, 0);
+						tri.uvs[2] = game::Vector2f(0, 0);
+					}
+
+
+					// count the vertices
+					if (!hasNormals)
+					{
+						vcount[p1 - 1]++;
+						vcount[p3 - 1]++;
+						vcount[p2 - 1]++;
+						game::Vector3i t;
+						t.x = p1 - 1;
+						t.y = p3 - 1;
+						t.z = p2 - 1;
+						fcount.emplace_back(t);
+					}
+
+
+					game::Vector3f a, b;
+					// Calculate the face normal of the triangle
+					a = tri.vertices[1] - tri.vertices[0];
+					b = tri.vertices[2] - tri.vertices[0];
+					tri.faceNormal = a.Cross(b);
+
+
+					if (hasNormals)
+					{
+						// Add the face normal to the vertex normals
+						tri.faceNormal.Normalize();
+						tri.normals[0] = norms[n1 - 1];
+						tri.normals[1] = norms[n3 - 1];
+						tri.normals[2] = norms[n2 - 1];
+					}
+					else
+					{
+						// Sum the normals
+						norms[p1 - 1] += tri.faceNormal;
+						norms[p3 - 1] += tri.faceNormal;
+						norms[p2 - 1] += tri.faceNormal;
+						tri.faceNormal.Normalize();
+
+					}
+
+					mesh.tris.emplace_back(tri);
+
+					continue;
+				}
+			}
+
+			if (!hasNormals)
+			{
+				for (int i = 0; i < mesh.tris.size(); i++)
+				{
+					mesh.tris[i].normals[0] = norms[fcount[i].x] / vcount[fcount[i].x];
+					mesh.tris[i].normals[1] = norms[fcount[i].y] / vcount[fcount[i].y];
+					mesh.tris[i].normals[2] = norms[fcount[i].z] / vcount[fcount[i].z];
+					mesh.tris[i].normals[0].Normalize();
+					mesh.tris[i].normals[1].Normalize();
+					mesh.tris[i].normals[2].Normalize();
+				}
+			}
+			for (int i = 0; i < mesh.tris.size(); i++)
+			{
+				mesh.tris[i].color[0] = game::Colors::DarkGray;
+				mesh.tris[i].color[1] = game::Colors::DarkGray;
+				mesh.tris[i].color[2] = game::Colors::DarkGray;
+			}
+
+			return true;
+		}
+		else return false;
+
 	}
 };
 
