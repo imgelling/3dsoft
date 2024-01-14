@@ -29,7 +29,7 @@ public:
 	{
 		ZeroMemory(&projMat, sizeof(float_t)*16);
 		maxFPS = 0;
-		scene = 0;
+		scene = 1;
 	}
 
 	void Initialize()
@@ -222,16 +222,16 @@ public:
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
 				temp.vertices[v].z = tz;// i / 1000.0f;
 			}
-			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
-			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
-			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
+			//game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
+			//game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
+			//game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
 
-			float area(e0.c + e1.c + e2.c);
-			// If area is negative, it means wrong winding
-			if (area < 0)
-			{
-				std::swap(temp.vertices[1], temp.vertices[2]);
-			}
+			//float area(e0.c + e1.c + e2.c);
+			//// If area is negative, it means wrong winding
+			//if (area < 0)
+			//{
+			//	std::swap(temp.vertices[1], temp.vertices[2]);
+			//}
 			tris.emplace_back(temp);
 		}
 
@@ -282,83 +282,6 @@ public:
 			scene = 1;
 		}
 	}
-
-	inline game::Triangle RotateZ(const game::Triangle& tri, const float_t theta) const noexcept
-	{
-		game::Triangle ret(tri);
-		float_t ctheta = cos(theta);
-		float_t stheta = sin(theta);
-
-		ret.vertices[0].x = (tri.vertices[0].x) * ctheta - (tri.vertices[0].y) * stheta;
-		ret.vertices[0].y = (tri.vertices[0].x) * stheta + (tri.vertices[0].y) * ctheta;
-		ret.vertices[1].x = (tri.vertices[1].x) * ctheta - (tri.vertices[1].y) * stheta;
-		ret.vertices[1].y = (tri.vertices[1].x) * stheta + (tri.vertices[1].y) * ctheta;
-		ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
-		ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
-
-		return ret;
-	}
-
-	inline game::Triangle RotateX(const game::Triangle& tri, const float_t theta) const noexcept
-	{
-		game::Triangle ret(tri);
-		float_t ctheta = cos(theta);
-		float_t stheta = sin(theta);
-
-		ret.vertices[0].y = (tri.vertices[0].y) * ctheta - (tri.vertices[0].z) * stheta;
-		ret.vertices[0].z = (tri.vertices[0].y) * stheta + (tri.vertices[0].z) * ctheta;
-		ret.vertices[1].y = (tri.vertices[1].y) * ctheta - (tri.vertices[1].z) * stheta;
-		ret.vertices[1].z = (tri.vertices[1].y) * stheta + (tri.vertices[1].z) * ctheta;
-		ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
-		ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
-
-		return ret;
-	}
-
-	inline game::Triangle RotateY(const game::Triangle& tri, const float_t theta) const noexcept
-	{
-		game::Triangle ret(tri);
-		float_t ctheta = cos(theta);
-		float_t stheta = sin(theta);
-
-		ret.vertices[0].x = (tri.vertices[0].x) * ctheta + (tri.vertices[0].z) * stheta;
-		ret.vertices[0].z = (tri.vertices[0].x) * -stheta + (tri.vertices[0].z) * ctheta;
-		ret.vertices[1].x = (tri.vertices[1].x) * ctheta + (tri.vertices[1].z) * stheta;
-		ret.vertices[1].z = (tri.vertices[1].x) * -stheta + (tri.vertices[1].z) * ctheta;
-		ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
-		ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
-
-		return ret;
-	}
-
-	inline game::Triangle RotateXYZ(const game::Triangle& tri, const float thetaX, const float thetaY, const float thetaZ) const noexcept
-	{
-		game::Triangle ret(tri);
-
-		ret = RotateX(ret, thetaX);
-		ret = RotateY(ret, thetaY);
-		ret = RotateZ(ret, thetaZ);
-
-		return ret;
-	}
-
-	inline game::Triangle Translate(const game::Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept
-	{
-		game::Triangle ret(tri);
-
-		ret.vertices[0].x += _x;
-		ret.vertices[0].y += _y;
-		ret.vertices[0].z += _z;
-		ret.vertices[1].x += _x;
-		ret.vertices[1].y += _y;
-		ret.vertices[1].z += _z;
-		ret.vertices[2].x += _x;
-		ret.vertices[2].y += _y;
-		ret.vertices[2].z += _z;
-
-		return ret;
-	}
-
 
 	// left handed -1 to 1
 	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, float_t* mret)
@@ -419,47 +342,7 @@ public:
 		return ret;
 	}
 
-	// For clipping only need znear so a lot can be precalc for plane
-	void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
-	{
-		out.clear();
-		for (int tri = 0; tri < in.size(); tri++)
-		{
-			// Near Z clip
-			if ((in[tri].vertices[0].w < 0.1f) ||
-				(in[tri].vertices[1].w < 0.1f) ||
-				(in[tri].vertices[2].w < 0.1f))
-			{
-				continue;
-			}
 
-			// backface here maybe
-
-			game::Recti boundingBox = software3D.TriangleBoundingBox(in[tri]);
-
-			// Screen clipping
-			// Offscreen completely
-			if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
-				(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
-			{
-				continue;
-			}
-
-			//// Partial offscreen
-			//if (boundingBox.x < clip.x)
-			//{
-			//	boundingBox.x = clip.x;
-			//		
-			//}
-			//if (boundingBox.right > clip.right)
-			//	boundingBox.right = clip.right;
-			//if (boundingBox.y < clip.y)
-			//	boundingBox.y = clip.y;
-			//if (boundingBox.bottom > clip.bottom)
-			//	boundingBox.bottom = clip.bottom;
-			out.emplace_back(in[tri]);
-		}
-	}
 
 	void Render(const float_t msElapsed)
 	{
@@ -477,12 +360,12 @@ public:
 		if (scene == 0)
 		{
 			game::Vector3f t(0.0f, 0.0f, 2.0f);
-			test = RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
+			test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
 			test = software3D.Translate(test, t);
 			test = Project(test);
 			quad.emplace_back(test);
 
-			test = RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
+			test = software3D.RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
 			test = software3D.Translate(test, t);
 			test = Project(test);
 			quad.emplace_back(test);
@@ -493,7 +376,7 @@ public:
 			game::Vector3f t(0.0f, 0.0f, 1.5f);
 			for (int i = 0; i < tris.size(); i++)
 			{
-				test = RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+				test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
 				test = software3D.Translate(test, t);
 				test = Project(test);
 				quad.emplace_back(test);
@@ -506,9 +389,8 @@ public:
 		uint32_t fenceCount = 0;
 		for (int c = 0; c < 16; c++)
 		{
-			Clip(quad, clip[c], clippedTris[c]);
+			software3D.Clip(quad, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
-			// sorting messes up wireframe only
 			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
 				{
 					float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;

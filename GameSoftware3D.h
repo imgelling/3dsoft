@@ -33,9 +33,15 @@ namespace game
 		void ClearDepth();
 		float* GetDepth() const noexcept { return _depth; }
 
+		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
 		// No matrix math
 
 		Triangle Translate(const Triangle& tri, Vector3f& translate) const noexcept;
+		Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept;
+		Triangle RotateX(const Triangle& tri, const float_t theta) const noexcept;
+		Triangle RotateY(const Triangle& tri, const float_t theta) const noexcept;
+		Triangle RotateZ(const Triangle& tri, const float_t theta) const noexcept;
+		Triangle RotateXYZ(const Triangle& tri, const float thetaX, const float thetaY, const float thetaZ) const noexcept;
 
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
@@ -194,7 +200,7 @@ namespace game
 		EdgeEquation e2(v0, v1);
 
 		// back face cull
-		float area(e0.c + e1.c + e2.c);
+		float_t area(e0.c + e1.c + e2.c);
 		if (area < 0)
 		{
 			fence++;
@@ -391,6 +397,64 @@ namespace game
 		}
 		fence++;
 	}
+
+	// clipping
+	// 	// For clipping only need znear so a lot can be precalc for plane
+	inline void Software3D::Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
+	{
+		out.clear();
+		for (int tri = 0; tri < in.size(); tri++)
+		{
+			// Near Z clip
+			if ((in[tri].vertices[0].w < 0.1f) ||
+				(in[tri].vertices[1].w < 0.1f) ||
+				(in[tri].vertices[2].w < 0.1f))
+			{
+				continue;
+			}
+
+			// backface here maybe
+			//// back face cull
+			//game::EdgeEquation e0(in[tri].vertices[1], in[tri].vertices[2]);
+			//game::EdgeEquation e1(in[tri].vertices[2], in[tri].vertices[0]);
+			//game::EdgeEquation e2(in[tri].vertices[0], in[tri].vertices[1]);
+			//float area(e0.c + e1.c + e2.c);
+			//if (area < 0)
+			//{
+			//	//fence++;
+			//	//in.erase(std::next(in.begin(), tri));
+			//	//std::swap(v1, v2);
+			//	//e0.Set(v1, v2);
+			//	//e1.Set(v2, v0);
+			//	//e2.Set(v0, v1);
+			//	continue;
+			//}
+
+			game::Recti boundingBox = TriangleBoundingBox(in[tri]);
+
+			// Screen clipping
+			// Offscreen completely
+			if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
+				(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
+			{
+				continue;
+			}
+
+			//// Partial offscreen
+			//if (boundingBox.x < clip.x)
+			//{
+			//	boundingBox.x = clip.x;
+			//		
+			//}
+			//if (boundingBox.right > clip.right)
+			//	boundingBox.right = clip.right;
+			//if (boundingBox.y < clip.y)
+			//	boundingBox.y = clip.y;
+			//if (boundingBox.bottom > clip.bottom)
+			//	boundingBox.bottom = clip.bottom;
+			out.emplace_back(in[tri]);
+		}
+	}
 // No Matrix Math
 	inline Triangle Software3D::Translate(const Triangle& tri, Vector3f& translate) const noexcept
 	{
@@ -399,6 +463,82 @@ namespace game
 		ret.vertices[0] += translate;
 		ret.vertices[1] += translate;
 		ret.vertices[2] += translate;
+
+		return ret;
+	}
+
+	inline Triangle Software3D::RotateZ(const Triangle& tri, const float_t theta) const noexcept
+	{
+		Triangle ret(tri);
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+
+		ret.vertices[0].x = (tri.vertices[0].x) * ctheta - (tri.vertices[0].y) * stheta;
+		ret.vertices[0].y = (tri.vertices[0].x) * stheta + (tri.vertices[0].y) * ctheta;
+		ret.vertices[1].x = (tri.vertices[1].x) * ctheta - (tri.vertices[1].y) * stheta;
+		ret.vertices[1].y = (tri.vertices[1].x) * stheta + (tri.vertices[1].y) * ctheta;
+		ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
+		ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
+
+		return ret;
+	}
+
+	inline Triangle Software3D::RotateX(const Triangle& tri, const float_t theta) const noexcept
+	{
+		Triangle ret(tri);
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+
+		ret.vertices[0].y = (tri.vertices[0].y) * ctheta - (tri.vertices[0].z) * stheta;
+		ret.vertices[0].z = (tri.vertices[0].y) * stheta + (tri.vertices[0].z) * ctheta;
+		ret.vertices[1].y = (tri.vertices[1].y) * ctheta - (tri.vertices[1].z) * stheta;
+		ret.vertices[1].z = (tri.vertices[1].y) * stheta + (tri.vertices[1].z) * ctheta;
+		ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
+		ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
+
+		return ret;
+	}
+
+	inline Triangle Software3D::RotateY(const Triangle& tri, const float_t theta) const noexcept
+	{
+		Triangle ret(tri);
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+
+		ret.vertices[0].x = (tri.vertices[0].x) * ctheta + (tri.vertices[0].z) * stheta;
+		ret.vertices[0].z = (tri.vertices[0].x) * -stheta + (tri.vertices[0].z) * ctheta;
+		ret.vertices[1].x = (tri.vertices[1].x) * ctheta + (tri.vertices[1].z) * stheta;
+		ret.vertices[1].z = (tri.vertices[1].x) * -stheta + (tri.vertices[1].z) * ctheta;
+		ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
+		ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
+
+		return ret;
+	}
+
+	inline Triangle Software3D::RotateXYZ(const Triangle& tri, const float thetaX, const float thetaY, const float thetaZ) const noexcept
+	{
+		Triangle ret(tri);
+
+		ret = RotateX(ret, thetaX);
+		ret = RotateY(ret, thetaY);
+		ret = RotateZ(ret, thetaZ);
+
+		return ret;
+	}
+
+	inline Triangle Software3D::Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept
+	{
+		Triangle ret(tri);
+
+		ret.vertices[0].x += _x;
+		ret.vertices[0].y += _y;
+		ret.vertices[0].z += _z;
+		ret.vertices[1].x += _x;
+		ret.vertices[1].y += _y;
+		ret.vertices[1].z += _z;
+		ret.vertices[2].x += _x;
+		ret.vertices[2].y += _y;
+		ret.vertices[2].z += _z;
 
 		return ret;
 	}
