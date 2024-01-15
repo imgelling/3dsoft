@@ -328,7 +328,7 @@ public:
 		proj.b = yScale;
 		proj.c = (farz + nearz) / nearmfar;
 		proj.d = 1.0f;
-		proj.e = (2.0f * farz * nearz) / nearmfar;
+		proj.e = -(2.0f * farz * nearz) / nearmfar;
 	}
 
 	// left handed (D3DXFovLH) 0 to +1
@@ -368,7 +368,7 @@ public:
 			xScale, 0,      0,                                         0,
 			0,      yScale, 0,                                         0,
 			0,      0,      (farz + nearz) / (farz - nearz),    	 1.0f,
-			0,      0,		(2.0f * farz * nearz) / (farz - nearz),    0
+			0,      0,		-(2.0f * farz * nearz) / (farz - nearz),    0
 		};
 		//proj.a = xScale;
 		//proj.b = yScale;
