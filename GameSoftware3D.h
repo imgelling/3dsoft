@@ -179,8 +179,8 @@ namespace game
 
 		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
 		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
-		boundingBox.x = sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3);
-		boundingBox.y = sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3);
+		boundingBox.left = sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3);
+		boundingBox.top = sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3);
 
 		return boundingBox;
 	}
@@ -217,12 +217,12 @@ namespace game
 		// Screen clipping
 
 		// Partial offscreen
-		if (boundingBox.x < clip.x)
-			boundingBox.x = clip.x;
+		if (boundingBox.left < clip.left)
+			boundingBox.left = clip.left;
 		if (boundingBox.right > clip.right)
 			boundingBox.right = clip.right;
-		if (boundingBox.y < clip.y)
-			boundingBox.y = clip.y;
+		if (boundingBox.top < clip.top)
+			boundingBox.top = clip.top;
 		if (boundingBox.bottom > clip.bottom)
 			boundingBox.bottom = clip.bottom;
 
@@ -272,15 +272,15 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* buffer = _frameBuffer + (boundingBox.y * videoBufferStride + boundingBox.x);
-		float_t* zbuffer = _depth + (boundingBox.y * videoBufferStride + boundingBox.x);
+		uint32_t* buffer = _frameBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
+		float_t* zbuffer = _depth + (boundingBox.top * videoBufferStride + boundingBox.left);
 		uint32_t xLoopCount = 0;
 
-		for (int32_t j = boundingBox.y; j <= boundingBox.bottom; ++j)
+		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
 		{
 			foundTriangle = false;
 			xLoopCount = 0;
-			for (int32_t i = boundingBox.x; i <= boundingBox.right; ++i)
+			for (int32_t i = boundingBox.left; i <= boundingBox.right; ++i)
 			{
 				++xLoopCount;
 				pixelOffset = { i + 0.5f , j + 0.5f };
@@ -445,8 +445,8 @@ namespace game
 
 			// Screen clipping
 			// Offscreen completely
-			if ((boundingBox.right < clip.x) || (boundingBox.x > clip.right) ||
-				(boundingBox.bottom < clip.y) || (boundingBox.y > clip.bottom))
+			if ((boundingBox.right < clip.left) || (boundingBox.left > clip.right) ||
+				(boundingBox.bottom < clip.top) || (boundingBox.top > clip.bottom))
 			{
 				continue;
 			}

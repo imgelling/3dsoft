@@ -1,4 +1,9 @@
+#define GAME_SUPPORT_OPENGL
+#define GAME_SUPPORT_DIRECTX9
+#define GAME_SUPPORT_DIRECTX10
 #define GAME_SUPPORT_DIRECTX11
+#define GAME_SUPPORT_DIRECTX12
+
 #include "game.h"
 #include "GameSoftware3D.h"
 
@@ -56,104 +61,104 @@ public:
 		// check the webpage
 
 		//tl
-		clip[0].x = 0;
-		clip[0].y = 0;
+		clip[0].left = 0;
+		clip[0].top = 0;
 		clip[0].right = (640 - 1) / 2;
 		clip[0].bottom = (360 - 1) / 2;
 
 		// tr
-		clip[1].x = (640 - 1) / 2;
-		clip[1].y = 0;
+		clip[1].left = (640 - 1) / 2;
+		clip[1].top = 0;
 		clip[1].right = 640 - 1;
 		clip[1].bottom = (360 - 1) / 2;
 
 		// bl
-		clip[2].x = 0;
-		clip[2].y = (360 - 1) / 2;
+		clip[2].left = 0;
+		clip[2].top = (360 - 1) / 2;
 		clip[2].right = (640 - 1) / 2;
 		clip[2].bottom = 360 - 1;
 
 		// br
-		clip[3].x = (640 - 1) / 2;
-		clip[3].y = (360 - 1) / 2;
+		clip[3].left = (640 - 1) / 2;
+		clip[3].top = (360 - 1) / 2;
 		clip[3].right = 640 - 1;
 		clip[3].bottom = 360 - 1;
 
 
 		// --------------tr
 		//tl
-		clip[4].x = 0 + 640;
-		clip[4].y = 0;
+		clip[4].left = 0 + 640;
+		clip[4].top = 0;
 		clip[4].right = (640 - 1) / 2 + 640;
 		clip[4].bottom = (360 - 1) / 2;
 
 		// tr
-		clip[5].x = (640 - 1) / 2 + 640;
-		clip[5].y = 0;
+		clip[5].left = (640 - 1) / 2 + 640;
+		clip[5].top = 0;
 		clip[5].right = 640 - 1 + 640;
 		clip[5].bottom = (360 - 1) / 2;
 
 		// bl
-		clip[6].x = 0 + 640;
-		clip[6].y = (360 - 1) / 2;
+		clip[6].left = 0 + 640;
+		clip[6].bottom = (360 - 1) / 2;
 		clip[6].right = (640 - 1) / 2 + 640;
 		clip[6].bottom = 360 - 1;
 
 		// br
-		clip[7].x = (640 - 1) / 2 + 640;
-		clip[7].y = (360 - 1) / 2;
+		clip[7].left = (640 - 1) / 2 + 640;
+		clip[7].bottom = (360 - 1) / 2;
 		clip[7].right = 640 - 1 + 640;
 		clip[7].bottom = 360 - 1;
 
 
 		// --------------bl
 		//tl
-		clip[8].x = 0;
-		clip[8].y = 0 + 360;
+		clip[8].left = 0;
+		clip[8].bottom = 0 + 360;
 		clip[8].right = (640 - 1) / 2;
 		clip[8].bottom = (360 - 1) / 2 + 360;
 
 		// tr
-		clip[9].x = (640 - 1) / 2;
-		clip[9].y = 0 + 360;
+		clip[9].left = (640 - 1) / 2;
+		clip[9].bottom = 0 + 360;
 		clip[9].right = 640 - 1;
 		clip[9].bottom = (360 - 1) / 2 + 360;
 
 		// bl
-		clip[10].x = 0;
-		clip[10].y = (360 - 1) / 2 + 360;
+		clip[10].left = 0;
+		clip[10].top = (360 - 1) / 2 + 360;
 		clip[10].right = (640 - 1) / 2;
 		clip[10].bottom = 360 - 1 + 360;
 
 		// br
-		clip[11].x = (640 - 1) / 2;
-		clip[11].y = (360 - 1) / 2 + 360;
+		clip[11].left = (640 - 1) / 2;
+		clip[11].top = (360 - 1) / 2 + 360;
 		clip[11].right = 640 - 1;
 		clip[11].bottom = 360 - 1 + 360;
 
 
 		// ----------------br
 		//tl
-		clip[12].x = 0 + 640;
-		clip[12].y = 0 + 360;
+		clip[12].left = 0 + 640;
+		clip[12].top = 0 + 360;
 		clip[12].right = (640 - 1) / 2 + 640;
 		clip[12].bottom = (360 - 1) / 2 + 360;
 
 		// tr
-		clip[13].x = (640 - 1) / 2 + 640;
-		clip[13].y = 0 + 360;
+		clip[13].left = (640 - 1) / 2 + 640;
+		clip[13].top = 0 + 360;
 		clip[13].right = 640 - 1 + 640;
 		clip[13].bottom = (360 - 1) / 2 + 360;
 
 		// bl
-		clip[14].x = 0 + 640;
-		clip[14].y = (360 - 1) / 2 + 360;
+		clip[14].left = 0 + 640;
+		clip[14].top = (360 - 1) / 2 + 360;
 		clip[14].right = (640 - 1) / 2 + 640;
 		clip[14].bottom = 360 - 1 + 360;
 
 		// br
-		clip[15].x = (640 - 1) / 2 + 640;
-		clip[15].y = (360 - 1) / 2 + 360;
+		clip[15].left = (640 - 1) / 2 + 640;
+		clip[15].top = (360 - 1) / 2 + 360;
 		clip[15].right = 640 - 1 + 640;
 		clip[15].bottom = 360 - 1 + 360;
 	}
