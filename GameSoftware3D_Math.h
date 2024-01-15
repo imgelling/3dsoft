@@ -6,8 +6,6 @@
 
 namespace game
 {
-
-
 	inline Triangle RotateZ(const Triangle& tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);

@@ -236,7 +236,7 @@ public:
 				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
 				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
 				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
-				temp.vertices[v].z = tz;// 0.0f;// -(float_t)i;// / 100.0f;
+				temp.vertices[v].z = 1000.0f / i;
 			}
 
 			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);

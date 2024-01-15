@@ -13,7 +13,6 @@
 #define GAME_SOFTWARE3D_STATE_THREADED 1
 #define GAME_SOFTWARE3D_WIREFRAME_THICKNESS 2
 
-
 namespace game
 {
 
@@ -35,15 +34,6 @@ namespace game
 		float* GetDepth() const noexcept { return _depth; }
 
 		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
-		// No matrix math
-
-		//Triangle Translate(const Triangle& tri, Vector3f& translate) const noexcept;
-		//Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept;
-		//Triangle RotateX(const Triangle& tri, const float_t theta) const noexcept;
-		//Triangle RotateY(const Triangle& tri, const float_t theta) const noexcept;
-		//Triangle RotateZ(const Triangle& tri, const float_t theta) const noexcept;
-		//Triangle RotateXYZ(const Triangle& tri, const float_t thetaX, const float_t thetaY, const float_t thetaZ) const noexcept;
-
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -52,14 +42,14 @@ namespace game
 		int32_t _frameBufferWidth;
 		int32_t _frameBufferHeight;
 		float_t* _depth;
-		HANDLE _fenceEvent;
+		//HANDLE _fenceEvent;
 		FillMode _FillMode;
 	};
 
 	Software3D::Software3D()
 	{
 		_frameBuffer = nullptr;
-		_fenceEvent = nullptr;
+		//_fenceEvent = nullptr;
 		fence = 0;
 		_frameBufferWidth = 0;
 		_frameBufferHeight = 0;
@@ -70,8 +60,8 @@ namespace game
 
 	Software3D::~Software3D()
 	{
-		CloseHandle(_fenceEvent);
-		_fenceEvent = nullptr;
+		//CloseHandle(_fenceEvent);
+		//_fenceEvent = nullptr;
 		_threadPool.Stop();
 		delete[] _depth;
 		_depth = nullptr;
