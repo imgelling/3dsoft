@@ -6,6 +6,7 @@
 #include "GameColor.h"
 #include "GamePixelMode.h"
 #include "GameSoftware3D_Data.h"
+#include "GameSoftware3D_Math.h"
 #include "GameThreadPool.h"
 
 #define GAME_SOFTWARE3D_STATE_FILL_MODE 0
@@ -36,12 +37,12 @@ namespace game
 		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
 		// No matrix math
 
-		Triangle Translate(const Triangle& tri, Vector3f& translate) const noexcept;
-		Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept;
-		Triangle RotateX(const Triangle& tri, const float_t theta) const noexcept;
-		Triangle RotateY(const Triangle& tri, const float_t theta) const noexcept;
-		Triangle RotateZ(const Triangle& tri, const float_t theta) const noexcept;
-		Triangle RotateXYZ(const Triangle& tri, const float thetaX, const float thetaY, const float thetaZ) const noexcept;
+		//Triangle Translate(const Triangle& tri, Vector3f& translate) const noexcept;
+		//Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept;
+		//Triangle RotateX(const Triangle& tri, const float_t theta) const noexcept;
+		//Triangle RotateY(const Triangle& tri, const float_t theta) const noexcept;
+		//Triangle RotateZ(const Triangle& tri, const float_t theta) const noexcept;
+		//Triangle RotateXYZ(const Triangle& tri, const float_t thetaX, const float_t thetaY, const float_t thetaZ) const noexcept;
 
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
@@ -354,7 +355,6 @@ namespace game
 							float_t numerator = num * num;
 							return (numerator * denominator);
 						};
-
 					for (uint32_t dist = 0; dist < 3; dist++)
 					{
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
@@ -362,7 +362,7 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1)
 					{
-						float pre = dd;
+						float_t pre = dd;
 						//dd -= 0.5f;// 3.5f;
 						//if (dd > 1.0f) dd = 1.0f;
 						//dd = 1.0f - dd;
@@ -374,6 +374,13 @@ namespace game
 						++zbuffer;
 						continue;
 					}
+					else
+					{
+						if (!color)
+						{
+							*buffer = game::Colors::Black.packedARGB;
+						}
+					}
 				}
 
 				// Color filled
@@ -381,7 +388,7 @@ namespace game
 				{
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
-					float pre = dd;
+					float_t pre = dd;
 					dd += 1.0f;
 					dd = 1.0f / dd;
 					//dd += 0.3f; // simulate ambient 
@@ -469,94 +476,100 @@ namespace game
 // No Matrix Math
 
 
-	inline Triangle Software3D::RotateZ(const Triangle& tri, const float_t theta) const noexcept
-	{
-		Triangle ret(tri);
-		float_t ctheta = cos(theta);
-		float_t stheta = sin(theta);
+}
 
-		ret.vertices[0].x = (tri.vertices[0].x) * ctheta - (tri.vertices[0].y) * stheta;
-		ret.vertices[0].y = (tri.vertices[0].x) * stheta + (tri.vertices[0].y) * ctheta;
-		ret.vertices[1].x = (tri.vertices[1].x) * ctheta - (tri.vertices[1].y) * stheta;
-		ret.vertices[1].y = (tri.vertices[1].x) * stheta + (tri.vertices[1].y) * ctheta;
-		ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
-		ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
+static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
+{
+	float_t D2R = 3.14159f / 180.0f;
+	float_t halfFOV = tan((D2R * fov) / 2.0f);
+	float_t yScale = 1.0f / halfFOV;
+	float_t xScale = 1.0f / (aspect * halfFOV);
+	float_t m[] = {
+		xScale, 0,      0,                                         0,
+		0,      yScale, 0,                                         0,
+		0,      0,      (farz + nearz) / (farz - nearz),    	 1.0f,
+		0,      0,		-(2.0f * farz * nearz) / (farz - nearz),    0
+	};
+	//proj.a = xScale;
+	//proj.b = yScale;
+	//proj.c = farz / nearmfar;
+	//proj.d = 1.0f;
+	//proj.e = -(nearz * farz) / nearmfar;
+	//memcpy(&mret, m, sizeof(float_t) * 16);
+	int e = 0;
+	game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
+	game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
+	game::Vector3f ret;
+	ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret /= ret.w;
+	e += (ret.z != -1.0f);
+	std::cout << "\nFOV -1 to +1\n";
+	std::cout << "Nz = " << ret.z << "\n";
+	std::cout << "error = " << e << "\n";
 
-		return ret;
-	}
 
-	inline Triangle Software3D::RotateX(const Triangle& tri, const float_t theta) const noexcept
-	{
-		Triangle ret(tri);
-		float_t ctheta = cos(theta);
-		float_t stheta = sin(theta);
-
-		ret.vertices[0].y = (tri.vertices[0].y) * ctheta - (tri.vertices[0].z) * stheta;
-		ret.vertices[0].z = (tri.vertices[0].y) * stheta + (tri.vertices[0].z) * ctheta;
-		ret.vertices[1].y = (tri.vertices[1].y) * ctheta - (tri.vertices[1].z) * stheta;
-		ret.vertices[1].z = (tri.vertices[1].y) * stheta + (tri.vertices[1].z) * ctheta;
-		ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
-		ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
-
-		return ret;
-	}
-
-	inline Triangle Software3D::RotateY(const Triangle& tri, const float_t theta) const noexcept
-	{
-		Triangle ret(tri);
-		float_t ctheta = cos(theta);
-		float_t stheta = sin(theta);
-
-		ret.vertices[0].x = (tri.vertices[0].x) * ctheta + (tri.vertices[0].z) * stheta;
-		ret.vertices[0].z = (tri.vertices[0].x) * -stheta + (tri.vertices[0].z) * ctheta;
-		ret.vertices[1].x = (tri.vertices[1].x) * ctheta + (tri.vertices[1].z) * stheta;
-		ret.vertices[1].z = (tri.vertices[1].x) * -stheta + (tri.vertices[1].z) * ctheta;
-		ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
-		ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
-
-		return ret;
-	}
-
-	inline Triangle Software3D::RotateXYZ(const Triangle& tri, const float thetaX, const float thetaY, const float thetaZ) const noexcept
-	{
-		Triangle ret(tri);
-
-		ret = RotateX(ret, thetaX);
-		ret = RotateY(ret, thetaY);
-		ret = RotateZ(ret, thetaZ);
-
-		return ret;
-	}
-
-	inline Triangle Software3D::Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) const noexcept
-	{
-		Triangle ret(tri);
-
-		ret.vertices[0].x += _x;
-		ret.vertices[0].y += _y;
-		ret.vertices[0].z += _z;
-		ret.vertices[1].x += _x;
-		ret.vertices[1].y += _y;
-		ret.vertices[1].z += _z;
-		ret.vertices[2].x += _x;
-		ret.vertices[2].y += _y;
-		ret.vertices[2].z += _z;
-
-		return ret;
-	}
-	
-	inline Triangle Software3D::Translate(const Triangle& tri, Vector3f& translate) const noexcept
-	{
-		Triangle ret(tri);
-
-		ret.vertices[0] += translate;
-		ret.vertices[1] += translate;
-		ret.vertices[2] += translate;
-
-		return ret;
-	}
+	N = F;
+	ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret /= ret.w;
+	e += (ret.z != 1.0f);
+	std::cout << "Fz = " << ret.z << "\n";
+	std::cout << "error = " << e << "\n";
 
 }
 
+static void testmy_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
+{
+	float_t D2R = 3.14159f / 180.0f;
+	float_t halfFOV = tan((D2R * fov) / 2.0f);
+	float_t yScale = 1.0f / halfFOV;
+	float_t xScale = 1.0f / (aspect * halfFOV);
+	float_t m[] = {
+		xScale, 0,      0,                           0,
+		0,      yScale, 0,                           0,
+		0,      0,      farz / (farz - nearz),			 1,
+		0,      0,		-(nearz * farz) / (farz - nearz),	 0
+	};
+	//proj.a = xScale;
+	//proj.b = yScale;
+	//proj.c = farz / nearmfar;
+	//proj.d = 1.0f;
+	//proj.e = -(nearz * farz) / nearmfar;
+	//memcpy(&mret, m, sizeof(float_t) * 16);
+	int e = 0;
+	game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
+	game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
+	game::Vector3f ret;
+	//ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	//ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	//ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	//ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret.x = (N.x * m[0]);// +N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = N.y * m[5];// (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = /*(N.x * m[2] + N.y * m[6] + */(N.z * m[10] + N.w * m[14]);
+	ret.w = /*(N.x * m[3] + N.y * m[7] + */ N.z * m[11];// +N.w * m[15]);
+	ret /= ret.w;
+	e += (ret.z != 0);
+	std::cout << "\nFOV2 0 to +1\n";
+	std::cout << "Nz = " << ret.z << "\n";
+	std::cout << "error = " << e << "\n";
+
+
+	N = F;
+	ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret /= ret.w;
+	e += (ret.z != 1);
+	std::cout << "Fz = " << ret.z << "\n";
+	std::cout << "error = " << e << "\n";
+
+}
 
 #endif

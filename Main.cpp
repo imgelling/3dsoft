@@ -1,8 +1,8 @@
-#define GAME_SUPPORT_OPENGL
-#define GAME_SUPPORT_DIRECTX9
-#define GAME_SUPPORT_DIRECTX10
+//#define GAME_SUPPORT_OPENGL
+//#define GAME_SUPPORT_DIRECTX9
+//#define GAME_SUPPORT_DIRECTX10
 #define GAME_SUPPORT_DIRECTX11
-#define GAME_SUPPORT_DIRECTX12
+//#define GAME_SUPPORT_DIRECTX12
 
 #include "game.h"
 #include "GameSoftware3D.h"
@@ -39,7 +39,7 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 0;
+		scene = 2;
 		tz = 0.0f;
 	}
 
@@ -175,7 +175,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!Load("Content/monkeysmooth.obj", model))
+		if (!Load("Content/crypt.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -184,8 +184,8 @@ public:
 
 		rnd.NewSeed();
 
-		float z = 0.0f;// 100.0f;
-		float size = 1.0f;
+		float_t z = 0.0f;// 100.0f;
+		float_t size = 1.0f;
 
 		// tl
 		topLeftTri.vertices[0].x = -size;
@@ -229,7 +229,7 @@ public:
 		for (uint32_t i = 0; i < 1000; i++)
 		{
 			game::Triangle temp(topLeftTri);
-			float tz = rnd.RndRange(0, 1000) / (float)rnd.RndRange(1, 10);
+			float_t tz = rnd.RndRange(0, 1000) / (float_t)rnd.RndRange(1, 10);
 			for (uint32_t v = 0; v < 3; v++)
 			{
 				temp.vertices[v].x = (float_t)rnd.RndRange(0, 1280);
@@ -243,7 +243,7 @@ public:
 			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
 			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
 
-			float area(e0.c + e1.c + e2.c);
+			float_t area(e0.c + e1.c + e2.c);
 			// If area is negative, it means wrong winding
 			if (area < 0)
 			{
@@ -306,12 +306,12 @@ public:
 
 		if (geKeyboard.IsKeyHeld(geK_UP))
 		{
-			tz -= 0.1f;
+			tz -= 0.5f * (msElapsed / 1000.0f);;
 		}
 
 		if (geKeyboard.IsKeyHeld(geK_DOWN))
 		{
-			tz += 0.1f;
+			tz += 0.5f * (msElapsed / 1000.0f);;
 		}
 	}
 
@@ -355,99 +355,7 @@ public:
 		proj.e = -(nearz * farz) / (farz - nearz);
 	}
 
-	static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
-	{
-		float_t D2R = 3.14159f / 180.0f;
-		float_t halfFOV = tan((D2R * fov) / 2.0f);
-		float_t yScale = 1.0f / halfFOV;
-		float_t xScale = 1.0f / (aspect * halfFOV);
-		float_t m[] = {
-			xScale, 0,      0,                                         0,
-			0,      yScale, 0,                                         0,
-			0,      0,      (farz + nearz) / (farz - nearz),    	 1.0f,
-			0,      0,		-(2.0f * farz * nearz) / (farz - nearz),    0
-		};
-		//proj.a = xScale;
-		//proj.b = yScale;
-		//proj.c = farz / nearmfar;
-		//proj.d = 1.0f;
-		//proj.e = -(nearz * farz) / nearmfar;
-		//memcpy(&mret, m, sizeof(float_t) * 16);
-		int e = 0;
-		game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
-		game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
-		game::Vector3f ret;
-		ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-		ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-		ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-		ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
-		ret /= ret.w;
-		e += (ret.z != -1.0f);
-		std::cout << "\nFOV -1 to +1\n";
-		std::cout << "Nz = " << ret.z << "\n";
-		std::cout << "error = " << e << "\n";
 
-
-		N = F;
-		ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-		ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-		ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-		ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
-		ret /= ret.w;
-		e += (ret.z != 1.0f);
-		std::cout << "Fz = " << ret.z << "\n";
-		std::cout << "error = " << e << "\n";
-
-	}
-
-	static void testmy_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
-	{
-		float_t D2R = 3.14159f / 180.0f;
-		float_t halfFOV = tan((D2R * fov) / 2.0f);
-		float_t yScale = 1.0f / halfFOV;
-		float_t xScale = 1.0f / (aspect * halfFOV);
-		float_t m[] = {
-			xScale, 0,      0,                           0,
-			0,      yScale, 0,                           0,
-			0,      0,      farz / (farz - nearz),			 1,
-			0,      0,		-(nearz * farz) / (farz - nearz),	 0
-		};
-		//proj.a = xScale;
-		//proj.b = yScale;
-		//proj.c = farz / nearmfar;
-		//proj.d = 1.0f;
-		//proj.e = -(nearz * farz) / nearmfar;
-		//memcpy(&mret, m, sizeof(float_t) * 16);
-		int e = 0;
-		game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
-		game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
-		game::Vector3f ret;
-		//ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-		//ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-		//ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-		//ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
-		ret.x = (N.x * m[0]);// +N.y * m[4] + N.z * m[8] + N.w * m[12]);
-		ret.y = N.y * m[5];// (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-		ret.z = /*(N.x * m[2] + N.y * m[6] + */(N.z * m[10] + N.w * m[14]);
-		ret.w = /*(N.x * m[3] + N.y * m[7] + */ N.z * m[11];// +N.w * m[15]);
-		ret /= ret.w;
-		e += (ret.z != 0);
-		std::cout << "\nFOV2 0 to +1\n";
-		std::cout << "Nz = " << ret.z << "\n";
-		std::cout << "error = " << e << "\n";
-
-
-		N = F;
-		ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-		ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-		ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-		ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
-		ret /= ret.w;
-		e += (ret.z != 1);
-		std::cout << "Fz = " << ret.z << "\n";
-		std::cout << "error = " << e << "\n";
-
-	}
 
 	inline game::Triangle Project(const game::Triangle& vertex, const game::Projection& proj) const noexcept
 	{
@@ -499,13 +407,13 @@ public:
 		if (scene == 0)
 		{
 			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
-			test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
-			test = software3D.Translate(test, t);
+			test = game::RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
+			test = game::Translate(test, t);
 			test = Project(test,projection);
 			quad.emplace_back(test);
 
-			test = software3D.RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
-			test = software3D.Translate(test, t);
+			test = game::RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
+			test = game::Translate(test, t);
 			test = Project(test, projection);
 			quad.emplace_back(test);
 		}
@@ -515,8 +423,8 @@ public:
 			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			for (int i = 0; i < tris.size(); i++)
 			{
-				test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
-				test = software3D.Translate(test, t);
+				test = game::RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+				test = game::Translate(test, t);
 				test = Project(test, projection);
 				quad.emplace_back(test);
 			}
@@ -527,8 +435,8 @@ public:
 			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			for (int i = 0; i < model.tris.size(); i++)
 			{
-				test = software3D.RotateXYZ(model.tris[i], -rotation, rotation, rotation * 0.5f);
-				test = software3D.Translate(test, t);
+				test = game::RotateXYZ(model.tris[i], -rotation, rotation, rotation * 0.5f);
+				test = game::Translate(test, t);
 				test = Project(test, projection);
 				quad.emplace_back(test);
 			}
@@ -542,9 +450,9 @@ public:
 			if (!clippedTris[c].size()) continue;
 			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
 				{
-					float az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-					float bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-					return az > bz;
+					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+					return az < bz;
 				});
 			software3D.Render(clippedTris[c], clip[c]);
 			fenceCount += (uint32_t)clippedTris[c].size();
@@ -583,8 +491,8 @@ public:
 		{
 
 			game::Color dColor;
-			float depth = 0.0f;
-			float* zbuffer = software3D.GetDepth();
+			float_t depth = 0.0f;
+			float_t* zbuffer = software3D.GetDepth();
 			uint32_t* vbuffer = pixelMode.videoBuffer;
 			for (int pos = 0; pos < pixelMode.GetPixelFrameBufferSize().y * pixelMode.GetPixelFrameBufferSize().x; pos++)
 			{
@@ -597,14 +505,13 @@ public:
 				*vbuffer = dColor.packedABGR;
 				vbuffer++;
 			}
-			pixelMode.Text("Showing Depth buffer.", 0, 40, game::Colors::Yellow, 1);
+			pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Yellow, 1);
 		}
-		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 50, game::Colors::Yellow, 1);
+		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
 		game::Pointi m = pixelMode.GetScaledMousePosition();
-		//int depthAtMouse = (m.y * pixelMode.GetPixelFrameBufferSize().x + m.x);
-		float* zb = software3D.GetDepth();
-		float depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
-		pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 60, game::Colors::Yellow, 2);
+		float_t* zb = software3D.GetDepth();
+		float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
+		pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 50, game::Colors::Yellow, 1);
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
@@ -817,8 +724,8 @@ int32_t main()
 	Game engine;
 	engine.geSetLogger(&logger);
 
-	engine.testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
-	engine.testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+	testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+	testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 
 	// Create the needed bits for the engine
 	if (!engine.geCreate())
