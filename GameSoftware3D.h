@@ -229,13 +229,13 @@ namespace game
 
 		// Color parameter	
 		Color colorAtPixel;
-		ParameterEquation r(tri.color[0].rf * tri.vertices[0].w, tri.color[1].rf * tri.vertices[1].w, tri.color[2].rf * tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf * tri.vertices[0].w, tri.color[1].gf * tri.vertices[1].w, tri.color[2].gf * tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf * tri.vertices[0].w, tri.color[1].bf * tri.vertices[1].w, tri.color[2].bf * tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation r(tri.color[0].rf / tri.vertices[0].w, tri.color[1].rf / tri.vertices[1].w, tri.color[2].rf / tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf / tri.vertices[0].w, tri.color[1].gf / tri.vertices[1].w, tri.color[2].gf / tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf / tri.vertices[0].w, tri.color[1].bf / tri.vertices[1].w, tri.color[2].bf / tri.vertices[2].w, e0, e1, e2, area);
 		
 		// Depth parameter
 		float_t dd(0.0f);
-		ParameterEquation depth(tri.vertices[0].w, tri.vertices[1].w, tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation depth(1.0f / tri.vertices[0].w, 1.0f / tri.vertices[1].w, 1.0f / tri.vertices[2].w, e0, e1, e2, area);
 		if (tri.color[0].packedABGR == Colors::Magenta.packedABGR) std::cout << tri.vertices[0].w << "\n";
 
 		// Wireframe precalcs
@@ -333,7 +333,7 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				dd = depth.evaluate(pixelOffset.x, pixelOffset.y);
+				dd = 1.0f / (depth.evaluate(pixelOffset.x, pixelOffset.y));
 				if (dd < *zbuffer)
 				{
 					*zbuffer = dd;
@@ -381,9 +381,11 @@ namespace game
 				{
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
 					// depth test
-					float pre = 1.0f / dd;
+					float pre = dd;
 					dd += 1.0f;
-					dd = 1.0f;// / dd;
+					dd = 1.0f / dd;
+					//dd += 0.3f; // simulate ambient 
+					dd = min(dd, 1.0f);
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
@@ -465,16 +467,7 @@ namespace game
 		}
 	}
 // No Matrix Math
-	inline Triangle Software3D::Translate(const Triangle& tri, Vector3f& translate) const noexcept
-	{
-		Triangle ret(tri);
 
-		ret.vertices[0] += translate;
-		ret.vertices[1] += translate;
-		ret.vertices[2] += translate;
-
-		return ret;
-	}
 
 	inline Triangle Software3D::RotateZ(const Triangle& tri, const float_t theta) const noexcept
 	{
@@ -548,6 +541,17 @@ namespace game
 		ret.vertices[2].x += _x;
 		ret.vertices[2].y += _y;
 		ret.vertices[2].z += _z;
+
+		return ret;
+	}
+	
+	inline Triangle Software3D::Translate(const Triangle& tri, Vector3f& translate) const noexcept
+	{
+		Triangle ret(tri);
+
+		ret.vertices[0] += translate;
+		ret.vertices[1] += translate;
+		ret.vertices[2] += translate;
 
 		return ret;
 	}

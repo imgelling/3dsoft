@@ -34,7 +34,7 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 2;
+		scene = 0;
 		tz = 0.0f;
 	}
 
@@ -310,40 +310,31 @@ public:
 		}
 	}
 
-	// left handed -1 to 1
+	// Left handed (GL) -1 to +1
 	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, game::Projection& proj)
 	{
 		float_t D2R = 3.14159f / 180.0f;
-		float_t yScale = 1.0f / tan(D2R * fov / 2);
+		float_t yScale = 1.0f / tan((D2R * fov) / 2);
 		float_t xScale = yScale / aspect;
-		float_t nearmfar = farz - nearz;
+		//float_t nearmfar = farz - nearz;
 		//float_t m[] = {
 		//	xScale, 0,      0,                           0,
 		//	0,      yScale, 0,                           0,
 		//	0,      0,      (farz + nearz) / nearmfar,   1,
-		//	0,      0,      (2 * farz * nearz) / nearmfar, 0
+		//	0,      0,      -(2 * farz * nearz) / nearmfar, 0
 		//};
-		//memcpy(mret, m, sizeof(float_t) * 16);
 		proj.a = xScale;
 		proj.b = yScale;
-		proj.c = (farz + nearz) / nearmfar;
+		proj.c = (farz + nearz) / (farz - nearz);
 		proj.d = 1.0f;
-		proj.e = -(2.0f * farz * nearz) / nearmfar;
+		proj.e = -(2.0f * farz * nearz) / (farz - nearz);
 	}
 
-	// left handed (D3DXFovLH) 0 to +1
-	////		float_t m[] = {
-	//  xScale, 0, 0, 0,
-	//	0, yScale, 0, 0,
-	//	0, 0, farz / (farz - nearz), 1,
-	//	0, 0, -(nearz * farz) / (farz - nearz), 0
-	//	};
-	//	//
+	// Left handed (DX) 0 to +1
 	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, game::Projection& proj)
 	{
 		float_t D2R = 3.14159f / 180.0f;
-
-		float_t halfFOV = tan(0.25f / 2.0f);
+		float_t halfFOV = tan((D2R * fov) / 2.0f);
 		float_t yScale = 1.0f / halfFOV;
 		float_t xScale = 1.0f / (aspect * halfFOV);
 		//  float_t m[] = {
@@ -361,9 +352,10 @@ public:
 
 	static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
 	{
-		float_t halfFOV = tan(0.25f / 2.0f);
-		float_t yScale = 1.0f / halfFOV;// 1.0f / tan(0.25 / 2.0f);
-		float_t xScale = 1.0f / (aspect * halfFOV);//yScale / aspect;
+		float_t D2R = 3.14159f / 180.0f;
+		float_t halfFOV = tan((D2R * fov) / 2.0f);
+		float_t yScale = 1.0f / halfFOV;
+		float_t xScale = 1.0f / (aspect * halfFOV);
 		float_t m[] = {
 			xScale, 0,      0,                                         0,
 			0,      yScale, 0,                                         0,
@@ -405,10 +397,10 @@ public:
 
 	static void testmy_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
 	{
-		float_t halfFOV = tan(0.25f / 2.0f);
-		float_t yScale = 1.0f / halfFOV;// 1.0f / tan(0.25 / 2.0f);
-		float_t xScale = 1.0f / (aspect * halfFOV);//yScale / aspect;
-		
+		float_t D2R = 3.14159f / 180.0f;
+		float_t halfFOV = tan((D2R * fov) / 2.0f);
+		float_t yScale = 1.0f / halfFOV;
+		float_t xScale = 1.0f / (aspect * halfFOV);
 		float_t m[] = {
 			xScale, 0,      0,                           0,
 			0,      yScale, 0,                           0,
@@ -501,7 +493,7 @@ public:
 
 		if (scene == 0)
 		{
-			game::Vector3f t(0.0f, 0.0f, 10.0f+tz);
+			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			test = software3D.RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
 			test = software3D.Translate(test, t);
 			test = Project(test,projection);
@@ -515,7 +507,7 @@ public:
 
 		if (scene == 1)
 		{
-			game::Vector3f t(0.0f, 0.0f, 10.0f + tz);
+			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			for (int i = 0; i < tris.size(); i++)
 			{
 				test = software3D.RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
@@ -527,7 +519,7 @@ public:
 
 		if (scene == 2)
 		{
-			game::Vector3f t(0.0f, 0.0f, 10.0f + tz);
+			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			for (int i = 0; i < model.tris.size(); i++)
 			{
 				test = software3D.RotateXYZ(model.tris[i], -rotation, rotation, rotation * 0.5f);
@@ -593,7 +585,8 @@ public:
 			{
 				depth = *zbuffer;
 				zbuffer++;
-				//depth += 1.0f;
+				depth += 1.0f;  // 1 added because z becomes < 1.0f near camera and makes depth > 1.0 making colors
+								// go all weird
 				depth = 1.0f/depth;
 				dColor.Set(1.0f * depth, 1.0f * depth, 1.0f * depth, 1.0f);
 				*vbuffer = dColor.packedABGR;
@@ -602,6 +595,11 @@ public:
 			pixelMode.Text("Showing Depth buffer.", 0, 40, game::Colors::Yellow, 1);
 		}
 		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 50, game::Colors::Yellow, 1);
+		game::Pointi m = pixelMode.GetScaledMousePosition();
+		//int depthAtMouse = (m.y * pixelMode.GetPixelFrameBufferSize().x + m.x);
+		float* zb = software3D.GetDepth();
+		float depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
+		pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 60, game::Colors::Yellow, 2);
 		
 
 		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
@@ -648,10 +646,10 @@ public:
 		// Parse the file
 		if (f.is_open())
 		{
-			unsigned char junk = 0;
-			unsigned int p1 = 0, p2 = 0, p3 = 0;
-			unsigned int n1 = 0, n2 = 0, n3 = 0;
-			unsigned int uv1 = 0, uv2 = 0, uv3 = 0;
+			uint8_t junk = 0;
+			uint32_t p1 = 0, p2 = 0, p3 = 0;
+			uint32_t n1 = 0, n2 = 0, n3 = 0;
+			uint32_t uv1 = 0, uv2 = 0, uv3 = 0;
 			while (!f.eof())
 			{
 				junk = 0;
@@ -719,15 +717,15 @@ public:
 					}
 					game::Triangle tri;
 					// Vertices
-					tri.vertices[0] = verts[p1 - 1];
-					tri.vertices[1] = verts[p3 - 1];
-					tri.vertices[2] = verts[p2 - 1];
+					tri.vertices[0] = verts[(size_t)p1 - 1];
+					tri.vertices[1] = verts[(size_t)p3 - 1];
+					tri.vertices[2] = verts[(size_t)p2 - 1];
 					// UV (texture) coords
 					if (hasUVs)
 					{
-						tri.uvs[0] = uvs[uv1 - 1];// Vector2d(uvs[uv1 - 1].x, uvs[uv1 - 1].y);
-						tri.uvs[1] = uvs[uv3 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
-						tri.uvs[2] = uvs[uv2 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
+						tri.uvs[0] = uvs[(size_t)uv1 - 1];// Vector2d(uvs[uv1 - 1].x, uvs[uv1 - 1].y);
+						tri.uvs[1] = uvs[(size_t)uv3 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
+						tri.uvs[2] = uvs[(size_t)uv2 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
 					}
 					else
 					{
@@ -740,9 +738,9 @@ public:
 					// count the vertices
 					if (!hasNormals)
 					{
-						vcount[p1 - 1]++;
-						vcount[p3 - 1]++;
-						vcount[p2 - 1]++;
+						vcount[(size_t)p1 - 1]++;
+						vcount[(size_t)p3 - 1]++;
+						vcount[(size_t)p2 - 1]++;
 						game::Vector3i t;
 						t.x = p1 - 1;
 						t.y = p3 - 1;
@@ -762,16 +760,16 @@ public:
 					{
 						// Add the face normal to the vertex normals
 						tri.faceNormal.Normalize();
-						tri.normals[0] = norms[n1 - 1];
-						tri.normals[1] = norms[n3 - 1];
-						tri.normals[2] = norms[n2 - 1];
+						tri.normals[0] = norms[(size_t)n1 - 1];
+						tri.normals[1] = norms[(size_t)n3 - 1];
+						tri.normals[2] = norms[(size_t)n2 - 1];
 					}
 					else
 					{
 						// Sum the normals
-						norms[p1 - 1] += tri.faceNormal;
-						norms[p3 - 1] += tri.faceNormal;
-						norms[p2 - 1] += tri.faceNormal;
+						norms[(size_t)p1 - 1] += tri.faceNormal;
+						norms[(size_t)p3 - 1] += tri.faceNormal;
+						norms[(size_t)p2 - 1] += tri.faceNormal;
 						tri.faceNormal.Normalize();
 
 					}
@@ -796,9 +794,9 @@ public:
 			}
 			for (int i = 0; i < mesh.tris.size(); i++)
 			{
-				mesh.tris[i].color[0] = game::Colors::DarkGray;
-				mesh.tris[i].color[1] = game::Colors::DarkGray;
-				mesh.tris[i].color[2] = game::Colors::DarkGray;
+				mesh.tris[i].color[0] = game::Colors::White;
+				mesh.tris[i].color[1] = game::Colors::White;
+				mesh.tris[i].color[2] = game::Colors::White;
 			}
 
 			return true;
