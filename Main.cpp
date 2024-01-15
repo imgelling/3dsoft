@@ -39,7 +39,7 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 2;
+		scene = 1;
 		tz = 0.0f;
 	}
 
@@ -175,7 +175,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!Load("Content/crypt.obj", model))
+		if (!Load("Content/torus.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -192,6 +192,10 @@ public:
 		topLeftTri.vertices[0].y = -size;
 		topLeftTri.vertices[0].z = z;
 		topLeftTri.color[0] = game::Colors::Red;
+		topLeftTri.faceNormal.x = 0.0f;
+		topLeftTri.faceNormal.y = 0.0f;
+		topLeftTri.faceNormal.z = -1.0f;
+
 
 		// tr
 		topLeftTri.vertices[1].x = size;
@@ -211,6 +215,9 @@ public:
 		bottomRightTri.vertices[0].y = -size;
 		bottomRightTri.vertices[0].z = z;
 		bottomRightTri.color[0] = game::Colors::Green;
+		bottomRightTri.faceNormal.x = 0.0f;
+		bottomRightTri.faceNormal.y = 0.0f;
+		bottomRightTri.faceNormal.z = -1.0f;
 
 		// br
 		bottomRightTri.vertices[1].x = size;
@@ -359,7 +366,7 @@ public:
 
 	inline game::Triangle Project(const game::Triangle& vertex, const game::Projection& proj) const noexcept
 	{
-		game::Triangle ret;
+		game::Triangle ret(vertex);
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -665,7 +672,9 @@ public:
 					// Calculate the face normal of the triangle
 					a = tri.vertices[1] - tri.vertices[0];
 					b = tri.vertices[2] - tri.vertices[0];
-					tri.faceNormal = a.Cross(b);
+					// this was changed to make face normals work with gamelib2
+					tri.faceNormal = b.Cross(a);
+					//tri.faceNormal = a.Cross(b);  // orig
 
 
 					if (hasNormals)

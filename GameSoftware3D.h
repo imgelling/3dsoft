@@ -229,6 +229,17 @@ namespace game
 		ParameterEquation depth(1.0f / tri.vertices[0].w, 1.0f / tri.vertices[1].w, 1.0f / tri.vertices[2].w, e0, e1, e2, area);
 		if (tri.color[0].packedABGR == Colors::Magenta.packedABGR) std::cout << tri.vertices[0].w << "\n";
 
+		// Face normal parameter not needed as is same across the tri
+		//ParameterEquation fn(tri.faceNormal.x / tri.vertices[0].w, tri.faceNormal.y / tri.vertices[1].w, tri.faceNormal.z / tri.vertices[2].w, e0, e1, e2, area);
+
+		// face normal light pre calc
+		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
+		Vector3f light(1.25f, 0.0f, -1.0f);  // where lite is AT not where it is pointing
+		light.Normalize();
+		float_t lum = face.Dot(light);
+		lum = lum < 0.0f ? 0.0f : lum;
+
+
 		// Wireframe precalcs
 		float_t d[3] = {};
 		float_t minDistSq(0.0f);
@@ -374,15 +385,22 @@ namespace game
 				}
 
 				// Color filled
+				
 				if (color)
 				{
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
-					// depth test
+					
+					// depth color
 					float_t pre = dd;
-					dd += 1.0f;
-					dd = 1.0f / dd;
-					//dd += 0.3f; // simulate ambient 
-					dd = min(dd, 1.0f);
+					//dd += 1.0f;
+					//dd = 1.0f / dd;
+					////dd += 0.3f; // simulate ambient 
+					//dd = min(dd, 1.0f);
+
+					// face normal lit
+					dd = lum + 0.1f; // ambient
+					dd = dd > 1.0f ? 1.0f : dd;
+					//std::cout << dd << "\n";
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;

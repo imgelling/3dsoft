@@ -19,6 +19,9 @@ namespace game
 		ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
 		ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
 
+		ret.faceNormal.x = (tri.faceNormal.x) * ctheta - (tri.faceNormal.y) * stheta;
+		ret.faceNormal.y = (tri.faceNormal.x) * stheta + (tri.faceNormal.y) * ctheta;
+
 		return ret;
 	}
 
@@ -35,6 +38,9 @@ namespace game
 		ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
 		ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
 
+		ret.faceNormal.y = (tri.faceNormal.y) * ctheta - (tri.faceNormal.z) * stheta;
+		ret.faceNormal.z = (tri.faceNormal.y) * stheta + (tri.faceNormal.z) * ctheta;
+
 		return ret;
 	}
 
@@ -50,6 +56,10 @@ namespace game
 		ret.vertices[1].z = (tri.vertices[1].x) * -stheta + (tri.vertices[1].z) * ctheta;
 		ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
 		ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
+
+		// face normals
+		ret.faceNormal.x = (tri.faceNormal.x) * ctheta + (tri.faceNormal.z) * stheta;
+		ret.faceNormal.z = (tri.faceNormal.x) * -stheta + (tri.faceNormal.z) * ctheta;
 
 		return ret;
 	}
