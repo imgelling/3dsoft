@@ -648,9 +648,9 @@ public:
 					}
 					else
 					{
-						tri.uvs[0] = game::Vector2f(0, 0);
-						tri.uvs[1] = game::Vector2f(0, 0);
-						tri.uvs[2] = game::Vector2f(0, 0);
+						tri.uvs[0];// = game::Vector2f(0, 0);
+						tri.uvs[1];// = game::Vector2f(0, 0);
+						tri.uvs[2];// = game::Vector2f(0, 0);
 					}
 
 
@@ -681,16 +681,19 @@ public:
 					{
 						// Add the face normal to the vertex normals
 						tri.faceNormal.Normalize();
-						tri.normals[0] = norms[(size_t)n1 - 1];
-						tri.normals[1] = norms[(size_t)n3 - 1];
-						tri.normals[2] = norms[(size_t)n2 - 1];
+						tri.normals[0] = norms[(size_t)n1 - 1];// * -1.0f;
+						tri.normals[1] = norms[(size_t)n3 - 1];// * -1.0f;
+						tri.normals[2] = norms[(size_t)n2 - 1];// * -1.0f;
+						tri.normals[0].Normalize();
+						tri.normals[1].Normalize();
+						tri.normals[2].Normalize();
 					}
 					else
 					{
 						// Sum the normals
-						norms[(size_t)p1 - 1] += tri.faceNormal;
-						norms[(size_t)p3 - 1] += tri.faceNormal;
-						norms[(size_t)p2 - 1] += tri.faceNormal;
+						norms[(size_t)p1 - 1] += tri.faceNormal;// *-1.0f;
+						norms[(size_t)p3 - 1] += tri.faceNormal;// *-1.0f;
+						norms[(size_t)p2 - 1] += tri.faceNormal;// *-1.0f;
 						tri.faceNormal.Normalize();
 
 					}

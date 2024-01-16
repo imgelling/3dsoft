@@ -232,12 +232,17 @@ namespace game
 		// Face normal parameter not needed as is same across the tri
 		//ParameterEquation fn(tri.faceNormal.x / tri.vertices[0].w, tri.faceNormal.y / tri.vertices[1].w, tri.faceNormal.z / tri.vertices[2].w, e0, e1, e2, area);
 
-		// face normal light pre calc
+		// face normal light pre calc (directional light)
 		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f light(1.25f, 0.0f, -1.0f);  // where lite is AT not where it is pointing
+		Vector3f light(-1.0f, 0.0f, 0.0f);  // where lite is AT not where it is pointing
 		light.Normalize();
 		float_t lum = face.Dot(light);
-		lum = lum < 0.0f ? 0.0f : lum;
+		lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
+
+		// Vertex normal parameters
+		ParameterEquation vnx(tri.normals[0].x / tri.vertices[0].w, tri.normals[1].x / tri.vertices[1].w, tri.normals[2].x / tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation vny(tri.normals[0].y / tri.vertices[0].w, tri.normals[1].y / tri.vertices[1].w, tri.normals[2].y / tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation vnz(tri.normals[0].z / tri.vertices[0].w, tri.normals[1].z / tri.vertices[1].w, tri.normals[2].z / tri.vertices[2].w, e0, e1, e2, area);
 
 
 		// Wireframe precalcs
@@ -397,10 +402,19 @@ namespace game
 					////dd += 0.3f; // simulate ambient 
 					//dd = min(dd, 1.0f);
 
-					// face normal lit
+					//// face normal lit
+					//dd = lum + 0.1f; // ambient
+					//dd = dd > 1.0f ? 1.0f : dd;
+					////std::cout << dd << "\n";
+					
+					// vertex normal lit
+					Vector3f normal(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
+					normal.Normalize();
+					float_t lum = normal.Dot(light);
+					lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
 					dd = lum + 0.1f; // ambient
-					dd = dd > 1.0f ? 1.0f : dd;
-					//std::cout << dd << "\n";
+					dd = min(dd, 1.0f);
+
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;

@@ -19,6 +19,15 @@ namespace game
 		ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
 		ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
 
+		// vertex normals
+		ret.normals[0].x = (tri.normals[0].x) * ctheta - (tri.normals[0].y) * stheta;
+		ret.normals[0].y = (tri.normals[0].x) * stheta + (tri.normals[0].y) * ctheta;
+		ret.normals[1].x = (tri.normals[1].x) * ctheta - (tri.normals[1].y) * stheta;
+		ret.normals[1].y = (tri.normals[1].x) * stheta + (tri.normals[1].y) * ctheta;
+		ret.normals[2].x = (tri.normals[2].x) * ctheta - (tri.normals[2].y) * stheta;
+		ret.normals[2].y = (tri.normals[2].x) * stheta + (tri.normals[2].y) * ctheta;
+
+		// face normals
 		ret.faceNormal.x = (tri.faceNormal.x) * ctheta - (tri.faceNormal.y) * stheta;
 		ret.faceNormal.y = (tri.faceNormal.x) * stheta + (tri.faceNormal.y) * ctheta;
 
@@ -38,6 +47,15 @@ namespace game
 		ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
 		ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
 
+		// vertex normals
+		ret.normals[0].y = (tri.normals[0].y) * ctheta - (tri.normals[0].z) * stheta;
+		ret.normals[0].z = (tri.normals[0].y) * stheta + (tri.normals[0].z) * ctheta;
+		ret.normals[1].y = (tri.normals[1].y) * ctheta - (tri.normals[1].z) * stheta;
+		ret.normals[1].z = (tri.normals[1].y) * stheta + (tri.normals[1].z) * ctheta;
+		ret.normals[2].y = (tri.normals[2].y) * ctheta - (tri.normals[2].z) * stheta;
+		ret.normals[2].z = (tri.normals[2].y) * stheta + (tri.normals[2].z) * ctheta;
+
+		// face normals
 		ret.faceNormal.y = (tri.faceNormal.y) * ctheta - (tri.faceNormal.z) * stheta;
 		ret.faceNormal.z = (tri.faceNormal.y) * stheta + (tri.faceNormal.z) * ctheta;
 
@@ -56,6 +74,14 @@ namespace game
 		ret.vertices[1].z = (tri.vertices[1].x) * -stheta + (tri.vertices[1].z) * ctheta;
 		ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
 		ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
+
+		// vertex normals
+		ret.normals[0].x = (tri.normals[0].x) * ctheta + (tri.normals[0].z) * stheta;
+		ret.normals[0].z = (tri.normals[0].x) * -stheta + (tri.normals[0].z) * ctheta;
+		ret.normals[1].x = (tri.normals[1].x) * ctheta + (tri.normals[1].z) * stheta;
+		ret.normals[1].z = (tri.normals[1].x) * -stheta + (tri.normals[1].z) * ctheta;
+		ret.normals[2].x = (tri.normals[2].x) * ctheta + (tri.normals[2].z) * stheta;
+		ret.normals[2].z = (tri.normals[2].x) * -stheta + (tri.normals[2].z) * ctheta;
 
 		// face normals
 		ret.faceNormal.x = (tri.faceNormal.x) * ctheta + (tri.faceNormal.z) * stheta;
