@@ -231,7 +231,8 @@ namespace game
 
 		// Face normal light pre calc (directional light)
 		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f light(0.0f, 1.0f, 0.0f);  // direction the light is shining to (opposite for y)
+		Vector3f light(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
+		Color lightColor = Colors::Yellow;
 		light.Normalize();
 		float_t lum = -face.Dot(light);// Should have the negative as it is left handed
 		lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
@@ -412,6 +413,16 @@ namespace game
 					// Face and vertex normal lighting
 					dd = lum + 0.05f; // ambient
 					dd = min(dd, 1.0f);
+
+					//// Colored light
+					//float rp = r.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					//float gp = g.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					//float bp = b.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+
+					//rp = min(((lum * lightColor.rf)+(rp))/2.0f, 1.0f);
+					//gp = min(((lum * lightColor.gf)+(gp))/2.0f,1.0f);
+					//bp = min(((lum * lightColor.bf)+(bp))/2.0f,1.0f);
+					//colorAtPixel.Set(rp, gp, bp, 1.0f);
 
 					// Common to all lighting
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
