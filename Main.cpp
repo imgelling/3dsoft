@@ -177,7 +177,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		if (!Load("Content/teapot.obj", model))
+		if (!Load("Content/torus.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -210,6 +210,11 @@ public:
 		topLeftTri.vertices[2].y = size;
 		topLeftTri.vertices[2].z = z;
 		topLeftTri.color[2] = game::Colors::Blue;
+
+		//game::Vector3f u = topLeftTri.vertices[1] - topLeftTri.vertices[0];
+		//game::Vector3f v = topLeftTri.vertices[2] - topLeftTri.vertices[0];
+		//topLeftTri.faceNormal = u.Cross(v);// topLeftTri.vertices[0].Cross(topLeftTri.vertices[1]);
+		//topLeftTri.faceNormal.Normalize();
 
 
 		// tr
