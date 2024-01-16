@@ -233,6 +233,12 @@ public:
 		bottomRightTri.vertices[2].z = z;
 		bottomRightTri.color[2] = game::Colors::Blue;
 
+		for (uint32_t i = 0; i < 3; i++)
+		{
+			topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
+			bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
+		}
+
 
 		// Generate a 1000 tris
 		for (uint32_t i = 0; i < 1000; i++)

@@ -231,9 +231,9 @@ namespace game
 
 		// Face normal light pre calc (directional light)
 		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f light(-1.0f, 0.0f, 0.0f);  // where light is AT not where it is pointing directional
+		Vector3f light(0.0f, 0.0f, 1.0f);  // direction of light 
 		light.Normalize();
-		float_t lum = face.Dot(light);
+		float_t lum = -face.Dot(light);// Should have the negative as it is left handed
 		lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
 
 		// Vertex normal parameters (directional light)
@@ -406,7 +406,7 @@ namespace game
 
 					// Vertex normal lighting
 					Vector3f normal(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					float_t lum = normal.Dot(light);
+					float_t lum = -normal.Dot(light);
 					lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting
