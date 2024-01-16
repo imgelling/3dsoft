@@ -33,13 +33,13 @@ public:
 	uint32_t scene;
 	float_t tz;
 
-	game::FillMode state = game::FillMode::WireFrameFilled;
+	game::FillMode state = game::FillMode::FilledColor;
 
 	Game() : game::Engine()
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 1;
+		scene = 2;
 		tz = 0.0f;
 	}
 
@@ -175,7 +175,9 @@ public:
 			geLogLastError();
 		}
 
-		if (!Load("Content/torus.obj", model))
+		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
+
+		if (!Load("Content/teapot.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}

@@ -196,13 +196,9 @@ namespace game
 		{
 			fence++;
 			return;
-			//std::swap(v1, v2);
-			//e0.Set(v1, v2);
-			//e1.Set(v2, v0);
-			//e2.Set(v0, v1);
 		}
 
-		game::Recti boundingBox = TriangleBoundingBox(tri);
+		game::Recti boundingBox(TriangleBoundingBox(tri));
 		game::Vector2f pixelOffset;
 
 		// Screen clipping
@@ -217,33 +213,36 @@ namespace game
 		if (boundingBox.bottom > clip.bottom)
 			boundingBox.bottom = clip.bottom;
 
+		// 301 fps
+		Vector3f oneOverW(1.0f / tri.vertices[0].w, 1.0f / tri.vertices[1].w, 1.0f / tri.vertices[2].w);
 
 		// Color parameter	
 		Color colorAtPixel;
-		ParameterEquation r(tri.color[0].rf / tri.vertices[0].w, tri.color[1].rf / tri.vertices[1].w, tri.color[2].rf / tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf / tri.vertices[0].w, tri.color[1].gf / tri.vertices[1].w, tri.color[2].gf / tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf / tri.vertices[0].w, tri.color[1].bf / tri.vertices[1].w, tri.color[2].bf / tri.vertices[2].w, e0, e1, e2, area);
-		
+		//ParameterEquation r(tri.color[0].rf / tri.vertices[0].w, tri.color[1].rf / tri.vertices[1].w, tri.color[2].rf / tri.vertices[2].w, e0, e1, e2, area);
+		//ParameterEquation g(tri.color[0].gf / tri.vertices[0].w, tri.color[1].gf / tri.vertices[1].w, tri.color[2].gf / tri.vertices[2].w, e0, e1, e2, area);
+		//ParameterEquation b(tri.color[0].bf / tri.vertices[0].w, tri.color[1].bf / tri.vertices[1].w, tri.color[2].bf / tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation r(tri.color[0].rf * oneOverW.x, tri.color[1].rf * oneOverW.y, tri.color[2].rf * oneOverW.z, e0, e1, e2, area);
+		ParameterEquation g(tri.color[0].gf * oneOverW.x, tri.color[1].gf * oneOverW.y, tri.color[2].gf * oneOverW.z, e0, e1, e2, area);
+		ParameterEquation b(tri.color[0].bf * oneOverW.x, tri.color[1].bf * oneOverW.y, tri.color[2].bf * oneOverW.z, e0, e1, e2, area);
+
 		// Depth parameter
 		float_t dd(0.0f);
 		ParameterEquation depth(1.0f / tri.vertices[0].w, 1.0f / tri.vertices[1].w, 1.0f / tri.vertices[2].w, e0, e1, e2, area);
-		if (tri.color[0].packedABGR == Colors::Magenta.packedABGR) std::cout << tri.vertices[0].w << "\n";
 
-		// Face normal parameter not needed as is same across the tri
-		//ParameterEquation fn(tri.faceNormal.x / tri.vertices[0].w, tri.faceNormal.y / tri.vertices[1].w, tri.faceNormal.z / tri.vertices[2].w, e0, e1, e2, area);
-
-		// face normal light pre calc (directional light)
+		// Face normal light pre calc (directional light)
 		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f light(-1.0f, 0.0f, 0.0f);  // where lite is AT not where it is pointing
+		Vector3f light(-1.0f, 0.0f, 0.0f);  // where light is AT not where it is pointing directional
 		light.Normalize();
 		float_t lum = face.Dot(light);
 		lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
 
-		// Vertex normal parameters
-		ParameterEquation vnx(tri.normals[0].x / tri.vertices[0].w, tri.normals[1].x / tri.vertices[1].w, tri.normals[2].x / tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation vny(tri.normals[0].y / tri.vertices[0].w, tri.normals[1].y / tri.vertices[1].w, tri.normals[2].y / tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation vnz(tri.normals[0].z / tri.vertices[0].w, tri.normals[1].z / tri.vertices[1].w, tri.normals[2].z / tri.vertices[2].w, e0, e1, e2, area);
-
+		// Vertex normal parameters (directional light)
+		//ParameterEquation vnx(tri.normals[0].x / tri.vertices[0].w, tri.normals[1].x / tri.vertices[1].w, tri.normals[2].x / tri.vertices[2].w, e0, e1, e2, area);
+		//ParameterEquation vny(tri.normals[0].y / tri.vertices[0].w, tri.normals[1].y / tri.vertices[1].w, tri.normals[2].y / tri.vertices[2].w, e0, e1, e2, area);
+		//ParameterEquation vnz(tri.normals[0].z / tri.vertices[0].w, tri.normals[1].z / tri.vertices[1].w, tri.normals[2].z / tri.vertices[2].w, e0, e1, e2, area);
+		ParameterEquation vnx(tri.normals[0].x * oneOverW.x, tri.normals[1].x * oneOverW.y, tri.normals[2].x * oneOverW.z, e0, e1, e2, area);
+		ParameterEquation vny(tri.normals[0].y * oneOverW.x, tri.normals[1].y * oneOverW.y, tri.normals[2].y * oneOverW.z, e0, e1, e2, area);
+		ParameterEquation vnz(tri.normals[0].z * oneOverW.x, tri.normals[1].z * oneOverW.y, tri.normals[2].z * oneOverW.z, e0, e1, e2, area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -393,28 +392,28 @@ namespace game
 				
 				if (color)
 				{
-					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y), g.evaluate(pixelOffset.x, pixelOffset.y), b.evaluate(pixelOffset.x, pixelOffset.y), 1.0f);
+					// No lighting
+					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y) * dd, g.evaluate(pixelOffset.x, pixelOffset.y) * dd, b.evaluate(pixelOffset.x, pixelOffset.y) * dd, 1.0f);
 					
-					// depth color
+					// original 1/(1/w)
 					float_t pre = dd;
-					//dd += 1.0f;
-					//dd = 1.0f / dd;
-					////dd += 0.3f; // simulate ambient 
-					//dd = min(dd, 1.0f);
-
-					//// face normal lit
-					//dd = lum + 0.1f; // ambient
-					//dd = dd > 1.0f ? 1.0f : dd;
-					////std::cout << dd << "\n";
 					
-					// vertex normal lit
+					//// Depth based lighting color
+					////dd += 1.0f;
+					////dd = 1.0f / dd;
+					//////dd += 0.3f; // simulate ambient 
+					////dd = min(dd, 1.0f);
+
+					// Vertex normal lighting
 					Vector3f normal(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					normal.Normalize();
 					float_t lum = normal.Dot(light);
 					lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
+
+					// Face and vertex normal lighting
 					dd = lum + 0.1f; // ambient
 					dd = min(dd, 1.0f);
 
+					// Common to all lighting
 					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
 					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
