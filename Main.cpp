@@ -170,14 +170,14 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),0))
+		if (!software3D.Initialize(pixelMode, pixelMode.GetPixelFrameBufferSize(),0))
 		{
 			geLogLastError();
 		}
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		if (!Load("Content/torus.obj", model))
+		if (!Load("Content/teapot.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -512,8 +512,8 @@ public:
 
 			game::Color dColor;
 			float_t depth = 0.0f;
-			float_t* zbuffer = software3D.GetDepth();
-			uint32_t* vbuffer = pixelMode.videoBuffer;
+			float_t* zbuffer = software3D.currentDepthBuffer;
+			uint32_t* vbuffer = pixelMode.currentVideoBuffer;
 			for (int pos = 0; pos < pixelMode.GetPixelFrameBufferSize().y * pixelMode.GetPixelFrameBufferSize().x; pos++)
 			{
 				depth = *zbuffer;
@@ -529,7 +529,7 @@ public:
 		}
 		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
 		game::Pointi m = pixelMode.GetScaledMousePosition();
-		float_t* zb = software3D.GetDepth();
+		float_t* zb = software3D.currentDepthBuffer;
 		float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
 		pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 50, game::Colors::Yellow, 1);
 		

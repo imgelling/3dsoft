@@ -21,7 +21,7 @@ namespace game
 	public:
 		Software3D();
 		~Software3D();
-		bool Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads);
+		bool Initialize(PixelMode& pixelMode, const Pointi& size, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
 		void Fence(uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
@@ -31,30 +31,38 @@ namespace game
 		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth(const float_t depth);
-		float* GetDepth() const noexcept { return _depth; }
+		//float* GetDepth() const noexcept { return currentDepthBuffer; }
 
 		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
+		float* currentDepthBuffer;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
+		PixelMode* _pixelMode;
 		ThreadPool _threadPool;
 		uint32_t* _frameBuffer;
 		int32_t _frameBufferWidth;
 		int32_t _frameBufferHeight;
-		float_t* _depth;
+		float_t* _depth0;
+		float_t* _depth1;
+		uint32_t _currentDepthBuffer;
 		//HANDLE _fenceEvent;
 		FillMode _FillMode;
 	};
 
 	Software3D::Software3D()
 	{
+		_pixelMode = nullptr;
 		_frameBuffer = nullptr;
 		//_fenceEvent = nullptr;
 		fence = 0;
 		_frameBufferWidth = 0;
 		_frameBufferHeight = 0;
 		_multiThreaded = false;
-		_depth = nullptr;
+		_depth0 = nullptr;
+		_depth1 = nullptr;
+		currentDepthBuffer = nullptr;
+		_currentDepthBuffer = 0;
 		_FillMode = FillMode::WireFrameFilled;
 	}
 
@@ -63,8 +71,11 @@ namespace game
 		//CloseHandle(_fenceEvent);
 		//_fenceEvent = nullptr;
 		_threadPool.Stop();
-		delete[] _depth;
-		_depth = nullptr;
+		if (_depth0 != nullptr) delete[] _depth0;
+		if (_depth1 != nullptr) delete[] _depth1;
+		_depth0 = nullptr;
+		_depth1 = nullptr;
+		currentDepthBuffer = nullptr;
 	}
 
 	inline void Software3D::Fence(uint64_t fenceValue) noexcept
@@ -75,7 +86,32 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		std::fill_n(_depth, _frameBufferWidth * _frameBufferHeight, depth);
+
+		_frameBuffer = _pixelMode->currentVideoBuffer;
+		if (_multiThreaded)
+		{
+			_threadPool.Queue(std::bind(std::fill_n<float_t*, int, float_t>, currentDepthBuffer, (_frameBufferWidth * _frameBufferHeight), depth));
+		}
+		else
+		{
+			std::fill_n(currentDepthBuffer, _frameBufferWidth * _frameBufferHeight, depth);
+		}
+
+
+		if (_currentDepthBuffer == 1)
+		{
+			currentDepthBuffer = _depth0;
+			_currentDepthBuffer = 0;
+			return;
+		}
+
+		if (_currentDepthBuffer == 0)
+		{
+			currentDepthBuffer = _depth1;
+			_currentDepthBuffer = 1;
+			return;
+		}
+
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -108,9 +144,10 @@ namespace game
 		return false;
 	}
 
-	inline bool Software3D::Initialize(uint32_t* frameBuffer, const Pointi& size, const int32_t threads = -1)
+	inline bool Software3D::Initialize(PixelMode& pixelMode, const Pointi& size, const int32_t threads = -1)
 	{
-		_frameBuffer = frameBuffer;
+		_pixelMode = &pixelMode;
+		//_frameBuffer = frameBuffer;
 		fence = 0;
 		_frameBufferWidth = size.width;
 		_frameBufferHeight = size.height;
@@ -123,7 +160,11 @@ namespace game
 			_multiThreaded = true;
 			_threadPool.Start(threads);
 		}
-		_depth = new float[size.width * size.height];
+		_depth0 = new float_t[size.width * size.height];
+		_depth1 = new float_t[size.width * size.height];
+		std::fill_n(_depth0, _frameBufferWidth * _frameBufferHeight, 1000.0f);
+		std::fill_n(_depth1, _frameBufferWidth * _frameBufferHeight, 1000.0f);
+		currentDepthBuffer = _depth0;
 		return true;
 	}
 
@@ -280,7 +321,7 @@ namespace game
 		}
 
 		uint32_t* buffer = _frameBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
-		float_t* zbuffer = _depth + (boundingBox.top * videoBufferStride + boundingBox.left);
+		float_t* zbuffer = currentDepthBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
 		uint32_t xLoopCount = 0;
 
 		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
@@ -406,9 +447,9 @@ namespace game
 					////dd = min(dd, 1.0f);
 
 					// Vertex normal lighting
-					//Vector3f normal(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					//float_t lum = -normal.Dot(light);
-					//lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
+					Vector3f normal(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
+					float_t lum = -normal.Dot(light);
+					lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting
 					dd = lum + 0.05f; // ambient
