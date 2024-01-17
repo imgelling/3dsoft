@@ -217,29 +217,29 @@ namespace game
 		return boundingBox;
 	}
 
-	template<bool wireFrame, bool color>
-	inline void Software3D::DrawColored(const Triangle& tri, const Recti& clip)
+	template<bool renderWireFrame, bool renderColor>
+	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip)
 	{
-		game::Vector3f v0(tri.vertices[0].x, tri.vertices[0].y, 0);
-		game::Vector3f v1(tri.vertices[1].x, tri.vertices[1].y, 0);
-		game::Vector3f v2(tri.vertices[2].x, tri.vertices[2].y, 0);
+		game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
+		game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
+		game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
 
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_frameBufferWidth);
 
-		EdgeEquation e0(v1, v2);
-		EdgeEquation e1(v2, v0);
-		EdgeEquation e2(v0, v1);
+		EdgeEquation edge0(vertex1, vertex2);
+		EdgeEquation edge1(vertex2, vertex0);
+		EdgeEquation edge2(vertex0, vertex1);
 
 		// back face cull
-		float_t area(e0.c + e1.c + e2.c);
+		float_t area(edge0.c + edge1.c + edge2.c);
 		if (area < 0)
 		{
 			fence++;
 			return;
 		}
 
-		game::Recti boundingBox(TriangleBoundingBox(tri));
+		game::Recti boundingBox(TriangleBoundingBox(triangle));
 		game::Vector2f pixelOffset;
 
 		// Screen clipping
@@ -255,36 +255,30 @@ namespace game
 			boundingBox.bottom = clip.bottom;
 
 		// 301 fps
-		Vector3f oneOverW(1.0f / tri.vertices[0].w, 1.0f / tri.vertices[1].w, 1.0f / tri.vertices[2].w);
+		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
 		// Color parameter	
 		Color colorAtPixel;
-		//ParameterEquation r(tri.color[0].rf / tri.vertices[0].w, tri.color[1].rf / tri.vertices[1].w, tri.color[2].rf / tri.vertices[2].w, e0, e1, e2, area);
-		//ParameterEquation g(tri.color[0].gf / tri.vertices[0].w, tri.color[1].gf / tri.vertices[1].w, tri.color[2].gf / tri.vertices[2].w, e0, e1, e2, area);
-		//ParameterEquation b(tri.color[0].bf / tri.vertices[0].w, tri.color[1].bf / tri.vertices[1].w, tri.color[2].bf / tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation r(tri.color[0].rf * oneOverW.x, tri.color[1].rf * oneOverW.y, tri.color[2].rf * oneOverW.z, e0, e1, e2, area);
-		ParameterEquation g(tri.color[0].gf * oneOverW.x, tri.color[1].gf * oneOverW.y, tri.color[2].gf * oneOverW.z, e0, e1, e2, area);
-		ParameterEquation b(tri.color[0].bf * oneOverW.x, tri.color[1].bf * oneOverW.y, tri.color[2].bf * oneOverW.z, e0, e1, e2, area);
+		ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, edge0, edge1, edge2, area);
+		ParameterEquation gColorParam(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, edge0, edge1, edge2, area);
+		ParameterEquation bColorParam(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, edge0, edge1, edge2, area);
 
 		// Depth parameter
-		float_t dd(0.0f);
-		ParameterEquation depth(1.0f / tri.vertices[0].w, 1.0f / tri.vertices[1].w, 1.0f / tri.vertices[2].w, e0, e1, e2, area);
+		float_t oneOverDepthEval(0.0f);
+		ParameterEquation depthParam(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w, edge0, edge1, edge2, area);
 
-		// Face normal light pre calc (directional light)
-		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f light(1.0f, 0.0f, 0.0f);  // direction the light is shining to (opposite for y)
+		// Face normal light pre calc (directional light) can add ambient here
+		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
+		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
+		lightNormal.Normalize();
 		Color lightColor = Colors::Yellow;
-		light.Normalize();
-		float_t lum = -face.Dot(light);// Should have the negative as it is left handed
-		lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
+		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
+		luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 		// Vertex normal parameters (directional light)
-		//ParameterEquation vnx(tri.normals[0].x / tri.vertices[0].w, tri.normals[1].x / tri.vertices[1].w, tri.normals[2].x / tri.vertices[2].w, e0, e1, e2, area);
-		//ParameterEquation vny(tri.normals[0].y / tri.vertices[0].w, tri.normals[1].y / tri.vertices[1].w, tri.normals[2].y / tri.vertices[2].w, e0, e1, e2, area);
-		//ParameterEquation vnz(tri.normals[0].z / tri.vertices[0].w, tri.normals[1].z / tri.vertices[1].w, tri.normals[2].z / tri.vertices[2].w, e0, e1, e2, area);
-		ParameterEquation vnx(tri.normals[0].x * oneOverW.x, tri.normals[1].x * oneOverW.y, tri.normals[2].x * oneOverW.z, e0, e1, e2, area);
-		ParameterEquation vny(tri.normals[0].y * oneOverW.x, tri.normals[1].y * oneOverW.y, tri.normals[2].y * oneOverW.z, e0, e1, e2, area);
-		ParameterEquation vnz(tri.normals[0].z * oneOverW.x, tri.normals[1].z * oneOverW.y, tri.normals[2].z * oneOverW.z, e0, e1, e2, area);
+		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, edge0, edge1, edge2, area);
+		ParameterEquation vny(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, edge0, edge1, edge2, area);
+		ParameterEquation vnz(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, edge0, edge1, edge2, area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -294,22 +288,22 @@ namespace game
 		float_t xy[3] = {}; //x2 * y1 then xy - yx
 		float_t yx[3] = {}; //y2 * x1;
 		float_t denominator[3] = {};	//1.0f / (xx * xx + yy * yy);
-		if (wireFrame)
+		if (renderWireFrame)
 		{
-			yy[0] = tri.vertices[1].y - tri.vertices[0].y;
-			xx[0] = tri.vertices[1].x - tri.vertices[0].x;
-			xy[0] = tri.vertices[1].x * tri.vertices[0].y;
-			yx[0] = tri.vertices[1].y * tri.vertices[0].x;
+			yy[0] = triangle.vertices[1].y - triangle.vertices[0].y;
+			xx[0] = triangle.vertices[1].x - triangle.vertices[0].x;
+			xy[0] = triangle.vertices[1].x * triangle.vertices[0].y;
+			yx[0] = triangle.vertices[1].y * triangle.vertices[0].x;
 
-			yy[1] = tri.vertices[2].y - tri.vertices[1].y;
-			xx[1] = tri.vertices[2].x - tri.vertices[1].x;
-			xy[1] = tri.vertices[2].x * tri.vertices[1].y;
-			yx[1] = tri.vertices[2].y * tri.vertices[1].x;
+			yy[1] = triangle.vertices[2].y - triangle.vertices[1].y;
+			xx[1] = triangle.vertices[2].x - triangle.vertices[1].x;
+			xy[1] = triangle.vertices[2].x * triangle.vertices[1].y;
+			yx[1] = triangle.vertices[2].y * triangle.vertices[1].x;
 
-			yy[2] = tri.vertices[0].y - tri.vertices[2].y;
-			xx[2] = tri.vertices[0].x - tri.vertices[2].x;
-			xy[2] = tri.vertices[0].x * tri.vertices[2].y;
-			yx[2] = tri.vertices[0].y * tri.vertices[2].x;
+			yy[2] = triangle.vertices[0].y - triangle.vertices[2].y;
+			xx[2] = triangle.vertices[0].x - triangle.vertices[2].x;
+			xy[2] = triangle.vertices[0].x * triangle.vertices[2].y;
+			yx[2] = triangle.vertices[0].y * triangle.vertices[2].x;
 
 			xy[0] = xy[0] - yx[0];
 			xy[1] = xy[1] - yx[1];
@@ -320,8 +314,8 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* buffer = _frameBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
-		float_t* zbuffer = currentDepthBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
+		uint32_t* colorBuffer = _frameBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
+		float_t* depthBuffer = currentDepthBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
 		uint32_t xLoopCount = 0;
 
 		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
@@ -333,68 +327,68 @@ namespace game
 				++xLoopCount;
 				pixelOffset = { i + 0.5f , j + 0.5f };
 
-				if (e0.test(pixelOffset.x, pixelOffset.y))
+				if (edge0.test(pixelOffset.x, pixelOffset.y))
 				{
 					if (foundTriangle)
 					{
-						++buffer;
-						++zbuffer;
+						++colorBuffer;
+						++depthBuffer;
 						break;
 					}
 					else
 					{
-						++buffer;
-						++zbuffer;
+						++colorBuffer;
+						++depthBuffer;
 						continue;
 					}
 				}
-				if (e1.test(pixelOffset.x, pixelOffset.y))
+				if (edge1.test(pixelOffset.x, pixelOffset.y))
 				{
 					if (foundTriangle)
 					{
-						++buffer;
-						++zbuffer;
+						++colorBuffer;
+						++depthBuffer;
 						break;
 					}
 					else
 					{
-						++buffer;
-						++zbuffer;
+						++colorBuffer;
+						++depthBuffer;
 						continue;
 					}
 				}
-				if (e2.test(pixelOffset.x, pixelOffset.y))
+				if (edge2.test(pixelOffset.x, pixelOffset.y))
 				{
 					if (foundTriangle)
 					{
-						++buffer;
-						++zbuffer;
+						++colorBuffer;
+						++depthBuffer;
 						break;
 					}
 					else
 					{
-						++buffer;
-						++zbuffer;
+						++colorBuffer;
+						++depthBuffer;
 						continue;
 					}
 				}
 				foundTriangle = true;
 
 				// depth buffer test
-				dd = 1.0f / (depth.evaluate(pixelOffset.x, pixelOffset.y));
-				if (dd < *zbuffer)
+				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
+				if (oneOverDepthEval < *depthBuffer)
 				{
-					*zbuffer = dd;
+					*depthBuffer = oneOverDepthEval;
 				}
 				else
 				{
-					++buffer;
-					++zbuffer;
+					++colorBuffer;
+					++depthBuffer;
 					continue;
 				}
 				
 				// Wireframe
-				if (wireFrame)
+				if (renderWireFrame)
 				{
 					auto distanceFromPointToLineSq = [&](const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx, const float_t denominator)
 						{
@@ -409,74 +403,74 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1)
 					{
-						float_t pre = dd;
+						float_t pre = oneOverDepthEval;
 						//dd -= 0.5f;// 3.5f;
 						//if (dd > 1.0f) dd = 1.0f;
 						//dd = 1.0f - dd;
 						//pre *= dd;
 						//colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
 						//*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
-						*buffer = game::Colors::White.packedARGB;
-						++buffer;
-						++zbuffer;
+						*colorBuffer = game::Colors::White.packedARGB;
+						++colorBuffer;
+						++depthBuffer;
 						continue;
 					}
 					else
 					{
-						if (!color)
+						if (!renderColor)
 						{
-							*buffer = game::Colors::Black.packedARGB;
+							*colorBuffer = game::Colors::Black.packedARGB;
 						}
 					}
 				}
 
 				// Color filled
 				
-				if (color)
+				if (renderColor)
 				{
 					// No lighting
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y) * dd, g.evaluate(pixelOffset.x, pixelOffset.y) * dd, b.evaluate(pixelOffset.x, pixelOffset.y) * dd, 1.0f);
 					
 					// original 1/(1/w)
-					float_t pre = dd;
+					float_t pre = oneOverDepthEval;
 					
-					//// Depth based lighting color
-					////dd += 1.0f;
-					////dd = 1.0f / dd;
-					//////dd += 0.3f; // simulate ambient 
-					////dd = min(dd, 1.0f);
+					// Depth based lighting color
+					//luminance = oneOverDepthEval + 1.0f;
+					//luminance = 1.0f / luminance;
+					//luminance += 0.3f; // simulate ambient 
+					//luminance = min(luminance, 1.0f);
 
 					// Vertex normal lighting
-					Vector3f normal(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					float_t lum = -normal.Dot(light);
-					lum = max(0.0f, lum);// < 0.0f ? 0.0f : lum;
+					//Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
+					//luminance = -vertexNormalEval.Dot(lightNormal);
+					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
-					// Face and vertex normal lighting
-					dd = lum + 0.05f; // ambient
-					dd = min(dd, 1.0f);
+					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
+					float_t luminanceAmbient(luminance + 0.05f);
+					luminanceAmbient = min(luminanceAmbient, 1.0f);
 
 					//// Colored light
-					//float rp = r.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-					//float gp = g.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-					//float bp = b.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					//float gp = gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					//float bp = bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 
-					//rp = min(((lum * lightColor.rf)+(rp))/2.0f, 1.0f);
-					//gp = min(((lum * lightColor.gf)+(gp))/2.0f,1.0f);
-					//bp = min(((lum * lightColor.bf)+(bp))/2.0f,1.0f);
+					//rp = min(((luminance * lightColor.rf) + (rp)) / 2.0f, 1.0f);
+					//gp = min(((luminance * lightColor.gf) + (gp)) / 2.0f, 1.0f);
+					//bp = min(((luminance * lightColor.bf) + (bp)) / 2.0f, 1.0f);
 					//colorAtPixel.Set(rp, gp, bp, 1.0f);
 
-					// Common to all lighting
-					float_t rd = min(r.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
-					float_t gd = min(g.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
-					float_t bd = min(b.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * dd;
+					// Common to all lighting except colored
+					float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
+					float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
+					float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
-					*buffer = colorAtPixel.packedABGR;
+					*colorBuffer = colorAtPixel.packedABGR;
 				}
-				++buffer;
-				++zbuffer;
+				++colorBuffer;
+				++depthBuffer;
 			}
-			buffer += videoBufferStride - xLoopCount;
-			zbuffer += videoBufferStride - xLoopCount;
+			colorBuffer += videoBufferStride - xLoopCount;
+			depthBuffer += videoBufferStride - xLoopCount;
 		}
 		fence++;
 	}
