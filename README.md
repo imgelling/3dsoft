@@ -18,3 +18,5 @@ D - Show depth buffer, hold down
 1 - Quad scene
 
 2 - 1000 triangle scene
+
+3 - Loaded model scene. It won't show any thing becuase models are not in this repository. But you can use your own
