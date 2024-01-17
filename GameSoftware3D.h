@@ -30,11 +30,11 @@ namespace game
 		void DrawColored(const Triangle& tri, const Recti& clip);
 		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
+		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
-		//float* GetDepth() const noexcept { return currentDepthBuffer; }
 
 		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
-		float* currentDepthBuffer;
+		float_t* currentDepthBuffer;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -97,7 +97,6 @@ namespace game
 			std::fill_n(currentDepthBuffer, _frameBufferWidth * _frameBufferHeight, depth);
 		}
 
-
 		if (_currentDepthBuffer == 1)
 		{
 			currentDepthBuffer = _depth0;
@@ -139,6 +138,7 @@ namespace game
 				_multiThreaded = false;
 				_threadPool.Stop();
 			}
+			return true;
 		}
 
 		return false;
@@ -329,46 +329,40 @@ namespace game
 
 				if (edge0.test(pixelOffset.x, pixelOffset.y))
 				{
+					++colorBuffer;
+					++depthBuffer;
 					if (foundTriangle)
 					{
-						++colorBuffer;
-						++depthBuffer;
 						break;
 					}
 					else
 					{
-						++colorBuffer;
-						++depthBuffer;
 						continue;
 					}
 				}
 				if (edge1.test(pixelOffset.x, pixelOffset.y))
 				{
+					++colorBuffer;
+					++depthBuffer;
 					if (foundTriangle)
 					{
-						++colorBuffer;
-						++depthBuffer;
 						break;
 					}
 					else
 					{
-						++colorBuffer;
-						++depthBuffer;
 						continue;
 					}
 				}
 				if (edge2.test(pixelOffset.x, pixelOffset.y))
 				{
+					++colorBuffer;
+					++depthBuffer;
 					if (foundTriangle)
 					{
-						++colorBuffer;
-						++depthBuffer;
 						break;
 					}
 					else
 					{
-						++colorBuffer;
-						++depthBuffer;
 						continue;
 					}
 				}
