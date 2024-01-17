@@ -272,7 +272,7 @@ namespace game
 
 		// Face normal light pre calc (directional light)
 		Vector3f face(tri.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f light(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
+		Vector3f light(1.0f, 0.0f, 0.0f);  // direction the light is shining to (opposite for y)
 		Color lightColor = Colors::Yellow;
 		light.Normalize();
 		float_t lum = -face.Dot(light);// Should have the negative as it is left handed
