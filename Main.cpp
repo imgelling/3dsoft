@@ -28,6 +28,9 @@ public:
 	std::vector<game::Triangle> tris;
 	game::Mesh model;
 
+	std::vector<game::Triangle> quad;
+	game::Triangle test;
+
 	uint32_t maxFPS;
 
 	uint32_t scene;
@@ -39,7 +42,7 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 2;
+		scene = 1;
 		tz = 0.0f;
 	}
 
@@ -274,6 +277,8 @@ public:
 
 		// Pre calc projection matrix
 		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projection);
+
+		quad.reserve(1000);
 	}
 
 	void Shutdown()
@@ -421,12 +426,17 @@ public:
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
-		std::vector<game::Triangle> quad;
-		game::Triangle test;
+		// 329
+		//std::vector<game::Triangle> quad;
+		//game::Triangle test;
+
+		// 501
+		quad.clear();
+
+		game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 
 		if (scene == 0)
 		{
-			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			test = game::RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
 			test = game::Translate(test, t);
 			test = Project(test,projection);
@@ -440,7 +450,6 @@ public:
 
 		if (scene == 1)
 		{
-			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			for (int i = 0; i < tris.size(); i++)
 			{
 				test = game::RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
@@ -452,7 +461,6 @@ public:
 
 		if (scene == 2)
 		{
-			game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
 			for (int i = 0; i < model.tris.size(); i++)
 			{
 				test = game::RotateXYZ(model.tris[i], -rotation, rotation, rotation * 0.5f);

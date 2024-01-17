@@ -254,7 +254,6 @@ namespace game
 		if (boundingBox.bottom > clip.bottom)
 			boundingBox.bottom = clip.bottom;
 
-		// 301 fps
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
 		// Color parameter	
@@ -534,9 +533,6 @@ namespace game
 			out.emplace_back(in[tri]);
 		}
 	}
-// No Matrix Math
-
-
 }
 
 static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
