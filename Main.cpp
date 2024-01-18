@@ -23,7 +23,6 @@ public:
 	game::Triangle bottomRightTri;
 	game::Recti clip[16];
 	std::vector<game::Triangle> clippedTris[16];
-	//float_t projMat[16];
 	game::Projection projection;
 	std::vector<game::Triangle> tris;
 	game::Mesh model;
@@ -41,6 +40,8 @@ public:
 	Game() : game::Engine()
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
+		ZeroMemory(&topLeftTri, sizeof(game::Triangle));
+		ZeroMemory(&bottomRightTri, sizeof(game::Triangle));
 		maxFPS = 0;
 		scene = 0;
 		tz = 0.0f;
@@ -173,7 +174,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode, pixelMode.GetPixelFrameBufferSize(),0))
+		if (!software3D.Initialize(pixelMode.currentVideoBuffer, pixelMode.GetPixelFrameBufferSize(),0))
 		{
 			geLogLastError();
 		}
@@ -520,7 +521,7 @@ public:
 
 			game::Color dColor;
 			float_t depth = 0.0f;
-			float_t* zbuffer = software3D.currentDepthBuffer;
+			float_t* zbuffer = software3D.depthBuffer;
 			uint32_t* vbuffer = pixelMode.currentVideoBuffer;
 			for (int pos = 0; pos < pixelMode.GetPixelFrameBufferSize().y * pixelMode.GetPixelFrameBufferSize().x; pos++)
 			{
@@ -537,7 +538,7 @@ public:
 		}
 		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
 		game::Pointi m = pixelMode.GetScaledMousePosition();
-		float_t* zb = software3D.currentDepthBuffer;
+		float_t* zb = software3D.depthBuffer;
 		float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
 		pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 50, game::Colors::Yellow, 1);
 		

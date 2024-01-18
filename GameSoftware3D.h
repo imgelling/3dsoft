@@ -21,7 +21,7 @@ namespace game
 	public:
 		Software3D();
 		~Software3D();
-		bool Initialize(PixelMode& pixelMode, const Pointi& size, const int32_t threads);
+		bool Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
 		void Fence(uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
@@ -32,48 +32,36 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
-
 		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
-		float_t* currentDepthBuffer;
+		float_t* depthBuffer;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
-		PixelMode* _pixelMode;
 		ThreadPool _threadPool;
-		uint32_t* _frameBuffer;
-		uint32_t _frameBufferWidth;
-		uint32_t _frameBufferHeight;
+		uint32_t* _colorBuffer;
+		uint32_t _colorBufferStride;
 		uint32_t _totalBufferSize;
-		float_t* _depth0;
-		uint32_t _currentDepthBuffer;
-		//HANDLE _fenceEvent;
+		//float_t* _depthBuffer;
 		FillMode _FillMode;
 	};
 
 	Software3D::Software3D()
 	{
-		_pixelMode = nullptr;
-		_frameBuffer = nullptr;
-		//_fenceEvent = nullptr;
+		_colorBuffer = nullptr;
 		fence = 0;
-		_frameBufferWidth = 0;
-		_frameBufferHeight = 0;
+		_colorBufferStride = 0;
 		_totalBufferSize = 0;
 		_multiThreaded = false;
-		_depth0 = nullptr;
-		currentDepthBuffer = nullptr;
-		_currentDepthBuffer = 0;
+		//_depthBuffer = nullptr;
+		depthBuffer = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
 	}
 
 	Software3D::~Software3D()
 	{
-		//CloseHandle(_fenceEvent);
-		//_fenceEvent = nullptr;
 		_threadPool.Stop();
-		if (_depth0 != nullptr) delete[] _depth0;
-		_depth0 = nullptr;
-		currentDepthBuffer = nullptr;
+		if (depthBuffer != nullptr) delete[] depthBuffer;
+		depthBuffer = nullptr;
 	}
 
 	inline void Software3D::Fence(uint64_t fenceValue) noexcept
@@ -84,9 +72,7 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		_frameBuffer = _pixelMode->currentVideoBuffer;
-
-		std::fill_n(currentDepthBuffer, _totalBufferSize, depth); 
+		std::fill_n(depthBuffer, _totalBufferSize, depth); 
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -120,14 +106,12 @@ namespace game
 		return false;
 	}
 
-	inline bool Software3D::Initialize(PixelMode& pixelMode, const Pointi& size, const int32_t threads = -1)
+	inline bool Software3D::Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads = -1)
 	{
-		_pixelMode = &pixelMode;
-		//_frameBuffer = frameBuffer;
+		_colorBuffer = colorBuffer;
 		fence = 0;
-		_frameBufferWidth = size.width;
-		_frameBufferHeight = size.height;
-		_totalBufferSize = _frameBufferWidth * _frameBufferHeight;
+		_colorBufferStride = colorBufferSize.width;
+		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
 		if (threads < 0)
 		{
 			_multiThreaded = false;
@@ -137,8 +121,7 @@ namespace game
 			_multiThreaded = true;
 			_threadPool.Start(threads);
 		}
-		_depth0 = new float_t[size.width * size.height];
-		currentDepthBuffer = _depth0;
+		depthBuffer = new float_t[colorBufferSize.width * colorBufferSize.height];
 		ClearDepth(1000.0f);
 		return true;
 	}
@@ -200,7 +183,7 @@ namespace game
 		game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
 
 		bool foundTriangle(false);
-		uint32_t videoBufferStride(_frameBufferWidth);
+		uint32_t videoBufferStride(_colorBufferStride);
 
 		EdgeEquation edge0(vertex1, vertex2);
 		EdgeEquation edge1(vertex2, vertex0);
@@ -288,8 +271,8 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* colorBuffer = _frameBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
-		float_t* depthBuffer = currentDepthBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
+		uint32_t* colorBuffer = _colorBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
+		float_t* depthBufferPtr = depthBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
 		uint32_t xLoopCount = 0;
 
 		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
@@ -304,7 +287,7 @@ namespace game
 				if (edge0.test(pixelOffset.x, pixelOffset.y))
 				{
 					++colorBuffer;
-					++depthBuffer;
+					++depthBufferPtr;
 					if (foundTriangle)
 					{
 						break;
@@ -317,7 +300,7 @@ namespace game
 				if (edge1.test(pixelOffset.x, pixelOffset.y))
 				{
 					++colorBuffer;
-					++depthBuffer;
+					++depthBufferPtr;
 					if (foundTriangle)
 					{
 						break;
@@ -330,7 +313,7 @@ namespace game
 				if (edge2.test(pixelOffset.x, pixelOffset.y))
 				{
 					++colorBuffer;
-					++depthBuffer;
+					++depthBufferPtr;
 					if (foundTriangle)
 					{
 						break;
@@ -344,14 +327,14 @@ namespace game
 
 				// depth buffer test
 				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
-				if (oneOverDepthEval < *depthBuffer)
+				if (oneOverDepthEval < *depthBufferPtr)
 				{
-					*depthBuffer = oneOverDepthEval;
+					*depthBufferPtr = oneOverDepthEval;
 				}
 				else
 				{
 					++colorBuffer;
-					++depthBuffer;
+					++depthBufferPtr;
 					continue;
 				}
 				
@@ -369,7 +352,7 @@ namespace game
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
 					}
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
-					if (minDistSq < 1)
+					if (minDistSq < 1.0f)
 					{
 						float_t pre = oneOverDepthEval;
 						//dd -= 0.5f;// 3.5f;
@@ -380,7 +363,7 @@ namespace game
 						//*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
 						*colorBuffer = game::Colors::White.packedARGB;
 						++colorBuffer;
-						++depthBuffer;
+						++depthBufferPtr;
 						continue;
 					}
 					else
@@ -435,10 +418,10 @@ namespace game
 					*colorBuffer = colorAtPixel.packedABGR;
 				}
 				++colorBuffer;
-				++depthBuffer;
+				++depthBufferPtr;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
-			depthBuffer += videoBufferStride - xLoopCount;
+			depthBufferPtr += videoBufferStride - xLoopCount;
 		}
 		fence++;
 	}
