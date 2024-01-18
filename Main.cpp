@@ -42,7 +42,7 @@ public:
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
-		scene = 1;
+		scene = 0;
 		tz = 0.0f;
 	}
 

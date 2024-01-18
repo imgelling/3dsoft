@@ -41,10 +41,10 @@ namespace game
 		PixelMode* _pixelMode;
 		ThreadPool _threadPool;
 		uint32_t* _frameBuffer;
-		int32_t _frameBufferWidth;
-		int32_t _frameBufferHeight;
+		uint32_t _frameBufferWidth;
+		uint32_t _frameBufferHeight;
+		uint32_t _totalBufferSize;
 		float_t* _depth0;
-		float_t* _depth1;
 		uint32_t _currentDepthBuffer;
 		//HANDLE _fenceEvent;
 		FillMode _FillMode;
@@ -58,9 +58,9 @@ namespace game
 		fence = 0;
 		_frameBufferWidth = 0;
 		_frameBufferHeight = 0;
+		_totalBufferSize = 0;
 		_multiThreaded = false;
 		_depth0 = nullptr;
-		_depth1 = nullptr;
 		currentDepthBuffer = nullptr;
 		_currentDepthBuffer = 0;
 		_FillMode = FillMode::WireFrameFilled;
@@ -72,9 +72,7 @@ namespace game
 		//_fenceEvent = nullptr;
 		_threadPool.Stop();
 		if (_depth0 != nullptr) delete[] _depth0;
-		if (_depth1 != nullptr) delete[] _depth1;
 		_depth0 = nullptr;
-		_depth1 = nullptr;
 		currentDepthBuffer = nullptr;
 	}
 
@@ -86,31 +84,9 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-
 		_frameBuffer = _pixelMode->currentVideoBuffer;
-		if (_multiThreaded)
-		{
-			_threadPool.Queue(std::bind(std::fill_n<float_t*, int, float_t>, currentDepthBuffer, (_frameBufferWidth * _frameBufferHeight), depth));
-		}
-		else
-		{
-			std::fill_n(currentDepthBuffer, _frameBufferWidth * _frameBufferHeight, depth);
-		}
 
-		if (_currentDepthBuffer == 1)
-		{
-			currentDepthBuffer = _depth0;
-			_currentDepthBuffer = 0;
-			return;
-		}
-
-		if (_currentDepthBuffer == 0)
-		{
-			currentDepthBuffer = _depth1;
-			_currentDepthBuffer = 1;
-			return;
-		}
-
+		std::fill_n(currentDepthBuffer, _totalBufferSize, depth); 
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -151,6 +127,7 @@ namespace game
 		fence = 0;
 		_frameBufferWidth = size.width;
 		_frameBufferHeight = size.height;
+		_totalBufferSize = _frameBufferWidth * _frameBufferHeight;
 		if (threads < 0)
 		{
 			_multiThreaded = false;
@@ -161,10 +138,8 @@ namespace game
 			_threadPool.Start(threads);
 		}
 		_depth0 = new float_t[size.width * size.height];
-		_depth1 = new float_t[size.width * size.height];
-		std::fill_n(_depth0, _frameBufferWidth * _frameBufferHeight, 1000.0f);
-		std::fill_n(_depth1, _frameBufferWidth * _frameBufferHeight, 1000.0f);
 		currentDepthBuffer = _depth0;
+		ClearDepth(1000.0f);
 		return true;
 	}
 
