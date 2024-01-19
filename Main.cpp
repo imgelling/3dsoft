@@ -50,6 +50,37 @@ public:
 		showText = true;
 	}
 
+	uint32_t testx = 0;
+	uint32_t testy = 0;
+	uint32_t numclips = 16;
+	void GenerateClips(const uint32_t numberOfClips, game::Recti *clips2, const game::Pointi& size)
+	{
+		uint32_t cols = (uint32_t)sqrt(numberOfClips);//(int32_t)std::ceil(sqrt(numberOfClips));
+		uint32_t rows = (uint32_t)(numberOfClips / (float_t)cols);//(int32_t)std::ceil(numberOfClips / (float_t)cols);
+
+		uint32_t colsize = (uint32_t)std::ceil(size.width / (float_t)cols);
+		uint32_t rowsize = (uint32_t)std::ceil(size.height / (float_t)rows);
+
+		uint32_t rc = 0;
+		uint32_t cc = 0;
+		for (uint32_t row = 0; row < rows; row++)
+		{
+			rc = 0;
+			for (uint32_t col = 0; col < cols; col++)
+			{
+				int access = row * cols + col;
+				clips2[access].left = (rc) * (colsize - 1);
+				clips2[access].right = (clips2[access].left + colsize);
+				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
+				clips2[access].top = cc * (rowsize - 1);
+				clips2[access].bottom = clips2[access].top + rowsize;
+				if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
+				rc++;
+			}
+			cc++;
+		}
+	}
+
 	void Initialize()
 	{
 		game::Attributes attributes;
@@ -61,111 +92,7 @@ public:
 
 		//geSetFrameLock(10);
 
-		// check the webpage
-
-		int x = resolution.x / 2;
-		int y = resolution.y / 2;
-		//tl
-		clip[0].left = 0;
-		clip[0].top = 0;
-		clip[0].right = (x - 1) / 2;
-		clip[0].bottom = (y - 1) / 2;
-
-		// tr
-		clip[1].left = (x - 1) / 2;
-		clip[1].top = 0;
-		clip[1].right = x - 1;
-		clip[1].bottom = (y - 1) / 2;
-
-		// bl
-		clip[2].left = 0;
-		clip[2].top = (y - 1) / 2;
-		clip[2].right = (x - 1) / 2;
-		clip[2].bottom = y - 1;
-
-		// br
-		clip[3].left = (x - 1) / 2;
-		clip[3].top = (y - 1) / 2;
-		clip[3].right = x - 1;
-		clip[3].bottom = y - 1;
-
-
-		// --------------tr
-		//tl
-		clip[4].left = 0 + x;
-		clip[4].top = 0;
-		clip[4].right = (x - 1) / 2 + x;
-		clip[4].bottom = (y - 1) / 2;
-
-		// tr
-		clip[5].left = (x - 1) / 2 + x;
-		clip[5].top = 0;
-		clip[5].right = x - 1 + x;
-		clip[5].bottom = (y - 1) / 2;
-
-		// bl
-		clip[6].left = 0 + x;
-		clip[6].bottom = (y - 1) / 2;
-		clip[6].right = (x - 1) / 2 + x;
-		clip[6].bottom = y - 1;
-
-		// br
-		clip[7].left = (x - 1) / 2 + x;
-		clip[7].bottom = (y - 1) / 2;
-		clip[7].right = x - 1 + x;
-		clip[7].bottom = y - 1;
-
-
-		// --------------bl
-		//tl
-		clip[8].left = 0;
-		clip[8].bottom = 0 + y;
-		clip[8].right = (x - 1) / 2;
-		clip[8].bottom = (y - 1) / 2 + y;
-
-		// tr
-		clip[9].left = (x - 1) / 2;
-		clip[9].bottom = 0 + y;
-		clip[9].right = x - 1;
-		clip[9].bottom = (y - 1) / 2 + y;
-
-		// bl
-		clip[10].left = 0;
-		clip[10].top = (y - 1) / 2 + y;
-		clip[10].right = (x - 1) / 2;
-		clip[10].bottom = y - 1 + y;
-
-		// br
-		clip[11].left = (x - 1) / 2;
-		clip[11].top = (y - 1) / 2 + y;
-		clip[11].right = x - 1;
-		clip[11].bottom = y - 1 + y;
-
-
-		// ----------------br
-		//tl
-		clip[12].left = 0 + x;
-		clip[12].top = 0 + y;
-		clip[12].right = (x - 1) / 2 + x;
-		clip[12].bottom = (y - 1) / 2 + y;
-
-		// tr
-		clip[13].left = (x - 1) / 2 + x;
-		clip[13].top = 0 + y;
-		clip[13].right = x - 1 + x;
-		clip[13].bottom = (y - 1) / 2 + y;
-
-		// bl
-		clip[14].left = 0 + x;
-		clip[14].top = (y - 1) / 2 + y;
-		clip[14].right = (x - 1) / 2 + x;
-		clip[14].bottom = y - 1 + y;
-
-		// br
-		clip[15].left = (x - 1) / 2 + x;
-		clip[15].top = (y - 1) / 2 + y;
-		clip[15].right = x - 1 + x;
-		clip[15].bottom = y - 1 + y;
+		GenerateClips(numclips, clip, resolution);
 	}
 
 	void LoadContent()
@@ -427,7 +354,7 @@ public:
 		}
 
 		uint32_t fenceCount = 0;
-		for (int c = 0; c < 16; c++)
+		for (uint32_t c = 0; c < numclips; c++)
 		{
 			software3D.Clip(quad, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
@@ -441,6 +368,9 @@ public:
 			fenceCount += (uint32_t)clippedTris[c].size();
 		}
 		software3D.Fence(fenceCount);
+
+		for (uint32_t i = 0; i < numclips; i++)
+			pixelMode.Rect(clip[i], game::Colors::Yellow);
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_D))
