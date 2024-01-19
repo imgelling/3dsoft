@@ -36,6 +36,8 @@ public:
 	float_t tz;
 
 	game::FillMode state = game::FillMode::FilledColor;
+	game::Pointi resolution = { 1280 , 720 }; //2560, 1440 };
+	bool showText;
 
 	Game() : game::Engine()
 	{
@@ -45,6 +47,7 @@ public:
 		maxFPS = 0;
 		scene = 0;
 		tz = 0.0f;
+		showText = true;
 	}
 
 	void Initialize()
@@ -56,120 +59,118 @@ public:
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
 		geSetAttributes(attributes);
 
-		//geSetFrameLock(60);
+		//geSetFrameLock(10);
 
-		// tl
-		// x = rectx
-		// y = recty
-		// right = 
 		// check the webpage
 
+		int x = resolution.x / 2;
+		int y = resolution.y / 2;
 		//tl
 		clip[0].left = 0;
 		clip[0].top = 0;
-		clip[0].right = (640 - 1) / 2;
-		clip[0].bottom = (360 - 1) / 2;
+		clip[0].right = (x - 1) / 2;
+		clip[0].bottom = (y - 1) / 2;
 
 		// tr
-		clip[1].left = (640 - 1) / 2;
+		clip[1].left = (x - 1) / 2;
 		clip[1].top = 0;
-		clip[1].right = 640 - 1;
-		clip[1].bottom = (360 - 1) / 2;
+		clip[1].right = x - 1;
+		clip[1].bottom = (y - 1) / 2;
 
 		// bl
 		clip[2].left = 0;
-		clip[2].top = (360 - 1) / 2;
-		clip[2].right = (640 - 1) / 2;
-		clip[2].bottom = 360 - 1;
+		clip[2].top = (y - 1) / 2;
+		clip[2].right = (x - 1) / 2;
+		clip[2].bottom = y - 1;
 
 		// br
-		clip[3].left = (640 - 1) / 2;
-		clip[3].top = (360 - 1) / 2;
-		clip[3].right = 640 - 1;
-		clip[3].bottom = 360 - 1;
+		clip[3].left = (x - 1) / 2;
+		clip[3].top = (y - 1) / 2;
+		clip[3].right = x - 1;
+		clip[3].bottom = y - 1;
 
 
 		// --------------tr
 		//tl
-		clip[4].left = 0 + 640;
+		clip[4].left = 0 + x;
 		clip[4].top = 0;
-		clip[4].right = (640 - 1) / 2 + 640;
-		clip[4].bottom = (360 - 1) / 2;
+		clip[4].right = (x - 1) / 2 + x;
+		clip[4].bottom = (y - 1) / 2;
 
 		// tr
-		clip[5].left = (640 - 1) / 2 + 640;
+		clip[5].left = (x - 1) / 2 + x;
 		clip[5].top = 0;
-		clip[5].right = 640 - 1 + 640;
-		clip[5].bottom = (360 - 1) / 2;
+		clip[5].right = x - 1 + x;
+		clip[5].bottom = (y - 1) / 2;
 
 		// bl
-		clip[6].left = 0 + 640;
-		clip[6].bottom = (360 - 1) / 2;
-		clip[6].right = (640 - 1) / 2 + 640;
-		clip[6].bottom = 360 - 1;
+		clip[6].left = 0 + x;
+		clip[6].bottom = (y - 1) / 2;
+		clip[6].right = (x - 1) / 2 + x;
+		clip[6].bottom = y - 1;
 
 		// br
-		clip[7].left = (640 - 1) / 2 + 640;
-		clip[7].bottom = (360 - 1) / 2;
-		clip[7].right = 640 - 1 + 640;
-		clip[7].bottom = 360 - 1;
+		clip[7].left = (x - 1) / 2 + x;
+		clip[7].bottom = (y - 1) / 2;
+		clip[7].right = x - 1 + x;
+		clip[7].bottom = y - 1;
 
 
 		// --------------bl
 		//tl
 		clip[8].left = 0;
-		clip[8].bottom = 0 + 360;
-		clip[8].right = (640 - 1) / 2;
-		clip[8].bottom = (360 - 1) / 2 + 360;
+		clip[8].bottom = 0 + y;
+		clip[8].right = (x - 1) / 2;
+		clip[8].bottom = (y - 1) / 2 + y;
 
 		// tr
-		clip[9].left = (640 - 1) / 2;
-		clip[9].bottom = 0 + 360;
-		clip[9].right = 640 - 1;
-		clip[9].bottom = (360 - 1) / 2 + 360;
+		clip[9].left = (x - 1) / 2;
+		clip[9].bottom = 0 + y;
+		clip[9].right = x - 1;
+		clip[9].bottom = (y - 1) / 2 + y;
 
 		// bl
 		clip[10].left = 0;
-		clip[10].top = (360 - 1) / 2 + 360;
-		clip[10].right = (640 - 1) / 2;
-		clip[10].bottom = 360 - 1 + 360;
+		clip[10].top = (y - 1) / 2 + y;
+		clip[10].right = (x - 1) / 2;
+		clip[10].bottom = y - 1 + y;
 
 		// br
-		clip[11].left = (640 - 1) / 2;
-		clip[11].top = (360 - 1) / 2 + 360;
-		clip[11].right = 640 - 1;
-		clip[11].bottom = 360 - 1 + 360;
+		clip[11].left = (x - 1) / 2;
+		clip[11].top = (y - 1) / 2 + y;
+		clip[11].right = x - 1;
+		clip[11].bottom = y - 1 + y;
 
 
 		// ----------------br
 		//tl
-		clip[12].left = 0 + 640;
-		clip[12].top = 0 + 360;
-		clip[12].right = (640 - 1) / 2 + 640;
-		clip[12].bottom = (360 - 1) / 2 + 360;
+		clip[12].left = 0 + x;
+		clip[12].top = 0 + y;
+		clip[12].right = (x - 1) / 2 + x;
+		clip[12].bottom = (y - 1) / 2 + y;
 
 		// tr
-		clip[13].left = (640 - 1) / 2 + 640;
-		clip[13].top = 0 + 360;
-		clip[13].right = 640 - 1 + 640;
-		clip[13].bottom = (360 - 1) / 2 + 360;
+		clip[13].left = (x - 1) / 2 + x;
+		clip[13].top = 0 + y;
+		clip[13].right = x - 1 + x;
+		clip[13].bottom = (y - 1) / 2 + y;
 
 		// bl
-		clip[14].left = 0 + 640;
-		clip[14].top = (360 - 1) / 2 + 360;
-		clip[14].right = (640 - 1) / 2 + 640;
-		clip[14].bottom = 360 - 1 + 360;
+		clip[14].left = 0 + x;
+		clip[14].top = (y - 1) / 2 + y;
+		clip[14].right = (x - 1) / 2 + x;
+		clip[14].bottom = y - 1 + y;
 
 		// br
-		clip[15].left = (640 - 1) / 2 + 640;
-		clip[15].top = (360 - 1) / 2 + 360;
-		clip[15].right = 640 - 1 + 640;
-		clip[15].bottom = 360 - 1 + 360;
+		clip[15].left = (x - 1) / 2 + x;
+		clip[15].top = (y - 1) / 2 + y;
+		clip[15].right = x - 1 + x;
+		clip[15].bottom = y - 1 + y;
 	}
 
 	void LoadContent()
 	{
-		if (!pixelMode.Initialize({ 1280, 720 }))// 640, 360 }))
+		if (!pixelMode.Initialize(resolution))// 640, 360 }))
 		{
 			geLogLastError();
 		}
@@ -256,10 +257,10 @@ public:
 			float_t tz = rnd.RndRange(0, 1000) / (float_t)rnd.RndRange(1, 10);
 			for (uint32_t v = 0; v < 3; v++)
 			{
-				temp.vertices[v].x = (float_t)rnd.RndRange(0, 1280);
-				temp.vertices[v].x = temp.vertices[v].x * 2.0f / 1280.0f - 1.0f;
-				temp.vertices[v].y = (float_t)rnd.RndRange(0, 720);
-				temp.vertices[v].y = temp.vertices[v].y * 2.0f / 720.0f - 1.0f;
+				temp.vertices[v].x = (float_t)rnd.RndRange(0, resolution.x);
+				temp.vertices[v].x = temp.vertices[v].x * 2.0f / (float_t)resolution.x - 1.0f;
+				temp.vertices[v].y = (float_t)rnd.RndRange(0, resolution.y);
+				temp.vertices[v].y = temp.vertices[v].y * 2.0f / (float_t)resolution.y - 1.0f;
 				temp.vertices[v].z = 1000.0f / i;
 			}
 
@@ -277,7 +278,7 @@ public:
 		}
 
 		// Pre calc projection matrix
-		my_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f, projection);
+		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 
 		quad.reserve(1000);
 	}
@@ -339,48 +340,12 @@ public:
 		{
 			tz += 0.5f * (msElapsed / 1000.0f);;
 		}
-	}
 
-	// Left handed (GL) -1 to +1
-	static void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, game::Projection& proj)
-	{
-		float_t D2R = 3.14159f / 180.0f;
-		float_t yScale = 1.0f / tan((D2R * fov) / 2);
-		float_t xScale = yScale / aspect;
-		//float_t nearmfar = farz - nearz;
-		//float_t m[] = {
-		//	xScale, 0,      0,                           0,
-		//	0,      yScale, 0,                           0,
-		//	0,      0,      (farz + nearz) / nearmfar,   1,
-		//	0,      0,      -(2 * farz * nearz) / nearmfar, 0
-		//};
-		proj.a = xScale;
-		proj.b = yScale;
-		proj.c = (farz + nearz) / (farz - nearz);
-		proj.d = 1.0f;
-		proj.e = -(2.0f * farz * nearz) / (farz - nearz);
+		if (geKeyboard.WasKeyPressed(geK_F3))
+		{
+			showText = !showText;
+		}
 	}
-
-	// Left handed (DX) 0 to +1
-	static void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, game::Projection& proj)
-	{
-		float_t D2R = 3.14159f / 180.0f;
-		float_t halfFOV = tan((D2R * fov) / 2.0f);
-		float_t yScale = 1.0f / halfFOV;
-		float_t xScale = 1.0f / (aspect * halfFOV);
-		//  float_t m[] = {
-		//  xScale, 0,      0,                           0,
-		//  0,      yScale, 0,                           0,
-		//  0,      0,      farz / (farz - nearz),			 1,
-		//  0,      0,		-(nearz * farz) / (farz - nearz),	 0
-		//  	};
-		proj.a = xScale;
-		proj.b = yScale;
-		proj.c = farz / (farz - nearz);
-		proj.d = 1.0f;
-		proj.e = -(nearz * farz) / (farz - nearz);
-	}
-
 
 
 	inline game::Triangle Project(const game::Triangle& vertex, const game::Projection& proj) const noexcept
@@ -396,22 +361,17 @@ public:
 			
 			// Projection divide
 			ret.vertices[i] /= ret.vertices[i].w;
-			//std::cout << ret.vertices[i].z;
 			{
 				// this scale is not really part of projection
-				//ret.vertices[i].x *= ret.vertices[i].w;// 1.0f / ret.vertices[i].w;
 				ret.vertices[i].x += 1.0f;
 				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
 				
 			}
 			{
 				// this scale is not really part of projection
-				//ret.vertices[i].y *= ret.vertices[i].w;//1.0f / ret.vertices[i].w;
 				ret.vertices[i].y += 1.0f;
 				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
 			}
-			// needed?
-			//ret.vertices[i].z = 1.0f;// ret.vertices[i].w;
 			ret.color[i] = vertex.color[i];
 		}
 		return ret;
@@ -427,11 +387,6 @@ public:
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
-		// 329
-		//std::vector<game::Triangle> quad;
-		//game::Triangle test;
-
-		// 501
 		quad.clear();
 
 		game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
@@ -471,7 +426,6 @@ public:
 			}
 		}
 
-		// max 1759 htris
 		uint32_t fenceCount = 0;
 		for (int c = 0; c < 16; c++)
 		{
@@ -487,33 +441,6 @@ public:
 			fenceCount += (uint32_t)clippedTris[c].size();
 		}
 		software3D.Fence(fenceCount);
-
-		//// max 1052
-		//software3D.Render(quad, clip[0]);
-		//software3D.Render(quad, clip[1]);
-		//software3D.Render(quad, clip[2]);
-		//software3D.Render(quad, clip[3]);
-		//software3D.Render(quad, clip[4]);
-		//software3D.Render(quad, clip[5]);
-		//software3D.Render(quad, clip[6]);
-		//software3D.Render(quad, clip[7]);
-		//software3D.Render(quad, clip[8]);
-		//software3D.Render(quad, clip[9]);
-		//software3D.Render(quad, clip[10]);
-		//software3D.Render(quad, clip[11]);
-		//software3D.Render(quad, clip[12]);
-		//software3D.Render(quad, clip[13]);
-		//software3D.Render(quad, clip[14]);
-		//software3D.Render(quad, clip[15]);
-		//software3D.Fence(quad.size() * 16);// fenceCount);
-
-		//// max 480fps
-		//game::Recti f(0, 0, 1279, 719);
-		//software3D.Render(quad, f);
-		//software3D.Fence(quad.size());
-
-		//for (int i = 0; i < 16; i++)
-			//pixelMode.Rect(clip[i], game::Colors::Yellow);
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_D))
@@ -534,23 +461,27 @@ public:
 				*vbuffer = dColor.packedABGR;
 				vbuffer++;
 			}
-			pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Yellow, 1);
+			if (showText)
+				pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Yellow, 1);
 		}
-		pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
-		game::Pointi m = pixelMode.GetScaledMousePosition();
-		float_t* zb = software3D.depthBuffer;
-		float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
-		pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 50, game::Colors::Yellow, 1);
-		
 
-		pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
-		if (geGetFramesPerSecond() > maxFPS) maxFPS = geGetFramesPerSecond();
-		pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Yellow, 1);
-		std::stringstream ss;
-		ss << "Fill Mode: " << state;
-		pixelMode.Text(ss.str(), 0, 20, game::Colors::Yellow, 1);
-		pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Yellow, 1);
+		if (showText)
+		{
+			pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
+			game::Pointi m = pixelMode.GetScaledMousePosition();
+			float_t* zb = software3D.depthBuffer;
+			float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
+			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 50, game::Colors::Yellow, 1);
 
+
+			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
+			if (geGetFramesPerSecond() > maxFPS) maxFPS = geGetFramesPerSecond();
+			pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Yellow, 1);
+			std::stringstream ss;
+			ss << "Fill Mode: " << state;
+			pixelMode.Text(ss.str(), 0, 20, game::Colors::Yellow, 1);
+			pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Yellow, 1);
+		}
 
 		pixelMode.Render();
 	}

@@ -43,6 +43,7 @@ namespace game
 		uint32_t _totalBufferSize;
 		//float_t* _depthBuffer;
 		FillMode _FillMode;
+		uint32_t frame;
 	};
 
 	Software3D::Software3D()
@@ -52,9 +53,9 @@ namespace game
 		_colorBufferStride = 0;
 		_totalBufferSize = 0;
 		_multiThreaded = false;
-		//_depthBuffer = nullptr;
 		depthBuffer = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
+		frame = 0;
 	}
 
 	Software3D::~Software3D()
@@ -73,6 +74,7 @@ namespace game
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
 		std::fill_n(depthBuffer, _totalBufferSize, depth); 
+		frame = ++frame % 2;
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -160,12 +162,12 @@ namespace game
 	{
 		Recti boundingBox;
 
-		int32_t sx1 = (int32_t)(tri.vertices[0].x);// + 0.5f);
-		int32_t sx2 = (int32_t)(tri.vertices[1].x);// + 0.5f);
-		int32_t sx3 = (int32_t)(tri.vertices[2].x);// + 0.5f);
-		int32_t sy1 = (int32_t)(tri.vertices[0].y);// + 0.5f);
-		int32_t sy2 = (int32_t)(tri.vertices[1].y);// + 0.5f);
-		int32_t sy3 = (int32_t)(tri.vertices[2].y);// + 0.5f);
+		int32_t sx1 = (int32_t)(tri.vertices[0].x);
+		int32_t sx2 = (int32_t)(tri.vertices[1].x);
+		int32_t sx3 = (int32_t)(tri.vertices[2].x);
+		int32_t sy1 = (int32_t)(tri.vertices[0].y);
+		int32_t sy2 = (int32_t)(tri.vertices[1].y);
+		int32_t sy3 = (int32_t)(tri.vertices[2].y);
 
 		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
 		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
@@ -277,11 +279,23 @@ namespace game
 
 		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
 		{
-			foundTriangle = false;
 			xLoopCount = 0;
+			//if ((j % 2 == frame))  // cheap scanline effect
+			//{
+			//	colorBuffer += videoBufferStride - xLoopCount;
+			//	depthBufferPtr += videoBufferStride - xLoopCount;
+			//	continue;
+			//}
+			foundTriangle = false;
 			for (int32_t i = boundingBox.left; i <= boundingBox.right; ++i)
 			{
 				++xLoopCount;
+				//if (i % 2 == 0)  // cheap scanline effect
+				//{
+				//	colorBuffer++;// = videoBufferStride - xLoopCount;
+				//	depthBufferPtr++;// += videoBufferStride - xLoopCount;
+				//	continue;
+				//}
 				pixelOffset = { i + 0.5f , j + 0.5f };
 
 				if (edge0.test(pixelOffset.x, pixelOffset.y))
@@ -392,9 +406,9 @@ namespace game
 					//luminance = min(luminance, 1.0f);
 
 					// Vertex normal lighting
-					//Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					//luminance = -vertexNormalEval.Dot(lightNormal);
-					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
+					Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
+					luminance = -vertexNormalEval.Dot(lightNormal);
+					luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
 					float_t luminanceAmbient(luminance + 0.05f);

@@ -6,6 +6,46 @@
 
 namespace game
 {
+	// Left handed (GL) -1 to +1
+	inline void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, game::Projection& proj)
+	{
+		float_t D2R = 3.14159f / 180.0f;
+		float_t yScale = 1.0f / tan((D2R * fov) / 2);
+		float_t xScale = yScale / aspect;
+		//float_t nearmfar = farz - nearz;
+		//float_t m[] = {
+		//	xScale, 0,      0,                           0,
+		//	0,      yScale, 0,                           0,
+		//	0,      0,      (farz + nearz) / nearmfar,   1,
+		//	0,      0,      -(2 * farz * nearz) / nearmfar, 0
+		//};
+		proj.a = xScale;
+		proj.b = yScale;
+		proj.c = (farz + nearz) / (farz - nearz);
+		proj.d = 1.0f;
+		proj.e = -(2.0f * farz * nearz) / (farz - nearz);
+	}
+
+	// Left handed (DX) 0 to +1
+	inline void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, game::Projection& proj)
+	{
+		float_t D2R = 3.14159f / 180.0f;
+		float_t halfFOV = tan((D2R * fov) / 2.0f);
+		float_t yScale = 1.0f / halfFOV;
+		float_t xScale = 1.0f / (aspect * halfFOV);
+		//  float_t m[] = {
+		//  xScale, 0,      0,                           0,
+		//  0,      yScale, 0,                           0,
+		//  0,      0,      farz / (farz - nearz),			 1,
+		//  0,      0,		-(nearz * farz) / (farz - nearz),	 0
+		//  	};
+		proj.a = xScale;
+		proj.b = yScale;
+		proj.c = farz / (farz - nearz);
+		proj.d = 1.0f;
+		proj.e = -(nearz * farz) / (farz - nearz);
+	}
+
 	inline Triangle RotateZ(const Triangle& tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
