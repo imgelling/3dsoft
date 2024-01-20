@@ -8,6 +8,26 @@
 #include "GameSoftware3D.h"
 
 
+class Camera
+{
+public:
+	game::Vector3f position;
+	game::Vector3f rotation;
+	Camera();
+	Camera(const game::Vector3f& position);
+
+private:
+};
+
+Camera::Camera()
+{
+}
+
+Camera::Camera(const game::Vector3f& position)
+{
+	this->position = position;
+}
+
 
 class Game : public game::Engine
 {
@@ -21,7 +41,7 @@ public:
 	// 3D stuff
 	game::Triangle topLeftTri;
 	game::Triangle bottomRightTri;
-	game::Recti clip[16];
+	game::Recti clip[16];  // in renderer
 	std::vector<game::Triangle> clippedTris[16];
 	game::Projection projection;
 	std::vector<game::Triangle> tris;
@@ -30,8 +50,8 @@ public:
 	std::vector<game::Triangle> quad;
 	game::Triangle test;
 
+	Camera camera;
 	uint32_t maxFPS;
-
 	uint32_t scene;
 	float_t tz;
 
@@ -107,7 +127,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		if (!Load("Content/torus.obj", model))
+		if (!Load("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -203,7 +223,7 @@ public:
 		}
 
 		// Pre calc projection matrix
-		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
+		game::my_PerspectiveFOV(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 
 		quad.reserve(1000);
 	}
@@ -225,7 +245,7 @@ public:
 			geToggleFullscreen();
 		}
 
-		if (geKeyboard.WasKeyPressed(geK_W))
+		if (geKeyboard.WasKeyPressed(geK_F1))
 		{
 			state++;
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
@@ -256,15 +276,110 @@ public:
 			scene = 2;
 		}
 
-		if (geKeyboard.IsKeyHeld(geK_UP))
+		if (geKeyboard.IsKeyHeld(geK_W))
 		{
-			tz -= 0.5f * (msElapsed / 1000.0f);;
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz -= 5.0f * (msElapsed / 1000.0f);
+				camera.position.z += 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz -= 0.5f * (msElapsed / 1000.0f);
+				camera.position.z += 0.1f * (msElapsed / 1000.0f);
+			}			
 		}
 
+		if (geKeyboard.IsKeyHeld(geK_S))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz += 5.0f * (msElapsed / 1000.0f);
+				camera.position.z -= 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz _= 0.5f * (msElapsed / 1000.0f);
+				camera.position.z -= 0.1f * (msElapsed / 1000.0f);
+			}
+		}
+
+		// strafe left
+		if (geKeyboard.IsKeyHeld(geK_Q))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz -= 5.0f * (msElapsed / 1000.0f);
+				camera.position.x -= 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz -= 0.5f * (msElapsed / 1000.0f);
+				camera.position.x -= 0.1f * (msElapsed / 1000.0f);
+			}
+		}
+
+		// strafe right
+		if (geKeyboard.IsKeyHeld(geK_E))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz += 5.0f * (msElapsed / 1000.0f);
+				camera.position.x += 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz _= 0.5f * (msElapsed / 1000.0f);
+				camera.position.x += 0.1f * (msElapsed / 1000.0f);
+			}
+		}
+
+		// y is invertex because....
+		if (geKeyboard.IsKeyHeld(geK_UP))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz -= 5.0f * (msElapsed / 1000.0f);
+				camera.position.y -= 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz -= 0.5f * (msElapsed / 1000.0f);
+				camera.position.y -= 0.1f * (msElapsed / 1000.0f);
+			}
+		}
+
+		// strafe right
 		if (geKeyboard.IsKeyHeld(geK_DOWN))
 		{
-			tz += 0.5f * (msElapsed / 1000.0f);;
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz += 5.0f * (msElapsed / 1000.0f);
+				camera.position.y += 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz _= 0.5f * (msElapsed / 1000.0f);
+				camera.position.y += 0.1f * (msElapsed / 1000.0f);
+			}
 		}
+
+		game::Pointi mouse = geMouse.GetPositionRelative();
+		if (mouse.x)
+		{
+			if (geMouse.IsButtonHeld(geM_LEFT))
+			{
+				camera.rotation.y += mouse.x * (3.14159f / 180.0f);
+			}
+		}
+		if (mouse.y)
+		{
+			if (geMouse.IsButtonHeld(geM_LEFT))
+			{
+				camera.rotation.x += -mouse.y * (3.14159f / 180.0f);
+			}
+		}
+
 
 		if (geKeyboard.WasKeyPressed(geK_F3))
 		{
@@ -306,7 +421,7 @@ public:
 	{
 		static float_t rotation = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
@@ -314,16 +429,17 @@ public:
 
 		quad.clear();
 
-		game::Vector3f t(0.0f, 0.0f, 2.0f + tz);
+		game::Vector3f t(0.0f, 0.0f, 2.0f);
+		t -= camera.position;
 
 		if (scene == 0)
 		{
-			test = game::RotateXYZ(topLeftTri, -rotation, rotation, rotation * 0.5f);
+			test = game::RotateXYZ(topLeftTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 			test = game::Translate(test, t);
 			test = Project(test,projection);
 			quad.emplace_back(test);
 
-			test = game::RotateXYZ(bottomRightTri, -rotation, rotation, rotation * 0.5f);
+			test = game::RotateXYZ(bottomRightTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 			test = game::Translate(test, t);
 			test = Project(test, projection);
 			quad.emplace_back(test);
@@ -333,7 +449,7 @@ public:
 		{
 			for (int i = 0; i < tris.size(); i++)
 			{
-				test = game::RotateXYZ(tris[i], -rotation, rotation, rotation * 0.5f);
+				test = game::RotateXYZ(tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = game::Translate(test, t);
 				test = Project(test, projection);
 				quad.emplace_back(test);
@@ -344,7 +460,7 @@ public:
 		{
 			for (int i = 0; i < model.tris.size(); i++)
 			{
-				test = game::RotateXYZ(model.tris[i], -rotation, rotation, rotation * 0.5f);
+				test = game::RotateXYZ(model.tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = game::Translate(test, t);
 				test = Project(test, projection);
 				quad.emplace_back(test);
@@ -442,7 +558,7 @@ public:
 		// Reset file
 		f.clear();
 		f.seekg(0);
-		//hasNormals = false;
+		hasNormals = false;
 
 		// Parse the file
 		if (f.is_open())
@@ -463,6 +579,7 @@ public:
 					if (line[1] == 'n') // Vertex normals
 					{
 						ss >> junk >> junk >> vert.x >> vert.y >> vert.z;
+						//vert.z = -vert.z;
 						norms.emplace_back(vert);
 						continue;
 					}
@@ -477,8 +594,8 @@ public:
 						ss >> junk >> vert.x >> vert.y >> vert.z;
 						// added new
 						vert.y = vert.y * -1;
-						vert.z = vert.z * -1;
-						//vert.x = vert.x * -1;
+						//vert.z = vert.z * -1;
+						vert.x = vert.x * -1;
 						// Also swapped ps and ns 2 and 3 for winding
 						verts.emplace_back(vert);
 						// start counting verts
@@ -525,8 +642,8 @@ public:
 					if (hasUVs)
 					{
 						tri.uvs[0] = uvs[(size_t)uv1 - 1];// Vector2d(uvs[uv1 - 1].x, uvs[uv1 - 1].y);
-						tri.uvs[1] = uvs[(size_t)uv3 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
-						tri.uvs[2] = uvs[(size_t)uv2 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
+						tri.uvs[1] = uvs[(size_t)uv2 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
+						tri.uvs[2] = uvs[(size_t)uv3 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
 					}
 					else
 					{
