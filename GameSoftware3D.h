@@ -32,7 +32,7 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
-		void Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
+		void Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
 		float_t* depthBuffer;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
@@ -187,19 +187,24 @@ namespace game
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_colorBufferStride);
 
-		EdgeEquation edge0(vertex1, vertex2);
-		EdgeEquation edge1(vertex2, vertex0);
-		EdgeEquation edge2(vertex0, vertex1);
+		// 236
+		EdgeEquation edge0 = triangle.e0;// (vertex1, vertex2);
+		EdgeEquation edge1 = triangle.e1;// (vertex2, vertex0);
+		EdgeEquation edge2 = triangle.e2;// (vertex0, vertex1);
+		//EdgeEquation edge0(vertex1, vertex2);
+		//EdgeEquation edge1(vertex2, vertex0);
+		//EdgeEquation edge2(vertex0, vertex1);
 
 		// back face cull
-		float_t area(edge0.c + edge1.c + edge2.c);
-		if (area < 0)
-		{
-			fence++;
-			return;
-		}
+		float_t area(triangle.area);
+		//float_t area(edge0.c + edge1.c + edge2.c);
+		//if (area < 0)
+		//{
+		//	fence++;
+		//	return;
+		//}
 
-		game::Recti boundingBox(TriangleBoundingBox(triangle));
+		game::Recti boundingBox(triangle.boundingBox);
 		game::Vector2f pixelOffset;
 
 		// Screen clipping
@@ -440,13 +445,15 @@ namespace game
 		fence++;
 	}
 
-	// clipping
+	// clipping  53 before
 	// 	// For clipping only need znear so a lot can be precalc for plane
-	inline void Software3D::Clip(const std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
+	inline void Software3D::Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
 	{
 		out.clear();
 		for (int tri = 0; tri < in.size(); tri++)
 		{
+			if (in[tri].culled) continue; // was backface culled before
+
 			// Near Z clip
 			if ((in[tri].vertices[0].w < 0.1f) ||
 				(in[tri].vertices[1].w < 0.1f) ||
@@ -463,45 +470,33 @@ namespace game
 				continue;
 			}
 
-			// backface here maybe
-			//// back face cull
-			//game::EdgeEquation e0(in[tri].vertices[1], in[tri].vertices[2]);
-			//game::EdgeEquation e1(in[tri].vertices[2], in[tri].vertices[0]);
-			//game::EdgeEquation e2(in[tri].vertices[0], in[tri].vertices[1]);
-			//float area(e0.c + e1.c + e2.c);
-			//if (area < 0)
-			//{
-			//	//fence++;
-			//	//in.erase(std::next(in.begin(), tri));
-			//	//std::swap(v1, v2);
-			//	//e0.Set(v1, v2);
-			//	//e1.Set(v2, v0);
-			//	//e2.Set(v0, v1);
-			//	continue;
-			//}
-
-			game::Recti boundingBox = TriangleBoundingBox(in[tri]);
-
+			// back face cull
+			if (!in[tri].edgeCalculated)
+			{
+				in[tri].e0.Set(in[tri].vertices[1], in[tri].vertices[2]);
+				in[tri].e1.Set(in[tri].vertices[2], in[tri].vertices[0]);
+				in[tri].e2.Set(in[tri].vertices[0], in[tri].vertices[1]);
+				in[tri].edgeCalculated = true;
+				in[tri].area = in[tri].e0.c + in[tri].e1.c + in[tri].e2.c;
+				if (in[tri].area < 0)
+				{
+					in[tri].culled = true;
+					continue;
+				}
+			}
+			if (!in[tri].boundingCalculated)
+			{
+				in[tri].boundingBox = TriangleBoundingBox(in[tri]);
+				in[tri].boundingCalculated = true;
+			}
 			// Screen clipping
 			// Offscreen completely
-			if ((boundingBox.right < clip.left) || (boundingBox.left > clip.right) ||
-				(boundingBox.bottom < clip.top) || (boundingBox.top > clip.bottom))
+			if ((in[tri].boundingBox.right < clip.left) || (in[tri].boundingBox.left > clip.right) ||
+				(in[tri].boundingBox.bottom < clip.top) || (in[tri].boundingBox.top > clip.bottom))
 			{
 				continue;
 			}
 
-			//// Partial offscreen
-			//if (boundingBox.x < clip.x)
-			//{
-			//	boundingBox.x = clip.x;
-			//		
-			//}
-			//if (boundingBox.right > clip.right)
-			//	boundingBox.right = clip.right;
-			//if (boundingBox.y < clip.y)
-			//	boundingBox.y = clip.y;
-			//if (boundingBox.bottom > clip.bottom)
-			//	boundingBox.bottom = clip.bottom;
 			out.emplace_back(in[tri]);
 		}
 	}

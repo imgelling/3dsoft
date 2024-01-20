@@ -45,13 +45,11 @@ public:
 		ZeroMemory(&topLeftTri, sizeof(game::Triangle));
 		ZeroMemory(&bottomRightTri, sizeof(game::Triangle));
 		maxFPS = 0;
-		scene = 0;
+		scene = 2;
 		tz = 0.0f;
 		showText = true;
 	}
 
-	uint32_t testx = 0;
-	uint32_t testy = 0;
 	uint32_t numclips = 16;
 	void GenerateClips(const uint32_t numberOfClips, game::Recti *clips2, const game::Pointi& size)
 	{
@@ -68,7 +66,7 @@ public:
 			rc = 0;
 			for (uint32_t col = 0; col < cols; col++)
 			{
-				int access = row * cols + col;
+				uint32_t access = row * cols + col;
 				clips2[access].left = (rc) * (colsize - 1);
 				clips2[access].right = (clips2[access].left + colsize);
 				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
@@ -109,7 +107,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		if (!Load("Content/teapot.obj", model))
+		if (!Load("Content/torus.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -364,13 +362,13 @@ public:
 					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
 					return az < bz;
 				});
+			//pixelMode.Rect(clip[c], game::Colors::Yellow);
 			software3D.Render(clippedTris[c], clip[c]);
 			fenceCount += (uint32_t)clippedTris[c].size();
 		}
 		software3D.Fence(fenceCount);
-
-		for (uint32_t i = 0; i < numclips; i++)
-			pixelMode.Rect(clip[i], game::Colors::Yellow);
+		//for (uint32_t i = 0; i < numclips; i++)
+		//	pixelMode.Rect(clip[i], game::Colors::Yellow);
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_D))
@@ -444,6 +442,7 @@ public:
 		// Reset file
 		f.clear();
 		f.seekg(0);
+		//hasNormals = false;
 
 		// Parse the file
 		if (f.is_open())
@@ -565,8 +564,8 @@ public:
 						// Add the face normal to the vertex normals
 						tri.faceNormal.Normalize();
 						tri.normals[0] = norms[(size_t)n1 - 1];// * -1.0f;
-						tri.normals[1] = norms[(size_t)n3 - 1];// * -1.0f;
-						tri.normals[2] = norms[(size_t)n2 - 1];// * -1.0f;
+						tri.normals[1] = norms[(size_t)n2 - 1];// * -1.0f;
+						tri.normals[2] = norms[(size_t)n3 - 1];// * -1.0f;
 						tri.normals[0].Normalize();
 						tri.normals[1].Normalize();
 						tri.normals[2].Normalize();

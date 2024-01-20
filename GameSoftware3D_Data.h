@@ -6,20 +6,9 @@
 
 namespace game
 {
-	struct Triangle
-	{
-		game::Vector3f vertices[3];
-		//game::Vector3f clippedVertices[3];
-		game::Color color[3];
-		game::Vector3f faceNormal;
-		game::Vector3f normals[3];
-		game::Vector2f uvs[3];
-	};
 
-	struct Mesh
-	{
-		std::vector<Triangle> tris;
-	};
+
+
 
 	enum FillMode
 	{
@@ -59,7 +48,7 @@ namespace game
 		float_t b;
 		float_t c;
 		bool fillRule;
-
+		EdgeEquation() { a=(0.0f); b=(0.0f); c=(0.0f); fillRule=(false); }
 		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
 			a = v0.y - v1.y;
@@ -119,11 +108,38 @@ namespace game
 		}
 	};
 
+	struct Triangle
+	{
+		Vector3f vertices[3];
+		//game::Vector3f clippedVertices[3];
+		Color color[3];
+		Vector3f faceNormal;
+		Vector3f normals[3];
+		Vector2f uvs[3];
+
+		// Pre calc in clip
+		EdgeEquation e0;
+		EdgeEquation e1;
+		EdgeEquation e2;
+
+		// Clipping data
+		bool culled = false;
+		bool edgeCalculated = false;
+		bool boundingCalculated = false;
+		Recti boundingBox;
+		float_t area = 0.0;
+	};
+
+	struct Mesh
+	{
+		std::vector<Triangle> tris;
+	};
+
 	struct ParameterEquation 
 	{
-		float_t a;
-		float_t b;
-		float_t c;
+		float_t a = 0.0f;
+		float_t b = 0.0f;
+		float_t c = 0.0f;
 
 		ParameterEquation(
 			const float_t p0,
@@ -149,11 +165,11 @@ namespace game
 	};
 
 	struct Projection {
-		float_t a;
-		float_t b;
-		float_t c;
-		float_t d;
-		float_t e;
+		float_t a = 0.0f;
+		float_t b = 0.0f;
+		float_t c = 0.0f;
+		float_t d = 0.0f;
+		float_t e = 0.0f;
 	};
 }
 

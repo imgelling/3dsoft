@@ -7,7 +7,7 @@
 namespace game
 {
 	// Left handed (GL) -1 to +1
-	inline void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, game::Projection& proj)
+	inline void my_PerspectiveFOV(float_t fov, float_t aspect, float_t nearz, float_t farz, Projection& proj)
 	{
 		float_t D2R = 3.14159f / 180.0f;
 		float_t yScale = 1.0f / tan((D2R * fov) / 2);
@@ -27,7 +27,7 @@ namespace game
 	}
 
 	// Left handed (DX) 0 to +1
-	inline void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, game::Projection& proj)
+	inline void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, Projection& proj)
 	{
 		float_t D2R = 3.14159f / 180.0f;
 		float_t halfFOV = tan((D2R * fov) / 2.0f);
@@ -52,6 +52,7 @@ namespace game
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
 
+		// Vertices
 		ret.vertices[0].x = (tri.vertices[0].x) * ctheta - (tri.vertices[0].y) * stheta;
 		ret.vertices[0].y = (tri.vertices[0].x) * stheta + (tri.vertices[0].y) * ctheta;
 		ret.vertices[1].x = (tri.vertices[1].x) * ctheta - (tri.vertices[1].y) * stheta;
@@ -59,7 +60,7 @@ namespace game
 		ret.vertices[2].x = (tri.vertices[2].x) * ctheta - (tri.vertices[2].y) * stheta;
 		ret.vertices[2].y = (tri.vertices[2].x) * stheta + (tri.vertices[2].y) * ctheta;
 
-		// vertex normals
+		// Vertex normals
 		ret.normals[0].x = (tri.normals[0].x) * ctheta - (tri.normals[0].y) * stheta;
 		ret.normals[0].y = (tri.normals[0].x) * stheta + (tri.normals[0].y) * ctheta;
 		ret.normals[1].x = (tri.normals[1].x) * ctheta - (tri.normals[1].y) * stheta;
@@ -67,7 +68,7 @@ namespace game
 		ret.normals[2].x = (tri.normals[2].x) * ctheta - (tri.normals[2].y) * stheta;
 		ret.normals[2].y = (tri.normals[2].x) * stheta + (tri.normals[2].y) * ctheta;
 
-		// face normals
+		// Face normals
 		ret.faceNormal.x = (tri.faceNormal.x) * ctheta - (tri.faceNormal.y) * stheta;
 		ret.faceNormal.y = (tri.faceNormal.x) * stheta + (tri.faceNormal.y) * ctheta;
 
@@ -80,6 +81,7 @@ namespace game
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
 
+		// Vertices
 		ret.vertices[0].y = (tri.vertices[0].y) * ctheta - (tri.vertices[0].z) * stheta;
 		ret.vertices[0].z = (tri.vertices[0].y) * stheta + (tri.vertices[0].z) * ctheta;
 		ret.vertices[1].y = (tri.vertices[1].y) * ctheta - (tri.vertices[1].z) * stheta;
@@ -87,7 +89,7 @@ namespace game
 		ret.vertices[2].y = (tri.vertices[2].y) * ctheta - (tri.vertices[2].z) * stheta;
 		ret.vertices[2].z = (tri.vertices[2].y) * stheta + (tri.vertices[2].z) * ctheta;
 
-		// vertex normals
+		// Vertex normals
 		ret.normals[0].y = (tri.normals[0].y) * ctheta - (tri.normals[0].z) * stheta;
 		ret.normals[0].z = (tri.normals[0].y) * stheta + (tri.normals[0].z) * ctheta;
 		ret.normals[1].y = (tri.normals[1].y) * ctheta - (tri.normals[1].z) * stheta;
@@ -95,7 +97,7 @@ namespace game
 		ret.normals[2].y = (tri.normals[2].y) * ctheta - (tri.normals[2].z) * stheta;
 		ret.normals[2].z = (tri.normals[2].y) * stheta + (tri.normals[2].z) * ctheta;
 
-		// face normals
+		// Face normals
 		ret.faceNormal.y = (tri.faceNormal.y) * ctheta - (tri.faceNormal.z) * stheta;
 		ret.faceNormal.z = (tri.faceNormal.y) * stheta + (tri.faceNormal.z) * ctheta;
 
@@ -108,6 +110,7 @@ namespace game
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
 
+		// Vertices
 		ret.vertices[0].x = (tri.vertices[0].x) * ctheta + (tri.vertices[0].z) * stheta;
 		ret.vertices[0].z = (tri.vertices[0].x) * -stheta + (tri.vertices[0].z) * ctheta;
 		ret.vertices[1].x = (tri.vertices[1].x) * ctheta + (tri.vertices[1].z) * stheta;
@@ -115,7 +118,7 @@ namespace game
 		ret.vertices[2].x = (tri.vertices[2].x) * ctheta + (tri.vertices[2].z) * stheta;
 		ret.vertices[2].z = (tri.vertices[2].x) * -stheta + (tri.vertices[2].z) * ctheta;
 
-		// vertex normals
+		// Vertex normals
 		ret.normals[0].x = (tri.normals[0].x) * ctheta + (tri.normals[0].z) * stheta;
 		ret.normals[0].z = (tri.normals[0].x) * -stheta + (tri.normals[0].z) * ctheta;
 		ret.normals[1].x = (tri.normals[1].x) * ctheta + (tri.normals[1].z) * stheta;
@@ -123,7 +126,7 @@ namespace game
 		ret.normals[2].x = (tri.normals[2].x) * ctheta + (tri.normals[2].z) * stheta;
 		ret.normals[2].z = (tri.normals[2].x) * -stheta + (tri.normals[2].z) * ctheta;
 
-		// face normals
+		// Face normals
 		ret.faceNormal.x = (tri.faceNormal.x) * ctheta + (tri.faceNormal.z) * stheta;
 		ret.faceNormal.z = (tri.faceNormal.x) * -stheta + (tri.faceNormal.z) * ctheta;
 
