@@ -128,7 +128,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/crypt.obj", model))
+		if (!Load("Content/room.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -538,17 +538,7 @@ public:
 	{
 		for (int tri = 0; tri < mesh.tris.size(); tri++)
 		{
-			//game::EdgeEquation e0(mesh.tris[tri].vertices[1], mesh.tris[tri].vertices[2]);
-			//game::EdgeEquation e1(mesh.tris[tri].vertices[2], mesh.tris[tri].vertices[0]);
-			//game::EdgeEquation e2(mesh.tris[tri].vertices[0], mesh.tris[tri].vertices[1]);
 
-			//float_t area(e0.c + e1.c + e2.c);
-			// If area is negative, it means wrong winding
-			//if (area < 0)
-			//{
-			//	std::swap(mesh.tris[tri].vertices[1], mesh.tris[tri].vertices[2]);
-			//	std::swap(mesh.tris[tri].normals[1], mesh.tris[tri].normals[2]);
-			//}
 			// make left handed
 			//mesh.tris[tri].vertices[0].z = -mesh.tris[tri].vertices[0].z;
 			//mesh.tris[tri].vertices[1].z = -mesh.tris[tri].vertices[1].z;
@@ -581,6 +571,9 @@ public:
 			//mesh.tris[tri].faceNormal.z = mesh.tris[tri].faceNormal.z * -1.0f;
 			//mesh.tris[tri].faceNormal.y = mesh.tris[tri].faceNormal.y * -1.0f;
 			//mesh.tris[tri].faceNormal.x = mesh.tris[tri].faceNormal.x * -1.0f;
+
+			std::cout << mesh.tris[tri].uvs[0].x << "\n";
+
 		}
 	}
 
@@ -646,11 +639,6 @@ public:
 					else
 					{
 						ss >> junk >> vert.x >> vert.y >> vert.z;
-						// added new
-						//vert.y = vert.y * -1;
-						//vert.z = vert.z * -1;
-						//vert.x = vert.x * -1;
-						// Also swapped ps and ns 2 and 3 for winding
 						verts.emplace_back(vert);
 						// start counting verts
 						vcount.emplace_back(1.0f);
