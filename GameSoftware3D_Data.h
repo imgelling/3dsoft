@@ -118,9 +118,9 @@ namespace game
 		Vector2f uvs[3];
 
 		// Pre calc in clip
-		EdgeEquation e0;
-		EdgeEquation e1;
-		EdgeEquation e2;
+		EdgeEquation edge0;
+		EdgeEquation edge1;
+		EdgeEquation edge2;
 
 		// Clipping data
 		bool culled = false;

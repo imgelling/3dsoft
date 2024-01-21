@@ -43,7 +43,6 @@ namespace game
 		uint32_t _totalBufferSize;
 		//float_t* _depthBuffer;
 		FillMode _FillMode;
-		uint32_t frame;
 	};
 
 	Software3D::Software3D()
@@ -55,7 +54,6 @@ namespace game
 		_multiThreaded = false;
 		depthBuffer = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
-		frame = 0;
 	}
 
 	Software3D::~Software3D()
@@ -74,7 +72,6 @@ namespace game
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
 		std::fill_n(depthBuffer, _totalBufferSize, depth); 
-		frame = ++frame % 2;
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -187,49 +184,20 @@ namespace game
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_colorBufferStride);
 
-		// 236
-		EdgeEquation edge0 = triangle.e0;// (vertex1, vertex2);
-		EdgeEquation edge1 = triangle.e1;// (vertex2, vertex0);
-		EdgeEquation edge2 = triangle.e2;// (vertex0, vertex1);
-		//EdgeEquation edge0(vertex1, vertex2);
-		//EdgeEquation edge1(vertex2, vertex0);
-		//EdgeEquation edge2(vertex0, vertex1);
-
-		// back face cull
-		float_t area(triangle.area);
-		//float_t area(edge0.c + edge1.c + edge2.c);
-		//if (area < 0)
-		//{
-		//	fence++;
-		//	return;
-		//}
-
-		game::Recti boundingBox(triangle.boundingBox);
+		game::Recti boundingBox(triangle.boundingBox);  // needs to copy because it gets modified
 		game::Vector2f pixelOffset;
-
-		// Screen clipping
-
-		// Partial offscreen
-		if (boundingBox.left < clip.left)
-			boundingBox.left = clip.left;
-		if (boundingBox.right > clip.right)
-			boundingBox.right = clip.right;
-		if (boundingBox.top < clip.top)
-			boundingBox.top = clip.top;
-		if (boundingBox.bottom > clip.bottom)
-			boundingBox.bottom = clip.bottom;
 
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
 		// Color parameter	
 		Color colorAtPixel;
-		ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, edge0, edge1, edge2, area);
-		ParameterEquation gColorParam(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, edge0, edge1, edge2, area);
-		ParameterEquation bColorParam(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, edge0, edge1, edge2, area);
+		ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation gColorParam(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation bColorParam(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Depth parameter
 		float_t oneOverDepthEval(0.0f);
-		ParameterEquation depthParam(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w, edge0, edge1, edge2, area);
+		ParameterEquation depthParam(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Face normal light pre calc (directional light) can add ambient here
 		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
@@ -240,9 +208,9 @@ namespace game
 		luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 		// Vertex normal parameters (directional light)
-		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, edge0, edge1, edge2, area);
-		ParameterEquation vny(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, edge0, edge1, edge2, area);
-		ParameterEquation vnz(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, edge0, edge1, edge2, area);
+		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vny(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vnz(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -285,7 +253,7 @@ namespace game
 		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
-			//if ((j % 2 == frame))  // cheap scanline effect
+			//if ((j % 2 == 0))  // cheap scanline effect
 			//{
 			//	colorBuffer += videoBufferStride - xLoopCount;
 			//	depthBufferPtr += videoBufferStride - xLoopCount;
@@ -303,7 +271,7 @@ namespace game
 				//}
 				pixelOffset = { i + 0.5f , j + 0.5f };
 
-				if (edge0.test(pixelOffset.x, pixelOffset.y))
+				if (triangle.edge0.test(pixelOffset.x, pixelOffset.y))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
@@ -316,7 +284,7 @@ namespace game
 						continue;
 					}
 				}
-				if (edge1.test(pixelOffset.x, pixelOffset.y))
+				if (triangle.edge1.test(pixelOffset.x, pixelOffset.y))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
@@ -329,7 +297,7 @@ namespace game
 						continue;
 					}
 				}
-				if (edge2.test(pixelOffset.x, pixelOffset.y))
+				if (triangle.edge2.test(pixelOffset.x, pixelOffset.y))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
@@ -411,9 +379,9 @@ namespace game
 					//luminance = min(luminance, 1.0f);
 
 					// Vertex normal lighting
-					Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					luminance = -vertexNormalEval.Dot(lightNormal);
-					luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
+					//Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
+					//luminance = -vertexNormalEval.Dot(lightNormal);
+					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
 					float_t luminanceAmbient(luminance + 0.05f);
@@ -450,8 +418,10 @@ namespace game
 	inline void Software3D::Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
 	{
 		out.clear();
+		Triangle outTri;
 		for (int tri = 0; tri < in.size(); tri++)
 		{
+			//Triangle outTri(in[tri]);
 			if (in[tri].culled) continue; // was backface culled before
 
 			// Near Z clip
@@ -473,11 +443,11 @@ namespace game
 			// back face cull
 			if (!in[tri].edgeCalculated)
 			{
-				in[tri].e0.Set(in[tri].vertices[1], in[tri].vertices[2]);
-				in[tri].e1.Set(in[tri].vertices[2], in[tri].vertices[0]);
-				in[tri].e2.Set(in[tri].vertices[0], in[tri].vertices[1]);
+				in[tri].edge0.Set(in[tri].vertices[1], in[tri].vertices[2]);
+				in[tri].edge1.Set(in[tri].vertices[2], in[tri].vertices[0]);
+				in[tri].edge2.Set(in[tri].vertices[0], in[tri].vertices[1]);
 				in[tri].edgeCalculated = true;
-				in[tri].area = in[tri].e0.c + in[tri].e1.c + in[tri].e2.c;
+				in[tri].area = in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c;
 				if (in[tri].area < 0)
 				{
 					in[tri].culled = true;
@@ -497,7 +467,22 @@ namespace game
 				continue;
 			}
 
-			out.emplace_back(in[tri]);
+
+			// This needs copied as the bounding box modification 
+			// will only apply to this clip
+			outTri = in[tri];
+
+			// Partial offscreen
+			if (outTri.boundingBox.left < clip.left)
+				outTri.boundingBox.left = clip.left;
+			if (outTri.boundingBox.right > clip.right)
+				outTri.boundingBox.right = clip.right;
+			if (outTri.boundingBox.top < clip.top)
+				outTri.boundingBox.top = clip.top;
+			if (outTri.boundingBox.bottom > clip.bottom)
+				outTri.boundingBox.bottom = clip.bottom;
+
+			out.emplace_back(outTri);
 		}
 	}
 }

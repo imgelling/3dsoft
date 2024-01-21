@@ -128,7 +128,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/x.obj", model))
+		if (!Load("Content/teapot.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
