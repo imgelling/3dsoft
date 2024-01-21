@@ -54,6 +54,9 @@ public:
 	uint32_t maxFPS;
 	uint32_t scene;
 	float_t tz;
+	game::Color* texture;
+	uint32_t texW;
+	uint32_t texH;
 
 	game::FillMode state = game::FillMode::FilledColor;
 	game::Pointi resolution = { 1280 , 720 }; //2560, 1440 };
@@ -68,6 +71,9 @@ public:
 		scene = 2;
 		tz = 0.0f;
 		showText = true;
+		texture = nullptr;
+		texW = 64;
+		texH = 64;
 	}
 
 	uint32_t numclips = 16;
@@ -128,12 +134,16 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/room.obj", model))
+		if (!Load("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
 
 		ConvertBlenderToThis(model);
+
+		texture = new game::Color[texW * texH];
+		GenerateCheckerboard(texture, texW, texH);
+		software3D._currentTexture = texture;
 
 		game::Random rnd;
 
@@ -534,6 +544,24 @@ public:
 		pixelMode.Render();
 	}
 
+
+	void GenerateCheckerboard(game::Color* buff, unsigned int w, unsigned int h)
+	{
+		game::Color col1 = game::Colors::Red;
+		game::Color col2 = game::Colors::Blue;
+		for (uint32_t y = 0; y < h; y++)
+		{
+			if (y % 2 == 0)
+				std::swap(col1, col2);
+			for (uint32_t x = 0; x < w; x++)
+			{
+				if (x % 2 == 0)
+					std::swap(col1, col2);
+				buff[y * 64 + x] = col1;
+			}
+		}
+	}
+
 	void ConvertBlenderToThis(game::Mesh& mesh)
 	{
 		for (int tri = 0; tri < mesh.tris.size(); tri++)
@@ -571,8 +599,6 @@ public:
 			//mesh.tris[tri].faceNormal.z = mesh.tris[tri].faceNormal.z * -1.0f;
 			//mesh.tris[tri].faceNormal.y = mesh.tris[tri].faceNormal.y * -1.0f;
 			//mesh.tris[tri].faceNormal.x = mesh.tris[tri].faceNormal.x * -1.0f;
-
-			std::cout << mesh.tris[tri].uvs[0].x << "\n";
 
 		}
 	}

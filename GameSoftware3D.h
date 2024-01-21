@@ -35,6 +35,7 @@ namespace game
 		void Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
 		float_t* depthBuffer;
 		float_t time = 0.0f;
+		Color* _currentTexture;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -55,6 +56,7 @@ namespace game
 		_multiThreaded = false;
 		depthBuffer = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
+		_currentTexture = nullptr;
 	}
 
 	Software3D::~Software3D()
@@ -215,6 +217,11 @@ namespace game
 		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation vny(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation vnz(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+
+
+		// Texture parameters
+		ParameterEquation uParam(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vParam(triangle.uvs[0].v * oneOverW.x, triangle.uvs[1].v * oneOverW.y, triangle.uvs[2].v * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -398,6 +405,19 @@ namespace game
 					float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
 					float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
 					float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
+					colorAtPixel.Set(rd, gd, bd, 1.0f);
+
+
+					// texture stuff
+					float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
+					// calculate texture lookup
+					uint32_t tx = (uint32_t)(up * 64);
+					uint32_t ty = (uint32_t)(vp * 64);
+
+					rd = _currentTexture[ty * 64 + tx].rf * luminanceAmbient;
+					gd = _currentTexture[ty * 64 + tx].gf * luminanceAmbient;
+					bd = _currentTexture[ty * 64 + tx].bf * luminanceAmbient;
 					colorAtPixel.Set(rd, gd, bd, 1.0f);
 					*colorBuffer = colorAtPixel.packedABGR;
 				}
