@@ -206,7 +206,7 @@ namespace game
 		Vector3f lightNormal(-1.0f, 0.0f, 0.0f);  // direction the light is shining to (opposite for y)
 		lightNormal.Normalize();
 		//rot += (2 * 3.14f / 10.0f) * (time / 1000.0f);
-		lightNormal = RotateY(lightNormal, time);
+		lightNormal = RotateXYZ(lightNormal, 0, time , 0);
 		Color lightColor = Colors::Yellow;
 		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
 		luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;

@@ -75,14 +75,15 @@ namespace game
 		return ret;
 	}
 
-	inline Vector3f RotateZ(const Vector3f& in, const float_t theta)
+	template<typename T>
+	inline Vector3<T> RotateZ(const Vector3<T>& in, const float_t theta) noexcept
 	{
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
-		Vector3f ret(in);
+		Vector3<T> ret(in);
 
-		ret.x = in.x * ctheta - in.y * stheta;
-		ret.y = in.x * stheta + in.y * ctheta;
+		ret.x = (T)(in.x * ctheta - in.y * stheta);
+		ret.y = (T)(in.x * stheta + in.y * ctheta);
 
 		return ret;
 	}
@@ -116,6 +117,19 @@ namespace game
 		return ret;
 	}
 
+	template<typename T>
+	inline Vector3<T> RotateX(const Vector3<T>& in, const float_t theta) noexcept
+	{
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+		Vector3<T> ret(in);
+
+		ret.y = (T)(in.y * ctheta - in.z * stheta);
+		ret.z = (T)(in.y * stheta + in.z * ctheta);
+
+		return ret;
+	}
+
 	inline Triangle RotateY(const Triangle& tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
@@ -145,14 +159,15 @@ namespace game
 		return ret;
 	}
 
-	inline Vector3f RotateY(const Vector3f& in, const float_t theta)
+	template<typename T>
+	inline Vector3<T> RotateY(const Vector3<T>& in, const float_t theta) noexcept
 	{
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
-		Vector3f ret(in);
+		Vector3<T> ret(in);
 
-		ret.x = in.x * ctheta + in.z * stheta;
-		ret.z = in.x * -stheta + in.z * ctheta;
+		ret.x = (T)(in.x * ctheta + in.z * stheta);
+		ret.z = (T)(in.x * -stheta + in.z * ctheta);
 
 		return ret;
 	}
@@ -167,6 +182,19 @@ namespace game
 
 		return ret;
 	}
+
+	template<typename T>
+	inline Vector3<T> RotateXYZ(const Vector3<T>& in, const float_t thetaX, const float_t thetaY, const float_t thetaZ) noexcept
+	{
+		Vector3<T> ret(in);
+
+		ret = RotateX(ret, thetaX);
+		ret = RotateY(ret, thetaY);
+		ret = RotateZ(ret, thetaZ);
+
+		return ret;
+	}
+
 
 	inline Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) noexcept
 	{
