@@ -75,6 +75,18 @@ namespace game
 		return ret;
 	}
 
+	inline Vector3f RotateZ(const Vector3f& in, const float_t theta)
+	{
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+		Vector3f ret(in);
+
+		ret.x = in.x * ctheta - in.y * stheta;
+		ret.y = in.x * stheta + in.y * ctheta;
+
+		return ret;
+	}
+
 	inline Triangle RotateX(const Triangle& tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
@@ -129,6 +141,18 @@ namespace game
 		// Face normals
 		ret.faceNormal.x = (tri.faceNormal.x) * ctheta + (tri.faceNormal.z) * stheta;
 		ret.faceNormal.z = (tri.faceNormal.x) * -stheta + (tri.faceNormal.z) * ctheta;
+
+		return ret;
+	}
+
+	inline Vector3f RotateY(const Vector3f& in, const float_t theta)
+	{
+		float_t ctheta = cos(theta);
+		float_t stheta = sin(theta);
+		Vector3f ret(in);
+
+		ret.x = in.x * ctheta + in.z * stheta;
+		ret.z = in.x * -stheta + in.z * ctheta;
 
 		return ret;
 	}

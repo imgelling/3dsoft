@@ -34,6 +34,7 @@ namespace game
 		void ClearDepth(const float_t depth);
 		void Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
 		float_t* depthBuffer;
+		float_t time = 0.0f;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -177,6 +178,7 @@ namespace game
 	template<bool renderWireFrame, bool renderColor>
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip)
 	{
+		//static float_t rot = 0;
 		game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
 		game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
 		game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
@@ -201,8 +203,10 @@ namespace game
 
 		// Face normal light pre calc (directional light) can add ambient here
 		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f lightNormal(0.0f, -1.0f, 1.0f);  // direction the light is shining to (opposite for y)
+		Vector3f lightNormal(-1.0f, 0.0f, 0.0f);  // direction the light is shining to (opposite for y)
 		lightNormal.Normalize();
+		//rot += (2 * 3.14f / 10.0f) * (time / 1000.0f);
+		lightNormal = RotateY(lightNormal, time);
 		Color lightColor = Colors::Yellow;
 		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
 		luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
@@ -341,13 +345,6 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1.0f)
 					{
-						float_t pre = oneOverDepthEval;
-						//dd -= 0.5f;// 3.5f;
-						//if (dd > 1.0f) dd = 1.0f;
-						//dd = 1.0f - dd;
-						//pre *= dd;
-						//colorAtPixel.Set(1.0f * pre, 1.0f * pre, 1.0f * pre, 1.0f);
-						//*buffer = colorAtPixel.packedARGB;// game::Colors::White.packedARGB;
 						*colorBuffer = game::Colors::White.packedARGB;
 						++colorBuffer;
 						++depthBufferPtr;

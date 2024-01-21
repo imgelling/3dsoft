@@ -424,7 +424,8 @@ public:
 	{
 		static float_t rotation = 0.0f;
 
-		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		software3D.time = rotation;
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
