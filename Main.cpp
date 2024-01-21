@@ -127,10 +127,13 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		if (!Load("Content/torus2.obj", model))
+		// cone +z, conex +x, coney +y
+		if (!Load("Content/x.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
+
+		ConvertBlenderToThis(model);
 
 		game::Random rnd;
 
@@ -530,6 +533,56 @@ public:
 		pixelMode.Render();
 	}
 
+	void ConvertBlenderToThis(game::Mesh& mesh)
+	{
+		for (int tri = 0; tri < mesh.tris.size(); tri++)
+		{
+			//game::EdgeEquation e0(mesh.tris[tri].vertices[1], mesh.tris[tri].vertices[2]);
+			//game::EdgeEquation e1(mesh.tris[tri].vertices[2], mesh.tris[tri].vertices[0]);
+			//game::EdgeEquation e2(mesh.tris[tri].vertices[0], mesh.tris[tri].vertices[1]);
+
+			//float_t area(e0.c + e1.c + e2.c);
+			// If area is negative, it means wrong winding
+			//if (area < 0)
+			//{
+			//	std::swap(mesh.tris[tri].vertices[1], mesh.tris[tri].vertices[2]);
+			//	std::swap(mesh.tris[tri].normals[1], mesh.tris[tri].normals[2]);
+			//}
+			// make left handed
+			//mesh.tris[tri].vertices[0].z = -mesh.tris[tri].vertices[0].z;
+			//mesh.tris[tri].vertices[1].z = -mesh.tris[tri].vertices[1].z;
+			//mesh.tris[tri].vertices[2].z = -mesh.tris[tri].vertices[2].z;
+
+			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
+			std::swap(mesh.tris[tri].vertices[1].y, mesh.tris[tri].vertices[1].z);
+			std::swap(mesh.tris[tri].vertices[2].y, mesh.tris[tri].vertices[2].z);
+			//mesh.tris[tri].vertices[0].y = -mesh.tris[tri].vertices[0].y;
+			//mesh.tris[tri].vertices[1].y = -mesh.tris[tri].vertices[1].y;
+			//mesh.tris[tri].vertices[2].y = -mesh.tris[tri].vertices[2].y;
+			//mesh.tris[tri].vertices[0].x = -mesh.tris[tri].vertices[0].x;
+			//mesh.tris[tri].vertices[1].x = -mesh.tris[tri].vertices[1].x;
+			//mesh.tris[tri].vertices[2].x = -mesh.tris[tri].vertices[2].x;
+
+			//mesh.tris[tri].normals[0].z = -mesh.tris[tri].normals[0].z;
+			//mesh.tris[tri].normals[1].z = -mesh.tris[tri].normals[1].z;
+			//mesh.tris[tri].normals[2].z = -mesh.tris[tri].normals[2].z;
+			//mesh.tris[tri].normals[0].y = -mesh.tris[tri].normals[0].y;
+			//mesh.tris[tri].normals[1].y = -mesh.tris[tri].normals[1].y;
+			//mesh.tris[tri].normals[2].y = -mesh.tris[tri].normals[2].y;
+			std::swap(mesh.tris[tri].normals[0].y, mesh.tris[tri].normals[0].z);
+			std::swap(mesh.tris[tri].normals[1].y, mesh.tris[tri].normals[1].z);
+			std::swap(mesh.tris[tri].normals[2].y, mesh.tris[tri].normals[2].z);
+			//mesh.tris[tri].normals[0].x = -mesh.tris[tri].normals[0].x;
+			//mesh.tris[tri].normals[1].x = -mesh.tris[tri].normals[1].x;
+			//mesh.tris[tri].normals[2].x = -mesh.tris[tri].normals[2].x;
+
+			std::swap(mesh.tris[tri].faceNormal.y, mesh.tris[tri].faceNormal.z);
+			//mesh.tris[tri].faceNormal.z = mesh.tris[tri].faceNormal.z * -1.0f;
+			//mesh.tris[tri].faceNormal.y = mesh.tris[tri].faceNormal.y * -1.0f;
+			//mesh.tris[tri].faceNormal.x = mesh.tris[tri].faceNormal.x * -1.0f;
+		}
+	}
+
 	bool Load(std::string file, game::Mesh& mesh)
 	{
 		std::ifstream f(file.c_str());
@@ -593,9 +646,9 @@ public:
 					{
 						ss >> junk >> vert.x >> vert.y >> vert.z;
 						// added new
-						vert.y = vert.y * -1;
+						//vert.y = vert.y * -1;
 						//vert.z = vert.z * -1;
-						vert.x = vert.x * -1;
+						//vert.x = vert.x * -1;
 						// Also swapped ps and ns 2 and 3 for winding
 						verts.emplace_back(vert);
 						// start counting verts
@@ -636,8 +689,8 @@ public:
 					game::Triangle tri;
 					// Vertices
 					tri.vertices[0] = verts[(size_t)p1 - 1];
-					tri.vertices[1] = verts[(size_t)p3 - 1];
-					tri.vertices[2] = verts[(size_t)p2 - 1];
+					tri.vertices[1] = verts[(size_t)p2 - 1];
+					tri.vertices[2] = verts[(size_t)p3 - 1];
 					// UV (texture) coords
 					if (hasUVs)
 					{
@@ -657,12 +710,12 @@ public:
 					if (!hasNormals)
 					{
 						vcount[(size_t)p1 - 1]++;
-						vcount[(size_t)p3 - 1]++;
 						vcount[(size_t)p2 - 1]++;
+						vcount[(size_t)p3 - 1]++;
 						game::Vector3i t;
 						t.x = p1 - 1;
-						t.y = p3 - 1;
-						t.z = p2 - 1;
+						t.y = p2 - 1;
+						t.z = p3 - 1;
 						fcount.emplace_back(t);
 					}
 
@@ -672,8 +725,8 @@ public:
 					a = tri.vertices[1] - tri.vertices[0];
 					b = tri.vertices[2] - tri.vertices[0];
 					// this was changed to make face normals work with gamelib2
-					tri.faceNormal = b.Cross(a);
-					//tri.faceNormal = a.Cross(b);  // orig
+					//tri.faceNormal = b.Cross(a);
+					tri.faceNormal = a.Cross(b);  // orig
 
 
 					if (hasNormals)
@@ -691,8 +744,8 @@ public:
 					{
 						// Sum the normals
 						norms[(size_t)p1 - 1] += tri.faceNormal;// *-1.0f;
-						norms[(size_t)p3 - 1] += tri.faceNormal;// *-1.0f;
 						norms[(size_t)p2 - 1] += tri.faceNormal;// *-1.0f;
+						norms[(size_t)p3 - 1] += tri.faceNormal;// *-1.0f;
 						tri.faceNormal.Normalize();
 
 					}

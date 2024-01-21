@@ -233,7 +233,7 @@ namespace game
 
 		// Face normal light pre calc (directional light) can add ambient here
 		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
+		Vector3f lightNormal(0.0f, -1.0f, 1.0f);  // direction the light is shining to (opposite for y)
 		lightNormal.Normalize();
 		Color lightColor = Colors::Yellow;
 		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
@@ -524,10 +524,14 @@ static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const
 	game::Vector3f N(0.0f, 0.0f, 0.1f);// glm::vec4 N = Projection * glm::vec4(0.f, 0.f, Near, 1.f);
 	game::Vector3f F(0.0f, 0.0f, 100.0f); //glm::vec4 F = Projection * glm::vec4(0.f, 0.f, Far, 1.f);
 	game::Vector3f ret;
-	ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-	ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-	ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-	ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	//ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	//ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	//ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	//ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret.x = (N.x * m[0]);// +N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = N.y * m[5];// (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = /*(N.x * m[2] + N.y * m[6] + */(N.z * m[10] + N.w * m[14]);
+	ret.w = /*(N.x * m[3] + N.y * m[7] + */ N.z * m[11];// +N.w * m[15]);
 	ret /= ret.w;
 	e += (ret.z != -1.0f);
 	std::cout << "\nFOV -1 to +1\n";
@@ -536,10 +540,14 @@ static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const
 
 
 	N = F;
-	ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-	ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-	ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-	ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	//ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	//ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	//ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	//ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret.x = (N.x * m[0]);// +N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = N.y * m[5];// (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = /*(N.x * m[2] + N.y * m[6] + */(N.z * m[10] + N.w * m[14]);
+	ret.w = /*(N.x * m[3] + N.y * m[7] + */ N.z * m[11];// +N.w * m[15]);
 	ret /= ret.w;
 	e += (ret.z != 1.0f);
 	std::cout << "Fz = " << ret.z << "\n";
@@ -585,10 +593,14 @@ static void testmy_PerspectiveFOV2(const float_t fov, const float_t aspect, cons
 
 
 	N = F;
-	ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
-	ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
-	ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
-	ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	//ret.x = (N.x * m[0] + N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	//ret.y = (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	//ret.z = (N.x * m[2] + N.y * m[6] + N.z * m[10] + N.w * m[14]);
+	//ret.w = (N.x * m[3] + N.y * m[7] + N.z * m[11] + N.w * m[15]);
+	ret.x = (N.x * m[0]);// +N.y * m[4] + N.z * m[8] + N.w * m[12]);
+	ret.y = N.y * m[5];// (N.x * m[1] + N.y * m[5] + N.z * m[9] + N.w * m[13]);
+	ret.z = /*(N.x * m[2] + N.y * m[6] + */(N.z * m[10] + N.w * m[14]);
+	ret.w = /*(N.x * m[3] + N.y * m[7] + */ N.z * m[11];// +N.w * m[15]);
 	ret /= ret.w;
 	e += (ret.z != 1);
 	std::cout << "Fz = " << ret.z << "\n";
