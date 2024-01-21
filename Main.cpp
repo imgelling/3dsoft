@@ -120,7 +120,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode.currentVideoBuffer, pixelMode.GetPixelFrameBufferSize(),0))
+		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),0))
 		{
 			geLogLastError();
 		}
@@ -128,7 +128,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/teapot.obj", model))
+		if (!Load("Content/crypt.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -496,7 +496,7 @@ public:
 			game::Color dColor;
 			float_t depth = 0.0f;
 			float_t* zbuffer = software3D.depthBuffer;
-			uint32_t* vbuffer = pixelMode.currentVideoBuffer;
+			uint32_t* vbuffer = pixelMode.videoBuffer;
 			for (int pos = 0; pos < pixelMode.GetPixelFrameBufferSize().y * pixelMode.GetPixelFrameBufferSize().x; pos++)
 			{
 				depth = *zbuffer;
