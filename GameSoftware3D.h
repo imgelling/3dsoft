@@ -35,7 +35,9 @@ namespace game
 		void Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
 		float_t* depthBuffer;
 		float_t time = 0.0f;
-		Color* _currentTexture;
+		uint32_t* _currentTexture;
+		uint32_t _texW;
+		uint32_t _texH;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -57,6 +59,8 @@ namespace game
 		depthBuffer = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
 		_currentTexture = nullptr;
+		_texW = 0;
+		_texH = 0;
 	}
 
 	Software3D::~Software3D()
@@ -188,10 +192,11 @@ namespace game
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_colorBufferStride);
 
-		game::Recti boundingBox(triangle.boundingBox);  // needs to copy because it gets modified
+		//game::Recti boundingBox(triangle.boundingBox);  // needs to copy because it gets modified
 		game::Vector2f pixelOffset;
 
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
+
 
 		// Color parameter	
 		Color colorAtPixel;
@@ -257,11 +262,11 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* colorBuffer = _colorBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
-		float_t* depthBufferPtr = depthBuffer + (boundingBox.top * videoBufferStride + boundingBox.left);
+		uint32_t* colorBuffer = _colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
+		float_t* depthBufferPtr = depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		uint32_t xLoopCount = 0;
 
-		for (int32_t j = boundingBox.top; j <= boundingBox.bottom; ++j)
+		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
 			//if ((j % 2 == 0))  // cheap scanline effect
@@ -271,7 +276,7 @@ namespace game
 			//	continue;
 			//}
 			foundTriangle = false;
-			for (int32_t i = boundingBox.left; i <= boundingBox.right; ++i)
+			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
 				//if (i % 2 == 0)  // cheap scanline effect
@@ -388,8 +393,8 @@ namespace game
 					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-					float_t luminanceAmbient(luminance + 0.05f);
-					luminanceAmbient = min(luminanceAmbient, 1.0f);
+					//float_t luminanceAmbient(luminance + 0.05f);
+					//luminanceAmbient = min(luminanceAmbient, 1.0f);
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
@@ -401,25 +406,29 @@ namespace game
 					//bp = min(((luminance * lightColor.bf) + (bp)) / 2.0f, 1.0f);
 					//colorAtPixel.Set(rp, gp, bp, 1.0f);
 
-					// Common to all lighting except colored
-					float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
-					float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
-					float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
-					colorAtPixel.Set(rd, gd, bd, 1.0f);
+					// Common to all lighting except colored and texture
+					//float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
+					//float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
+					//float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
+					//colorAtPixel.Set(rd, gd, bd, 1.0f);
 
 
 					// texture stuff
 					float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 					float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 					// calculate texture lookup
-					uint32_t tx = (uint32_t)(up * 64);
-					uint32_t ty = (uint32_t)(vp * 64);
-
-					rd = _currentTexture[ty * 64 + tx].rf * luminanceAmbient;
-					gd = _currentTexture[ty * 64 + tx].gf * luminanceAmbient;
-					bd = _currentTexture[ty * 64 + tx].bf * luminanceAmbient;
-					colorAtPixel.Set(rd, gd, bd, 1.0f);
-					*colorBuffer = colorAtPixel.packedABGR;
+					up = min(up, 1.0f);
+					vp = min(vp, 1.0f);
+					float_t tx = max(std::round(up * (_texW-1)), 0.0f);//), _texW);  // -1 fix texture seems at max texW and texH
+					float_t ty = max(std::round(vp * (_texH-1)), 0.0f);// , _texH);
+					//rd = _currentTexture[ty * 64 + tx].rf * luminanceAmbient;
+					//gd = _currentTexture[ty * 64 + tx].gf * luminanceAmbient;
+					//bd = _currentTexture[ty * 64 + tx].bf * luminanceAmbient;
+					//colorAtPixel.Set(rd, gd, bd, 1.0f);
+					uint32_t color = _currentTexture[(int)ty * _texW + (int)tx];
+					//if (color & 0x0000FF00)  // when 
+						//std::cout << "shit\n";
+					*colorBuffer = color;// colorAtPixel.packedABGR;
 				}
 				++colorBuffer;
 				++depthBufferPtr;
@@ -430,7 +439,7 @@ namespace game
 		fence++;
 	}
 
-	// clipping  53 before
+	// clipping  
 	// 	// For clipping only need znear so a lot can be precalc for plane
 	inline void Software3D::Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
 	{

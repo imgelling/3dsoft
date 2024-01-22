@@ -54,7 +54,7 @@ public:
 	uint32_t maxFPS;
 	uint32_t scene;
 	float_t tz;
-	game::Color* texture;
+	uint32_t* texture;
 	uint32_t texW;
 	uint32_t texH;
 
@@ -141,12 +141,23 @@ public:
 
 		ConvertBlenderToThis(model);
 
-		texture = new game::Color[texW * texH];
+		texture = new uint32_t[texW * texH];
 		GenerateCheckerboard(texture, texW, texH);
 		software3D._currentTexture = texture;
+		software3D._texH = texH;
+		software3D._texW = texW;
+
+
+		//game::ImageLoader imageLoader;
+		//uint32_t t = 0;
+		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
+		//texture = new uint32_t[texW * texH];
+		//memcpy(texture, temp, (size_t)texW * texH * 4);
+		//software3D._currentTexture = texture;
+		//software3D._texH = texH;
+		//software3D._texW = texW;
 
 		game::Random rnd;
-
 		rnd.NewSeed();
 
 		float_t z = 0.0f;// 100.0f;
@@ -545,7 +556,7 @@ public:
 	}
 
 
-	void GenerateCheckerboard(game::Color* buff, unsigned int w, unsigned int h)
+	void GenerateCheckerboard(uint32_t* buff, unsigned int w, unsigned int h)
 	{
 		game::Color col1 = game::Colors::Red;
 		game::Color col2 = game::Colors::Blue;
@@ -557,7 +568,7 @@ public:
 			{
 				if (x % 2 == 0)
 					std::swap(col1, col2);
-				buff[y * 64 + x] = col1;
+				buff[y * w + x] = col1.packedABGR;
 			}
 		}
 	}
@@ -599,6 +610,21 @@ public:
 			//mesh.tris[tri].faceNormal.z = mesh.tris[tri].faceNormal.z * -1.0f;
 			//mesh.tris[tri].faceNormal.y = mesh.tris[tri].faceNormal.y * -1.0f;
 			//mesh.tris[tri].faceNormal.x = mesh.tris[tri].faceNormal.x * -1.0f;
+
+			//std::swap(mesh.tris[tri].uvs[0].u, mesh.tris[tri].uvs[0].v);
+			//std::swap(mesh.tris[tri].uvs[1].u, mesh.tris[tri].uvs[1].v);
+			//std::swap(mesh.tris[tri].uvs[2].u, mesh.tris[tri].uvs[2].v);
+
+			mesh.tris[tri].uvs[0].v = 1.0f - mesh.tris[tri].uvs[0].v;
+			mesh.tris[tri].uvs[1].v = 1.0f - mesh.tris[tri].uvs[1].v;
+			mesh.tris[tri].uvs[2].v = 1.0f - mesh.tris[tri].uvs[2].v;
+
+			//mesh.tris[tri].uvs[0].u = 1.0f - mesh.tris[tri].uvs[0].u;
+			//mesh.tris[tri].uvs[1].u = 1.0f - mesh.tris[tri].uvs[1].u;
+			//mesh.tris[tri].uvs[2].u = 1.0f - mesh.tris[tri].uvs[2].u;
+
+			//if (mesh.tris[tri].uvs[0].v > 1.0f) std::cout << "SHIT!!!!!\n";
+
 
 		}
 	}
