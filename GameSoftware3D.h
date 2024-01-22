@@ -32,7 +32,7 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
-		void Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept;
+		void Clip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
 		float_t* depthBuffer;
 		float_t time = 0.0f;
 		uint32_t* _currentTexture;
@@ -45,7 +45,6 @@ namespace game
 		uint32_t* _colorBuffer;
 		uint32_t _colorBufferStride;
 		uint32_t _totalBufferSize;
-		//float_t* _depthBuffer;
 		FillMode _FillMode;
 	};
 
@@ -393,8 +392,8 @@ namespace game
 					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-					//float_t luminanceAmbient(luminance + 0.05f);
-					//luminanceAmbient = min(luminanceAmbient, 1.0f);
+					float_t luminanceAmbient(luminance + 0.05f);
+					luminanceAmbient = min(luminanceAmbient, 1.0f);
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
@@ -412,22 +411,25 @@ namespace game
 					//float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
 					//colorAtPixel.Set(rd, gd, bd, 1.0f);
 
-
 					// texture stuff
 					float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 					float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 					// calculate texture lookup
 					up = min(up, 1.0f);
 					vp = min(vp, 1.0f);
-					float_t tx = max(std::round(up * (_texW-1)), 0.0f);//), _texW);  // -1 fix texture seems at max texW and texH
-					float_t ty = max(std::round(vp * (_texH-1)), 0.0f);// , _texH);
-					//rd = _currentTexture[ty * 64 + tx].rf * luminanceAmbient;
-					//gd = _currentTexture[ty * 64 + tx].gf * luminanceAmbient;
-					//bd = _currentTexture[ty * 64 + tx].bf * luminanceAmbient;
-					//colorAtPixel.Set(rd, gd, bd, 1.0f);
-					uint32_t color = _currentTexture[(int)ty * _texW + (int)tx];
-					//if (color & 0x0000FF00)  // when 
-						//std::cout << "shit\n";
+					float_t tx = max(std::round(up * (_texW-1)), 0.0f);  // -1 fix texture seams at max texW and texH
+					float_t ty = max(std::round(vp * (_texH-1)), 0.0f);
+
+					// texture lighting
+					uint32_t color = _currentTexture[(int32_t)ty * _texW + (int32_t)tx];
+					uint32_t rc = color & 0xFF;
+					uint32_t gc = (color >> 8) & 0xFF;
+					uint32_t bc = (color >> 16) & 0xFF;
+					rc = (uint32_t)(rc * luminanceAmbient);
+					gc = (uint32_t)(gc * luminanceAmbient);
+					bc = (uint32_t)(bc * luminanceAmbient);
+					color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
+
 					*colorBuffer = color;// colorAtPixel.packedABGR;
 				}
 				++colorBuffer;
@@ -441,7 +443,7 @@ namespace game
 
 	// clipping  
 	// 	// For clipping only need znear so a lot can be precalc for plane
-	inline void Software3D::Clip(std::vector<game::Triangle>& in, const game::Recti clip, std::vector<game::Triangle>& out) const noexcept
+	inline void Software3D::Clip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept
 	{
 		out.clear();
 		Triangle outTri;

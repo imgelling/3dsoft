@@ -134,7 +134,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/torus2.obj", model))
+		if (!Load("Content/character-ghost.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -148,14 +148,14 @@ public:
 		software3D._texW = texW;
 
 
-		//game::ImageLoader imageLoader;
-		//uint32_t t = 0;
-		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
-		//texture = new uint32_t[texW * texH];
-		//memcpy(texture, temp, (size_t)texW * texH * 4);
-		//software3D._currentTexture = texture;
-		//software3D._texH = texH;
-		//software3D._texW = texW;
+		game::ImageLoader imageLoader;
+		uint32_t t = 0;
+		uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
+		texture = new uint32_t[texW * texH];
+		memcpy(texture, temp, (size_t)texW * texH * 4);
+		software3D._currentTexture = texture;
+		software3D._texH = texH;
+		software3D._texW = texW;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -622,10 +622,6 @@ public:
 			//mesh.tris[tri].uvs[0].u = 1.0f - mesh.tris[tri].uvs[0].u;
 			//mesh.tris[tri].uvs[1].u = 1.0f - mesh.tris[tri].uvs[1].u;
 			//mesh.tris[tri].uvs[2].u = 1.0f - mesh.tris[tri].uvs[2].u;
-
-			//if (mesh.tris[tri].uvs[0].v > 1.0f) std::cout << "SHIT!!!!!\n";
-
-
 		}
 	}
 
