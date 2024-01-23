@@ -112,6 +112,7 @@ public:
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
+		attributes.DebugMode = true;
 		geSetAttributes(attributes);
 
 		//geSetFrameLock(10);
@@ -275,6 +276,8 @@ public:
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 		}
 
+
+
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, -1);
@@ -327,6 +330,7 @@ public:
 				camera.position.z -= 0.1f * (msElapsed / 1000.0f);
 			}
 		}
+
 
 		// strafe left
 		if (geKeyboard.IsKeyHeld(geK_Q))
@@ -553,6 +557,14 @@ public:
 		}
 
 		pixelMode.Render();
+		if (geKeyboard.WasKeyPressed(geK_F5))
+		{
+			game::ImageSaver save;
+			if (!save.Save(pixelMode.videoBuffer, "test.png", resolution.width, resolution.height, 0))
+			{
+				std::cout << "save failed---- :(\n";
+			}
+		}
 	}
 
 
