@@ -71,7 +71,6 @@ namespace game
 	Software3D::~Software3D()
 	{
 		_threadPool.Stop();
-		//if (depthBuffer != nullptr) delete[] depthBuffer;
 		for (uint32_t i = 0; i < numbuffers; i++)
 			if (clearDepthBuffer[i] != nullptr) delete[] clearDepthBuffer[i];
 		depthBuffer = nullptr;

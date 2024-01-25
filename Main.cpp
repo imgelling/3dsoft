@@ -107,12 +107,16 @@ public:
 
 	void Initialize()
 	{
+//#if defined(DEBUG) | defined(_DEBUG)
+		//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		//_CrtSetBreakAlloc(613);
+//#endif
 		game::Attributes attributes;
 
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
-		attributes.DebugMode = true;
+		attributes.DebugMode = false;
 		geSetAttributes(attributes);
 
 		//geSetFrameLock(10);
@@ -135,7 +139,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/character-ghost.obj", model))
+		if (!Load("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -149,14 +153,14 @@ public:
 		software3D._texW = texW;
 
 
-		game::ImageLoader imageLoader;
-		uint32_t t = 0;
-		uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
-		texture = new uint32_t[texW * texH];
-		memcpy(texture, temp, (size_t)texW * texH * 4);
-		software3D._currentTexture = texture;
-		software3D._texH = texH;
-		software3D._texW = texW;
+		//game::ImageLoader imageLoader;
+		//uint32_t t = 0;
+		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
+		//texture = new uint32_t[texW * texH];
+		//memcpy(texture, temp, (size_t)texW * texH * 4);
+		//software3D._currentTexture = texture;
+		//software3D._texH = texH;
+		//software3D._texW = texW;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -191,12 +195,6 @@ public:
 		topLeftTri.uvs[2].u = 0.0f;
 		topLeftTri.uvs[2].v = 1.0f;
 		topLeftTri.color[2] = game::Colors::Blue;
-
-		//game::Vector3f u = topLeftTri.vertices[1] - topLeftTri.vertices[0];
-		//game::Vector3f v = topLeftTri.vertices[2] - topLeftTri.vertices[0];
-		//topLeftTri.faceNormal = u.Cross(v);// topLeftTri.vertices[0].Cross(topLeftTri.vertices[1]);
-		//topLeftTri.faceNormal.Normalize();
-
 
 		// tr
 		bottomRightTri.vertices[0].x = size;
@@ -539,6 +537,7 @@ public:
 		uint32_t fenceCount = 0;
 		for (uint32_t c = 0; c < numclips; c++)
 		{
+			clippedTris[c].clear();
 			software3D.Clip(quad, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
 			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
