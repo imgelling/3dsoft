@@ -34,15 +34,18 @@ namespace game
 		void ClearDepth(const float_t depth);
 		void Clip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
 		float_t* depthBuffer;
+		float_t* clearDepthBuffer[10];
+		uint32_t numbuffers;
+		uint32_t currentDepth = 0;
 		float_t time = 0.0f;
 		uint32_t* _currentTexture;
 		uint32_t _texW;
 		uint32_t _texH;
+		uint32_t* _colorBuffer;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
 		ThreadPool _threadPool;
-		uint32_t* _colorBuffer;
 		uint32_t _colorBufferStride;
 		uint32_t _totalBufferSize;
 		FillMode _FillMode;
@@ -56,6 +59,9 @@ namespace game
 		_totalBufferSize = 0;
 		_multiThreaded = false;
 		depthBuffer = nullptr;
+		numbuffers = 5;
+		for (uint32_t i = 0; i < 10; i++)
+			clearDepthBuffer[i] = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
 		_currentTexture = nullptr;
 		_texW = 0;
@@ -65,7 +71,9 @@ namespace game
 	Software3D::~Software3D()
 	{
 		_threadPool.Stop();
-		if (depthBuffer != nullptr) delete[] depthBuffer;
+		//if (depthBuffer != nullptr) delete[] depthBuffer;
+		for (uint32_t i = 0; i < numbuffers; i++)
+			if (clearDepthBuffer[i] != nullptr) delete[] clearDepthBuffer[i];
 		depthBuffer = nullptr;
 	}
 
@@ -77,7 +85,21 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		std::fill_n(depthBuffer, _totalBufferSize, depth); 
+		if (_multiThreaded) //1235 torus no move
+		{
+			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[currentDepth], _totalBufferSize, depth));
+			currentDepth++;
+			if (currentDepth > numbuffers - 1) currentDepth = 0;
+			depthBuffer = clearDepthBuffer[currentDepth];
+		}
+		else
+		{
+			std::fill_n(depthBuffer, _totalBufferSize, depth); 
+		}
+		//std::fill(depthBuffer, depthBuffer + _totalBufferSize, depth);
+		//FillMemory(depthBuffer, 255, _totalBufferSize*4);
+		//memcpy(depthBuffer, clearDepthBuffer, _totalBufferSize * 4);
+		//MoveMemory(depthBuffer, clearDepthBuffer, _totalBufferSize * 4);
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
@@ -127,7 +149,16 @@ namespace game
 			_threadPool.Start(threads);
 		}
 		depthBuffer = new float_t[colorBufferSize.width * colorBufferSize.height];
-		ClearDepth(1000.0f);
+		//ClearDepth(1000.0f);
+		std::fill_n(depthBuffer, _totalBufferSize, 100.0f); //5.14
+		for (uint32_t i = 0; i < numbuffers; i++)
+		{
+			clearDepthBuffer[i] = new float_t[_totalBufferSize];
+			memcpy(clearDepthBuffer[i], depthBuffer, _totalBufferSize * 4);
+		}
+		currentDepth = 0;
+		delete[] depthBuffer;
+		depthBuffer = clearDepthBuffer[currentDepth];
 		return true;
 	}
 
@@ -155,7 +186,7 @@ namespace game
 		default: break;
 		}
 
-		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
+		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount) //52.6
 		{
 				renderer(tris[triangleCount]);
 		}
@@ -183,7 +214,6 @@ namespace game
 	template<bool renderWireFrame, bool renderColor>
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip)
 	{
-		//static float_t rot = 0;
 		game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
 		game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
 		game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
@@ -191,7 +221,6 @@ namespace game
 		bool foundTriangle(false);
 		uint32_t videoBufferStride(_colorBufferStride);
 
-		//game::Recti boundingBox(triangle.boundingBox);  // needs to copy because it gets modified
 		game::Vector2f pixelOffset;
 
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
@@ -209,10 +238,10 @@ namespace game
 
 		// Face normal light pre calc (directional light) can add ambient here
 		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
-		Vector3f lightNormal(-1.0f, 0.0f, 0.0f);  // direction the light is shining to (opposite for y)
+		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
 		lightNormal.Normalize();
 		//rot += (2 * 3.14f / 10.0f) * (time / 1000.0f);
-		lightNormal = RotateXYZ(lightNormal, 0, time , 0);
+		//lightNormal = RotateXYZ(lightNormal, 0, time , 0);
 		Color lightColor = Colors::Yellow;
 		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
 		luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
@@ -331,6 +360,7 @@ namespace game
 				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
 				if (oneOverDepthEval < *depthBufferPtr)
 				{
+
 					*depthBufferPtr = oneOverDepthEval;
 				}
 				else
@@ -410,27 +440,28 @@ namespace game
 					//float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
 					//float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
 					//colorAtPixel.Set(rd, gd, bd, 1.0f);
-
+					//*colorBuffer = colorAtPixel.packedABGR;
+					
 					// texture stuff
 					float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 					float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
 					// calculate texture lookup
 					up = min(up, 1.0f);
 					vp = min(vp, 1.0f);
-					float_t tx = max(std::round(up * (_texW-1)), 0.0f);  // -1 fix texture seams at max texW and texH
-					float_t ty = max(std::round(vp * (_texH-1)), 0.0f);
+					int32_t tx = max((int32_t)(up * (_texW-1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+					int32_t ty = max((int32_t)(vp * (_texH-1) + 0.5f), 0);
 
 					// texture lighting
-					uint32_t color = _currentTexture[(int32_t)ty * _texW + (int32_t)tx];
-					uint32_t rc = color & 0xFF;
-					uint32_t gc = (color >> 8) & 0xFF;
-					uint32_t bc = (color >> 16) & 0xFF;
+					//uint32_t color = _currentTexture[(int32_t)ty * _texW + (int32_t)tx];
+					uint32_t rc = (_currentTexture[(int32_t)ty * _texW + (int32_t)tx] >> 0) & 0xFF;  // 5.07
+					uint32_t gc = (_currentTexture[(int32_t)ty * _texW + (int32_t)tx] >> 8) & 0xFF;
+					uint32_t bc = (_currentTexture[(int32_t)ty * _texW + (int32_t)tx] >> 16) & 0xFF;
 					rc = (uint32_t)(rc * luminanceAmbient);
 					gc = (uint32_t)(gc * luminanceAmbient);
-					bc = (uint32_t)(bc * luminanceAmbient);
-					color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
+					bc = (uint32_t)(bc * luminanceAmbient); // 10.55
+					//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
-					*colorBuffer = color;// colorAtPixel.packedABGR;
+					*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; //0.91
 				}
 				++colorBuffer;
 				++depthBufferPtr;

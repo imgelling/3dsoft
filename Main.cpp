@@ -169,6 +169,8 @@ public:
 		topLeftTri.vertices[0].y = -size;
 		topLeftTri.vertices[0].z = z;
 		topLeftTri.color[0] = game::Colors::Red;
+		topLeftTri.uvs[0].u = 0.0f;
+		topLeftTri.uvs[0].v = 0.0f;
 		topLeftTri.faceNormal.x = 0.0f;
 		topLeftTri.faceNormal.y = 0.0f;
 		topLeftTri.faceNormal.z = -1.0f;
@@ -178,12 +180,16 @@ public:
 		topLeftTri.vertices[1].x = size;
 		topLeftTri.vertices[1].y = -size;
 		topLeftTri.vertices[1].z = z;
+		topLeftTri.uvs[1].u = 1.0f;
+		topLeftTri.uvs[1].v = 0.0f;
 		topLeftTri.color[1] = game::Colors::Green;
 
 		// bl
 		topLeftTri.vertices[2].x = -size;
 		topLeftTri.vertices[2].y = size;
 		topLeftTri.vertices[2].z = z;
+		topLeftTri.uvs[2].u = 0.0f;
+		topLeftTri.uvs[2].v = 1.0f;
 		topLeftTri.color[2] = game::Colors::Blue;
 
 		//game::Vector3f u = topLeftTri.vertices[1] - topLeftTri.vertices[0];
@@ -197,6 +203,8 @@ public:
 		bottomRightTri.vertices[0].y = -size;
 		bottomRightTri.vertices[0].z = z;
 		bottomRightTri.color[0] = game::Colors::Green;
+		bottomRightTri.uvs[0].u = 1.0f;
+		bottomRightTri.uvs[0].v = 0.0f;
 		bottomRightTri.faceNormal.x = 0.0f;
 		bottomRightTri.faceNormal.y = 0.0f;
 		bottomRightTri.faceNormal.z = -1.0f;
@@ -205,12 +213,16 @@ public:
 		bottomRightTri.vertices[1].x = size;
 		bottomRightTri.vertices[1].y = size;
 		bottomRightTri.vertices[1].z = z;
+		bottomRightTri.uvs[1].u = 1.0f;
+		bottomRightTri.uvs[1].v = 1.0f;
 		bottomRightTri.color[1] = game::Colors::White;
 
 		// bl
 		bottomRightTri.vertices[2].x = -size;
 		bottomRightTri.vertices[2].y = size;
 		bottomRightTri.vertices[2].z = z;
+		bottomRightTri.uvs[2].u = 0.0f;
+		bottomRightTri.uvs[2].v = 1.0f;
 		bottomRightTri.color[2] = game::Colors::Blue;
 
 		for (uint32_t i = 0; i < 3; i++)
@@ -415,33 +427,52 @@ public:
 		}
 	}
 
-
-	inline game::Triangle Project(const game::Triangle& vertex, const game::Projection& proj) const noexcept
+	inline void PerpectiveDivide(game::Triangle& triangle)
 	{
-		game::Triangle ret(vertex);
+		triangle.vertices[0] /= triangle.vertices[0].w;
+		triangle.vertices[1] /= triangle.vertices[1].w;
+		triangle.vertices[2] /= triangle.vertices[2].w;
+	}
 
-		for (int i = 0; i < 3; i++)
-		{
-			ret.vertices[i].x = vertex.vertices[i].x * proj.a;// projMat[0];// xScale;// (ret.vertices[i].x * projMat[0] + ret.vertices[i].y * projMat[4] + ret.vertices[i].z * projMat[8] + ret.vertices[i].w * projMat[12]);
-			ret.vertices[i].y = vertex.vertices[i].y * proj.b;// projMat[5];// yScale;// (ret.vertices[i].x * projMat[1] + ret.vertices[i].y * projMat[5] + ret.vertices[i].z * projMat[9] + ret.vertices[i].w * projMat[13]);
-			ret.vertices[i].z = (vertex.vertices[i].z * proj.c) + (vertex.vertices[i].w * proj.e);// projMat[10] + ret.vertices[i].w * projMat[14]);
-			ret.vertices[i].w = vertex.vertices[i].z;// *proj.d;// projMat[15];// (ret.vertices[i].x * projMat[3] + ret.vertices[i].y * projMat[7] + ret.vertices[i].z * projMat[11] + ret.vertices[i].w * projMat[15]);
-			
-			// Projection divide
-			ret.vertices[i] /= ret.vertices[i].w;
-			{
-				// this scale is not really part of projection
-				ret.vertices[i].x += 1.0f;
-				ret.vertices[i].x *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().x;// cale);// (vertex.x * 2.0 / (float_t)pixelMode.GetPixelFrameBufferSize().x) - 1.0f;
-				
-			}
-			{
-				// this scale is not really part of projection
-				ret.vertices[i].y += 1.0f;
-				ret.vertices[i].y *= 0.5f * (float_t)pixelMode.GetPixelFrameBufferSize().y;				
-			}
-			ret.color[i] = vertex.color[i];
-		}
+	inline void ScaleToScreen(game::Triangle& triangle) const
+	{
+		triangle.vertices[0].x += 1.0f;
+		triangle.vertices[1].x += 1.0f;
+		triangle.vertices[2].x += 1.0f;
+
+		triangle.vertices[0].y += 1.0f;
+		triangle.vertices[1].y += 1.0f;
+		triangle.vertices[2].y += 1.0f;
+
+		triangle.vertices[0].x *= 0.5f * (float_t)resolution.x;
+		triangle.vertices[1].x *= 0.5f * (float_t)resolution.x;
+		triangle.vertices[2].x *= 0.5f * (float_t)resolution.x;
+
+		triangle.vertices[0].y *= 0.5f * (float_t)resolution.y;
+		triangle.vertices[1].y *= 0.5f * (float_t)resolution.y;
+		triangle.vertices[2].y *= 0.5f * (float_t)resolution.y;
+	}
+
+	inline game::Triangle Project(const game::Triangle& triangle, const game::Projection& proj) const noexcept
+	{
+		game::Triangle ret(triangle);
+
+		ret.vertices[0].x = triangle.vertices[0].x * proj.a;
+		ret.vertices[1].x = triangle.vertices[1].x * proj.a;
+		ret.vertices[2].x = triangle.vertices[2].x * proj.a;
+
+		ret.vertices[0].y = triangle.vertices[0].y * proj.b;
+		ret.vertices[1].y = triangle.vertices[1].y * proj.b;
+		ret.vertices[2].y = triangle.vertices[2].y * proj.b;
+
+		ret.vertices[0].z = (triangle.vertices[0].z * proj.c) + (triangle.vertices[0].w * proj.e);
+		ret.vertices[1].z = (triangle.vertices[1].z * proj.c) + (triangle.vertices[1].w * proj.e);
+		ret.vertices[2].z = (triangle.vertices[2].z * proj.c) + (triangle.vertices[2].w * proj.e);
+
+		ret.vertices[0].w = triangle.vertices[0].z;
+		ret.vertices[1].w = triangle.vertices[1].z;
+		ret.vertices[2].w = triangle.vertices[2].z;
+
 		return ret;
 	}
 
@@ -454,6 +485,7 @@ public:
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
+		software3D._colorBuffer = pixelMode.videoBuffer;
 		software3D.ClearDepth(100.0f);
 
 		quad.clear();
@@ -466,11 +498,15 @@ public:
 			test = game::RotateXYZ(topLeftTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 			test = game::Translate(test, t);
 			test = Project(test,projection);
+			PerpectiveDivide(test);
+			ScaleToScreen(test);
 			quad.emplace_back(test);
 
 			test = game::RotateXYZ(bottomRightTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 			test = game::Translate(test, t);
 			test = Project(test, projection);
+			PerpectiveDivide(test);
+			ScaleToScreen(test);
 			quad.emplace_back(test);
 		}
 
@@ -481,6 +517,8 @@ public:
 				test = game::RotateXYZ(tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = game::Translate(test, t);
 				test = Project(test, projection);
+				PerpectiveDivide(test);
+				ScaleToScreen(test);
 				quad.emplace_back(test);
 			}
 		}
@@ -492,6 +530,8 @@ public:
 				test = game::RotateXYZ(model.tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = game::Translate(test, t);
 				test = Project(test, projection);
+				PerpectiveDivide(test);
+				ScaleToScreen(test);
 				quad.emplace_back(test);
 			}
 		}
@@ -512,10 +552,8 @@ public:
 			fenceCount += (uint32_t)clippedTris[c].size();
 		}
 		software3D.Fence(fenceCount);
-		//for (uint32_t i = 0; i < numclips; i++)
-		//	pixelMode.Rect(clip[i], game::Colors::Yellow);
 
-		// show depth buffer
+		// show depth buffer 468
 		if (geKeyboard.IsKeyHeld(geK_D))
 		{
 
@@ -540,11 +578,11 @@ public:
 
 		if (showText)
 		{
-			pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
+			//pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
 			game::Pointi m = pixelMode.GetScaledMousePosition();
 			float_t* zb = software3D.depthBuffer;
 			float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
-			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 50, game::Colors::Yellow, 1);
+			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 40, game::Colors::Yellow, 1);
 
 
 			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
