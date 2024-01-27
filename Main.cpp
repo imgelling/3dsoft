@@ -44,6 +44,7 @@ public:
 	game::Recti clip[16];  // in renderer
 	std::vector<game::Triangle> clippedTris[16];
 	game::Projection projection;
+	game::Matrix4x4f projMat;
 	std::vector<game::Triangle> tris;
 	game::Mesh model;
 
@@ -65,7 +66,7 @@ public:
 	Game() : game::Engine()
 	{
 		ZeroMemory(&projection, sizeof(game::Projection));
-		//ZeroMemory(&topLeftTri, sizeof(game::Triangle));
+		//ZeroMemory(&topLeftTri, sizeof(game::Triangle));  // dont do this
 		//ZeroMemory(&bottomRightTri, sizeof(game::Triangle));
 		maxFPS = 0;
 		scene = 0;
@@ -257,9 +258,10 @@ public:
 			tris.emplace_back(temp);
 		}
 
-		// Pre calc projection matrix
+		// Pre calc projection numbers
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
-
+		// Pre calc projection matrix
+		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 		quad.reserve(1000);
 	}
 
@@ -502,23 +504,21 @@ public:
 		roty.SetRotationY(-camera.rotation.y);	// works
 		rotz.SetRotationZ(0);					// works
 		rotationMat = rotx * roty * rotz;  // works
-		rotTranMat = translateMat * rotationMat; // nope
+		rotTranMat = projMat * translateMat * rotationMat; // works
+		//rotTranMat = projMat * rotTranMat;
 		//std::cout << translateMat.m[11] << "\n";
 
 		if (scene == 0)
 		{
 			test = topLeftTri;
+			test.faceNormal = test.faceNormal * rotationMat;
 			//test = game::RotateXYZ(topLeftTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f); //1160
 			test.vertices[0] = (topLeftTri.vertices[0] * rotTranMat); //* rotationMat + t);//
 			test.vertices[1] = (topLeftTri.vertices[1] * rotTranMat); //* rotationMat + t);//* translateMat);
 			test.vertices[2] = (topLeftTri.vertices[2] * rotTranMat); //* rotationMat + t);//* translateMat);
-			//std::cout << test.vertices[0].z << "\n";
-			//std::cout << test.vertices[1].z << "\n";
-			//std::cout << test.vertices[2].z << "\n";
-			test.faceNormal = test.faceNormal * rotationMat;
 
 			//test = game::Translate(test, t);
-			test = Project(test,projection);
+			//test = Project(test,projection);
 			PerpectiveDivide(test);
 			ScaleToScreen(test);
 			//std::cout << test.vertices[0].y << "\n";
@@ -526,13 +526,13 @@ public:
 
 			//test = game::RotateXYZ(bottomRightTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 			test = bottomRightTri;
+			test.faceNormal = test.faceNormal * rotationMat;
 			test.vertices[0] = bottomRightTri.vertices[0] * rotTranMat; //rotationMat + t;
 			test.vertices[1] = bottomRightTri.vertices[1] * rotTranMat; //rotationMat + t;
 			test.vertices[2] = bottomRightTri.vertices[2] * rotTranMat; //rotationMat + t;
-			test.faceNormal = test.faceNormal * rotationMat;
 
 			//test = game::Translate(test, t);
-			test = Project(test, projection);
+			//test = Project(test, projection);
 			PerpectiveDivide(test);
 			ScaleToScreen(test);
 			quad.emplace_back(test);
@@ -544,11 +544,12 @@ public:
 			{
 				//test = game::RotateXYZ(tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = tris[i];
-				test.vertices[0] = (tris[i].vertices[0] * rotationMat + t);//* translateMat);
-				test.vertices[1] = (tris[i].vertices[1] * rotationMat + t);//* translateMat);
-				test.vertices[2] = (tris[i].vertices[2] * rotationMat + t);//* translateMat);
+				test.faceNormal = test.faceNormal * rotationMat;
+				test.vertices[0] = (tris[i].vertices[0] * rotTranMat);//* translateMat);
+				test.vertices[1] = (tris[i].vertices[1] * rotTranMat);//* translateMat);
+				test.vertices[2] = (tris[i].vertices[2] * rotTranMat);//* translateMat);
 				//test = game::Translate(test, t);
-				test = Project(test, projection);
+				//test = Project(test, projection);
 				PerpectiveDivide(test);
 				ScaleToScreen(test);
 				quad.emplace_back(test);
@@ -561,11 +562,12 @@ public:
 			{
 				//test = game::RotateXYZ(model.tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = model.tris[i];
-				test.vertices[0] = (model.tris[i].vertices[0] * rotationMat + t);//* translateMat);
-				test.vertices[1] = (model.tris[i].vertices[1] * rotationMat + t);//* translateMat);
-				test.vertices[2] = (model.tris[i].vertices[2] * rotationMat + t);//* translateMat);
+				test.faceNormal = test.faceNormal * rotationMat;
+				test.vertices[0] = (model.tris[i].vertices[0] * rotTranMat);//* translateMat);
+				test.vertices[1] = (model.tris[i].vertices[1] * rotTranMat);//* translateMat);
+				test.vertices[2] = (model.tris[i].vertices[2] * rotTranMat);//* translateMat);
 				//test = game::Translate(test, t);
-				test = Project(test, projection);
+				//test = Project(test, projection);
 				PerpectiveDivide(test);
 				ScaleToScreen(test);
 				quad.emplace_back(test);

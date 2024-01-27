@@ -46,6 +46,27 @@ namespace game
 		proj.e = -(nearz * farz) / (farz - nearz);
 	}
 
+	inline void my_PerspectiveFOV2(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz, Matrix4x4f& proj)
+	{
+		float_t D2R = 3.14159f / 180.0f;
+		float_t halfFOV = tan((D2R * fov) / 2.0f);
+		float_t yScale = 1.0f / halfFOV;
+		float_t xScale = 1.0f / (aspect * halfFOV);
+		//float_t m[] = {
+		//xScale, 0,      0,                           0,
+		//0,      yScale, 0,                           0,
+		//0,      0,      farz / (farz - nearz),			 1,
+		//0,      0,		-(nearz * farz) / (farz - nearz),	 0
+		//};
+		proj.m[0] = xScale;
+		proj.m[5] = yScale;
+		proj.m[10] = farz / (farz - nearz);
+		proj.m[11] = 1.0f;
+		proj.m[14] = -(nearz * farz) / (farz - nearz);
+		proj.m[15] = 0;
+		//memcpy(proj.m, m, sizeof(float) * 16);
+	}
+
 	inline Triangle RotateZ(const Triangle& tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
