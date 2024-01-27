@@ -68,7 +68,7 @@ public:
 		ZeroMemory(&topLeftTri, sizeof(game::Triangle));
 		ZeroMemory(&bottomRightTri, sizeof(game::Triangle));
 		maxFPS = 0;
-		scene = 2;
+		scene = 0;
 		tz = 0.0f;
 		showText = true;
 		texture = nullptr;
@@ -139,7 +139,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/torus2.obj", model))
+		if (!Load("Content/advancedCharacter.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -153,14 +153,14 @@ public:
 		software3D._texW = texW;
 
 
-		//game::ImageLoader imageLoader;
-		//uint32_t t = 0;
-		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
-		//texture = new uint32_t[texW * texH];
-		//memcpy(texture, temp, (size_t)texW * texH * 4);
-		//software3D._currentTexture = texture;
-		//software3D._texH = texH;
-		//software3D._texW = texW;
+		game::ImageLoader imageLoader;
+		uint32_t t = 0;
+		uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
+		texture = new uint32_t[texW * texH];
+		memcpy(texture, temp, (size_t)texW * texH * 4);
+		software3D._currentTexture = texture;
+		software3D._texH = texH;
+		software3D._texW = texW;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -258,7 +258,7 @@ public:
 		}
 
 		// Pre calc projection matrix
-		game::my_PerspectiveFOV(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
+		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 
 		quad.reserve(1000);
 	}
@@ -491,17 +491,47 @@ public:
 		game::Vector3f t(0.0f, 0.0f, 2.0f);
 		t -= camera.position;
 
+		game::Matrix4x4f rotx;
+		game::Matrix4x4f roty;
+		game::Matrix4x4f rotz;
+		game::Matrix4x4f rotationMat;
+		game::Matrix4x4f translateMat;
+		game::Matrix4x4f rotTranMat;
+		translateMat.SetTranslation(t.x, t.y, -t.z); // doesnt work
+		rotx.SetRotationX(-camera.rotation.x);	// works
+		roty.SetRotationY(-camera.rotation.y);	// works
+		rotz.SetRotationZ(0);					// works
+		rotationMat = rotx * roty * rotz;  // works
+		rotTranMat = rotationMat * translateMat; // nope
+		//std::cout << translateMat.m[11] << "\n";
+
 		if (scene == 0)
 		{
-			test = game::RotateXYZ(topLeftTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
-			test = game::Translate(test, t);
+			test = topLeftTri;
+			//test = game::RotateXYZ(topLeftTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f); //1160
+			test.vertices[0] = (topLeftTri.vertices[0] * translateMat); //* rotationMat + t);//
+			test.vertices[1] = (topLeftTri.vertices[1] * translateMat); //* rotationMat + t);//* translateMat);
+			test.vertices[2] = (topLeftTri.vertices[2] * translateMat); //* rotationMat + t);//* translateMat);
+			std::cout << test.vertices[0].z << "\n";
+			std::cout << test.vertices[1].z << "\n";
+			std::cout << test.vertices[2].z << "\n";
+			test.faceNormal = test.faceNormal * rotationMat;
+
+			//test = game::Translate(test, t);
 			test = Project(test,projection);
 			PerpectiveDivide(test);
 			ScaleToScreen(test);
+			//std::cout << test.vertices[0].y << "\n";
 			quad.emplace_back(test);
 
-			test = game::RotateXYZ(bottomRightTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
-			test = game::Translate(test, t);
+			//test = game::RotateXYZ(bottomRightTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
+			test = bottomRightTri;
+			test.vertices[0] = bottomRightTri.vertices[0] * rotationMat + t;
+			test.vertices[1] = bottomRightTri.vertices[1] * rotationMat + t;
+			test.vertices[2] = bottomRightTri.vertices[2] * rotationMat + t;
+			test.faceNormal = test.faceNormal * rotationMat;
+
+			//test = game::Translate(test, t);
 			test = Project(test, projection);
 			PerpectiveDivide(test);
 			ScaleToScreen(test);
@@ -512,8 +542,12 @@ public:
 		{
 			for (int i = 0; i < tris.size(); i++)
 			{
-				test = game::RotateXYZ(tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
-				test = game::Translate(test, t);
+				//test = game::RotateXYZ(tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
+				test = tris[i];
+				test.vertices[0] = (tris[i].vertices[0] * rotationMat + t);//* translateMat);
+				test.vertices[1] = (tris[i].vertices[1] * rotationMat + t);//* translateMat);
+				test.vertices[2] = (tris[i].vertices[2] * rotationMat + t);//* translateMat);
+				//test = game::Translate(test, t);
 				test = Project(test, projection);
 				PerpectiveDivide(test);
 				ScaleToScreen(test);
@@ -521,12 +555,16 @@ public:
 			}
 		}
 
-		if (scene == 2)
+		if (scene == 2) //674
 		{
 			for (int i = 0; i < model.tris.size(); i++)
 			{
-				test = game::RotateXYZ(model.tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
-				test = game::Translate(test, t);
+				//test = game::RotateXYZ(model.tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
+				test = model.tris[i];
+				test.vertices[0] = (model.tris[i].vertices[0] * rotationMat + t);//* translateMat);
+				test.vertices[1] = (model.tris[i].vertices[1] * rotationMat + t);//* translateMat);
+				test.vertices[2] = (model.tris[i].vertices[2] * rotationMat + t);//* translateMat);
+				//test = game::Translate(test, t);
 				test = Project(test, projection);
 				PerpectiveDivide(test);
 				ScaleToScreen(test);
