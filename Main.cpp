@@ -140,7 +140,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/advancedCharacter.obj", model))
+		if (!Load("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -154,14 +154,14 @@ public:
 		software3D._texW = texW;
 
 
-		game::ImageLoader imageLoader;
-		uint32_t t = 0;
-		uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
-		texture = new uint32_t[texW * texH];
-		memcpy(texture, temp, (size_t)texW * texH * 4);
-		software3D._currentTexture = texture;
-		software3D._texH = texH;
-		software3D._texW = texW;
+		//game::ImageLoader imageLoader;
+		//uint32_t t = 0;
+		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
+		//texture = new uint32_t[texW * texH];
+		//memcpy(texture, temp, (size_t)texW * texH * 4);
+		//software3D._currentTexture = texture;
+		//software3D._texH = texH;
+		//software3D._texW = texW;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -453,29 +453,6 @@ public:
 		triangle.vertices[2].y *= 0.5f * (float_t)resolution.y;
 	}
 
-	inline game::Triangle Project(const game::Triangle& triangle, const game::Projection& proj) const noexcept
-	{
-		game::Triangle ret(triangle);
-
-		ret.vertices[0].x = triangle.vertices[0].x * proj.a;
-		ret.vertices[1].x = triangle.vertices[1].x * proj.a;
-		ret.vertices[2].x = triangle.vertices[2].x * proj.a;
-
-		ret.vertices[0].y = triangle.vertices[0].y * proj.b;
-		ret.vertices[1].y = triangle.vertices[1].y * proj.b;
-		ret.vertices[2].y = triangle.vertices[2].y * proj.b;
-
-		ret.vertices[0].z = (triangle.vertices[0].z * proj.c) + (triangle.vertices[0].w * proj.e);
-		ret.vertices[1].z = (triangle.vertices[1].z * proj.c) + (triangle.vertices[1].w * proj.e);
-		ret.vertices[2].z = (triangle.vertices[2].z * proj.c) + (triangle.vertices[2].w * proj.e);
-
-		ret.vertices[0].w = triangle.vertices[0].z;
-		ret.vertices[1].w = triangle.vertices[1].z;
-		ret.vertices[2].w = triangle.vertices[2].z;
-
-		return ret;
-	}
-
 	void Render(const float_t msElapsed)
 	{
 		static float_t rotation = 0.0f;
@@ -512,6 +489,9 @@ public:
 		{
 			test = topLeftTri;
 			test.faceNormal = test.faceNormal * rotationMat;
+			test.normals[0] = test.normals[0] * rotationMat;
+			test.normals[1] = test.normals[1] * rotationMat;
+			test.normals[2] = test.normals[2] * rotationMat;
 			//test = game::RotateXYZ(topLeftTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f); //1160
 			test.vertices[0] = (topLeftTri.vertices[0] * rotTranMat); //* rotationMat + t);//
 			test.vertices[1] = (topLeftTri.vertices[1] * rotTranMat); //* rotationMat + t);//* translateMat);
@@ -527,6 +507,9 @@ public:
 			//test = game::RotateXYZ(bottomRightTri, -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 			test = bottomRightTri;
 			test.faceNormal = test.faceNormal * rotationMat;
+			test.normals[0] = test.normals[0] * rotationMat;
+			test.normals[1] = test.normals[1] * rotationMat;
+			test.normals[2] = test.normals[2] * rotationMat;
 			test.vertices[0] = bottomRightTri.vertices[0] * rotTranMat; //rotationMat + t;
 			test.vertices[1] = bottomRightTri.vertices[1] * rotTranMat; //rotationMat + t;
 			test.vertices[2] = bottomRightTri.vertices[2] * rotTranMat; //rotationMat + t;
@@ -545,6 +528,9 @@ public:
 				//test = game::RotateXYZ(tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = tris[i];
 				test.faceNormal = test.faceNormal * rotationMat;
+				test.normals[0] = test.normals[0] * rotationMat;
+				test.normals[1] = test.normals[1] * rotationMat;
+				test.normals[2] = test.normals[2] * rotationMat;
 				test.vertices[0] = (tris[i].vertices[0] * rotTranMat);//* translateMat);
 				test.vertices[1] = (tris[i].vertices[1] * rotTranMat);//* translateMat);
 				test.vertices[2] = (tris[i].vertices[2] * rotTranMat);//* translateMat);
@@ -563,6 +549,9 @@ public:
 				//test = game::RotateXYZ(model.tris[i], -camera.rotation.x, -camera.rotation.y, 0 * 0.5f);
 				test = model.tris[i];
 				test.faceNormal = test.faceNormal * rotationMat;
+				test.normals[0] = test.normals[0] * rotationMat;
+				test.normals[1] = test.normals[1] * rotationMat;
+				test.normals[2] = test.normals[2] * rotationMat;
 				test.vertices[0] = (model.tris[i].vertices[0] * rotTranMat);//* translateMat);
 				test.vertices[1] = (model.tris[i].vertices[1] * rotTranMat);//* translateMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * rotTranMat);//* translateMat);
