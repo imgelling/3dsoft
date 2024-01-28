@@ -140,7 +140,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/torus2.obj", model))
+		if (!Load("Content/room.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -535,6 +535,53 @@ public:
 			}
 		}
 
+		//// Define the edges of the near clip plane
+		//std::vector<std::array<double, 3>> plane_edges = { {0, 0, d}, {w, 0, d}, {w, h, d}, {0, h, d} };
+
+		//// Define a function to check if a point is inside the plane
+		//bool inside(const std::array<double, 3>&point, const std::array<double, 3>&edge) {
+		//	// Use the cross product to determine the orientation
+		//	return (edge[1][0] - edge[0][0]) * (point[2] - edge[0][2]) - (edge[1][2] - edge[0][2]) * (point[0] - edge[0][0]) >= 0;
+		//}
+
+		//// Define a function to compute the intersection point of a line and a plane
+		//std::array<double, 3> intersect(const std::array<double, 3>&point1, const std::array<double, 3>&point2, const std::array<double, 3>&edge) {
+		//	// Use linear interpolation to find the intersection point
+		//	double t = ((edge[0][0] - point1[0]) * (edge[1][2] - edge[0][2]) - (edge[0][2] - point1[2]) * (edge[1][0] - edge[0][0])) / ((point2[0] - point1[0]) * (edge[1][2] - edge[0][2]) - (point2[2] - point1[2]) * (edge[1][0] - edge[0][0]));
+		//	return { point1[0] + t * (point2[0] - point1[0]), point1[1] + t * (point2[1] - point1[1]), point1[2] + t * (point2[2] - point1[2]) };
+		//}
+
+		//// Define a function to clip a triangle to a plane
+		//std::vector<std::array<double, 3>> clip(const std::vector<std::array<double, 3>>&triangle) {
+		//	// Start with the input triangle as the output polygon
+		//	std::vector<std::array<double, 3>> output = triangle;
+		//	// Loop through the edges of the plane
+		//	for (const auto& edge : plane_edges) {
+		//		// Initialize an empty vector for the new output polygon
+		//		std::vector<std::array<double, 3>> new_output;
+		//		// Loop through the edges of the output polygon
+		//		for (size_t i = 0; i < output.size(); i++) {
+		//			// Get the current and next vertices of the edge
+		//			const auto& current = output[i];
+		//			const auto& next = output[(i + 1) % output.size()];
+		//			// Check if the current vertex is inside the plane
+		//			if (inside(current, edge)) {
+		//				// Add it to the new output polygon
+		//				new_output.push_back(current);
+		//			}
+		//			// Check if the edge crosses the plane
+		//			if (inside(current, edge) != inside(next, edge)) {
+		//				// Compute the intersection point and add it to the new output polygon
+		//				new_output.push_back(intersect(current, next, edge));
+		//			}
+		//		}
+		//		// Replace the output polygon with the new one
+		//		output = new_output;
+		//	}
+		//	// Return the final output polygon
+		//	return output;
+		//}
+
 		if (scene == 2)
 		{
 			for (int i = 0; i < model.tris.size(); i++)
@@ -548,6 +595,27 @@ public:
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
+				if ((test.vertices[0].z < 0) ||
+					(test.vertices[1].z < 0) ||
+					(test.vertices[2].z < 0))
+				{
+
+					// output = triangle
+					// for each edge of triangle
+					// check if current vertex is inside
+					//		if so add it to newout
+					// check if next vertex is outside
+					//		if so, compute intersection of current and next and plane
+					//		and add it to new out
+					// current = next, next = next one (basically go around the triangle and do all edges)
+					//             const auto& current = output[i];
+					//				const auto& next = output[(i + 1) % output.size()];
+					// output = clipped tri against 1 plane
+
+					// dont forget to comment out near z in clip method
+					// can probably do back face cull here also
+				}
+
 				PerpectiveDivide(test);
 				ScaleToScreen(test);
 				quad.emplace_back(test);
@@ -558,7 +626,7 @@ public:
 		for (uint32_t c = 0; c < numclips; c++)
 		{
 			clippedTris[c].clear();
-			software3D.Clip(quad, clip[c], clippedTris[c]);
+			software3D.ScreenClip(quad, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
 			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
 				{

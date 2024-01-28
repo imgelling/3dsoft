@@ -32,7 +32,7 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
-		void Clip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
+		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
 		uint32_t numbuffers;
@@ -473,7 +473,7 @@ namespace game
 
 	// clipping  
 	// 	// For clipping only need znear so a lot can be precalc for plane
-	inline void Software3D::Clip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept
+	inline void Software3D::ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept
 	{
 		out.clear();
 		Triangle outTri;
