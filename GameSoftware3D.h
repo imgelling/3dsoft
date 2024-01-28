@@ -153,7 +153,7 @@ namespace game
 		for (uint32_t i = 0; i < numbuffers; i++)
 		{
 			clearDepthBuffer[i] = new float_t[_totalBufferSize];
-			memcpy(clearDepthBuffer[i], depthBuffer, _totalBufferSize * 4);
+			memcpy(clearDepthBuffer[i], depthBuffer, (size_t)_totalBufferSize * 4);
 		}
 		currentDepth = 0;
 		delete[] depthBuffer;
@@ -452,9 +452,9 @@ namespace game
 
 					// texture lighting
 					//uint32_t color = _currentTexture[(int32_t)ty * _texW + (int32_t)tx];
-					uint32_t rc = (_currentTexture[(int32_t)ty * _texW + (int32_t)tx] >> 0) & 0xFF;  // 5.07
-					uint32_t gc = (_currentTexture[(int32_t)ty * _texW + (int32_t)tx] >> 8) & 0xFF;
-					uint32_t bc = (_currentTexture[(int32_t)ty * _texW + (int32_t)tx] >> 16) & 0xFF;
+					uint32_t rc = (_currentTexture[ty * _texW + tx] >> 0) & 0xFF;  // 5.07
+					uint32_t gc = (_currentTexture[ty * _texW + tx] >> 8) & 0xFF;
+					uint32_t bc = (_currentTexture[ty * _texW + tx] >> 16) & 0xFF;
 					rc = (uint32_t)(rc * luminanceAmbient);
 					gc = (uint32_t)(gc * luminanceAmbient);
 					bc = (uint32_t)(bc * luminanceAmbient); // 10.55
@@ -480,7 +480,7 @@ namespace game
 		for (int tri = 0; tri < in.size(); tri++)
 		{
 			//Triangle outTri(in[tri]);
-			if (in[tri].culled) continue; // was backface culled before
+			if (in[tri].backFaceCulled) continue; // was backface culled before
 
 			// Near Z clip
 			if ((in[tri].vertices[0].w < 0.1f) ||
@@ -508,7 +508,7 @@ namespace game
 				in[tri].area = in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c;
 				if (in[tri].area < 0)
 				{
-					in[tri].culled = true;
+					in[tri].backFaceCulled = true;
 					continue;
 				}
 			}

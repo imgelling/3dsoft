@@ -6,10 +6,6 @@
 
 namespace game
 {
-
-
-
-
 	enum FillMode
 	{
 		WireFrame,
@@ -42,8 +38,9 @@ namespace game
 		}
 	}
 
-	struct EdgeEquation 
+	class EdgeEquation 
 	{
+	public:
 		float_t a;
 		float_t b;
 		float_t c;
@@ -123,7 +120,7 @@ namespace game
 		EdgeEquation edge2;
 
 		// Clipping data
-		bool culled = false;
+		bool backFaceCulled = false;
 		bool edgeCalculated = false;
 		bool boundingCalculated = false;
 		Recti boundingBox;
@@ -133,6 +130,7 @@ namespace game
 	struct Mesh
 	{
 		std::vector<Triangle> tris;
+		Matrix4x4f modelMat;
 	};
 
 	struct ParameterEquation 
