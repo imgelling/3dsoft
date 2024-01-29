@@ -422,7 +422,7 @@ namespace game
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
 					float_t luminanceAmbient(luminance + 0.05f);
-					luminanceAmbient = min(luminanceAmbient, 1.0f);
+					luminanceAmbient = 1.0f;// min(luminanceAmbient, 1.0f);
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
@@ -482,13 +482,13 @@ namespace game
 			//Triangle outTri(in[tri]);
 			if (in[tri].backFaceCulled) continue; // was backface culled before
 
-			// Near Z clip
-			if ((in[tri].vertices[0].w < 0.1f) ||
-				(in[tri].vertices[1].w < 0.1f) ||
-				(in[tri].vertices[2].w < 0.1f))
-			{
-				continue;
-			}
+			//// Near Z clip
+			//if ((in[tri].vertices[0].w < 0.1f) ||
+			//	(in[tri].vertices[1].w < 0.1f) ||
+			//	(in[tri].vertices[2].w < 0.1f))
+			//{
+			//	continue;
+			//}
 
 			// Far Z clip
 			if ((in[tri].vertices[0].w > 100.0f) ||
