@@ -453,9 +453,9 @@ public:
 		triangle.vertices[2].y *= 0.5f * (float_t)resolution.y;
 	}
 
-	game::Vector3f Vector_IntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t)
+	game::Vector3f Vector_IntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t) noexcept
 	{
-		plane_n.Normalize();// Vector_Normalise(plane_n);
+		//plane_n.Normalize();// Vector_Normalise(plane_n);
 		float plane_d = -plane_n.Dot(plane_p);// Vector_DotProduct(plane_n, plane_p);
 		float ad = lineStart.Dot(plane_n);// Vector_DotProduct(lineStart, plane_n);
 		float bd = lineEnd.Dot(plane_n);// Vector_DotProduct(lineEnd, plane_n);
@@ -703,7 +703,7 @@ public:
 		rotz.SetRotationZ(0);					// works
 		rotationMat = rotx * roty * rotz;  // works
 		viewMat = translateMat * rotationMat; // works
-		mvpMat = viewMat; //  * mesh.modelMat; // works
+		mvpMat = projMat * viewMat; //  * mesh.modelMat; // works
 
 
 		if (scene == 0)
@@ -767,13 +767,6 @@ public:
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
-				test.vertices[0] = (test.vertices[0] * projMat);
-				test.vertices[1] = (test.vertices[1] * projMat);
-				test.vertices[2] = (test.vertices[2] * projMat);
-
-				//PerpectiveDivide(test);
-				//ScaleToScreen(test);
-
 				//if ((test.vertices[0].z < -0.1) ||
 				//	(test.vertices[1].z < -0.1) ||
 				//	(test.vertices[2].z < -0.1))
@@ -783,16 +776,11 @@ public:
 
 					game::Triangle out1;
 					game::Triangle out2;
-					int numtris = Triangle_ClipAgainstPlane(planePoint, planeNormal, test, out1, out2);
+					uint32_t numtris = Triangle_ClipAgainstPlane(planePoint, planeNormal, test, out1, out2);
 					if (numtris == 2)
 					{
-						//out2.vertices[0] = (out2.vertices[0] * projMat);
-						//out2.vertices[1] = (out2.vertices[1] * projMat);
-						//out2.vertices[2] = (out2.vertices[2] * projMat);
-
 						PerpectiveDivide(out2);
 						ScaleToScreen(out2);
-
 						if (check_winding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
 						{
 							std::swap(out2.vertices[1], out2.vertices[0]);
@@ -800,13 +788,8 @@ public:
 							std::swap(out2.uvs[1], out2.uvs[0]);
 							std::swap(out2.color[1], out2.color[0]);
 						}
-
 						quad.emplace_back(out2);
 					}
-
-					//out1.vertices[0] = (out1.vertices[0] * projMat);
-					//out1.vertices[1] = (out1.vertices[1] * projMat);
-					//out1.vertices[2] = (out1.vertices[2] * projMat);
 
 					PerpectiveDivide(out1);
 					ScaleToScreen(out1);
@@ -817,8 +800,6 @@ public:
 						std::swap(out1.uvs[1], out1.uvs[0]);
 						std::swap(out1.color[1], out1.color[0]);
 					}
-
-					//if (numtris == 1)
 
 					quad.emplace_back(out1);
 				}
