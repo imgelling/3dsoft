@@ -140,7 +140,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/uvplane.obj", model))
+		if (!Load("Content/uvcube.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -764,12 +764,12 @@ public:
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
 
-				// needs back face culled  after MVP (needing view/camera)
-				if (check_winding(test.vertices[0], test.vertices[1], test.vertices[2]) < 0)
-				{
-					test.backFaceCulled = true;
-					continue;
-				}
+				//// needs back face culled  after MVP (needing view/camera)
+				//if (check_winding(test.vertices[0], test.vertices[1], test.vertices[2]) < 0)
+				//{
+				//	test.backFaceCulled = true;
+				//	continue;
+				//}
 				 
 				if ((test.vertices[0].z < 0) ||
 					(test.vertices[1].z < 0) ||
