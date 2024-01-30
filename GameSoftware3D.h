@@ -472,7 +472,6 @@ namespace game
 	}
 
 	// clipping  
-	// 	// For clipping only need znear so a lot can be precalc for plane
 	inline void Software3D::ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept
 	{
 		out.clear();
@@ -506,11 +505,11 @@ namespace game
 				in[tri].edge2.Set(in[tri].vertices[0], in[tri].vertices[1]);
 				in[tri].edgeCalculated = true;
 				in[tri].area = in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c;
-				if (in[tri].area < 0)
-				{
-					in[tri].backFaceCulled = true;
-					continue;
-				}
+				//if (in[tri].area < 0)
+				//{
+				//	in[tri].backFaceCulled = true;
+				//	continue;
+				//}
 			}
 			if (!in[tri].boundingCalculated)
 			{

@@ -140,7 +140,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/torus2.obj", model))
+		if (!Load("Content/uvplane.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -461,12 +461,8 @@ public:
 		float bd = lineEnd.Dot(plane_n);// Vector_DotProduct(lineEnd, plane_n);
 		t = (-plane_d - ad) / (bd - ad);
 		game::Vector3f lineStartToEnd = lineEnd - lineStart;// Vector_Sub(lineEnd, lineStart);
-		float wt = lineEnd.w - lineStart.w;
-		wt = lineStartToEnd.w * t;
 		game::Vector3f lineToIntersect = lineStartToEnd * t;// Vector_Mul(lineStartToEnd, t);
-		lineToIntersect += lineStart;
-		lineToIntersect.w = wt;
-		return lineToIntersect;// lineStart + lineToIntersect;// Vector_Add(lineStart, lineToIntersect);
+		return lineStart + lineToIntersect;// Vector_Add(lineStart, lineToIntersect);
 	}
 
 
@@ -495,8 +491,8 @@ public:
 
 		// Create two temporary storage arrays to classify points either side of plane
 		// If distance sign is positive, point lies on "inside" of plane
-		game::Vector3f* inside_points[3] = {};  int nInsidePointCount = 0;
-		game::Vector3f* outside_points[3] = {}; int nOutsidePointCount = 0;
+		game::Vector3f inside_points[3] = {};  int nInsidePointCount = 0;
+		game::Vector3f outside_points[3] = {}; int nOutsidePointCount = 0;
 
 		// Get signed distance of each point in triangle to plane
 		float d0 = dist(in_tri.vertices[0]);
@@ -515,42 +511,42 @@ public:
 
 		if (d0 >= 0.0f)
 		{
-			inside_points[nInsidePointCount++] = &in_tri.vertices[0];
+			inside_points[nInsidePointCount++] = in_tri.vertices[0];
 			in_normals[nInsidePointCount - 1] = in_tri.normals[0];
 			in_uv[nInsidePointCount - 1] = in_tri.uvs[0];
 			in_d[nInsidePointCount - 1] = in_tri.vertices[0].w;
 		}
 		else
 		{
-			outside_points[nOutsidePointCount++] = &in_tri.vertices[0];
+			outside_points[nOutsidePointCount++] = in_tri.vertices[0];
 			out_normals[nOutsidePointCount - 1] = in_tri.normals[0];
 			out_uv[nOutsidePointCount - 1] = in_tri.uvs[0];
 			out_d[nOutsidePointCount - 1] = in_tri.vertices[0].w;
 		}
 		if (d1 >= 0.0f)
 		{
-			inside_points[nInsidePointCount++] = &in_tri.vertices[1];
+			inside_points[nInsidePointCount++] = in_tri.vertices[1];
 			in_normals[nInsidePointCount - 1] = in_tri.normals[1];
 			in_uv[nInsidePointCount - 1] = in_tri.uvs[1];
 			in_d[nInsidePointCount - 1] = in_tri.vertices[1].w;
 		}
 		else
 		{
-			outside_points[nOutsidePointCount++] = &in_tri.vertices[1];
+			outside_points[nOutsidePointCount++] = in_tri.vertices[1];
 			out_normals[nOutsidePointCount - 1] = in_tri.normals[1];
 			out_uv[nOutsidePointCount - 1] = in_tri.uvs[1];
 			out_d[nOutsidePointCount - 1] = in_tri.vertices[1].w;
 		}
 		if (d2 >= 0.0f)
 		{
-			inside_points[nInsidePointCount++] = &in_tri.vertices[2];
+			inside_points[nInsidePointCount++] = in_tri.vertices[2];
 			in_normals[nInsidePointCount - 1] = in_tri.normals[2];
 			in_uv[nInsidePointCount - 1] = in_tri.uvs[2];
 			in_d[nInsidePointCount - 1] = in_tri.vertices[2].w;
 		}
 		else
 		{
-			outside_points[nOutsidePointCount++] = &in_tri.vertices[2];
+			outside_points[nOutsidePointCount++] = in_tri.vertices[2];
 			out_normals[nOutsidePointCount - 1] = in_tri.normals[2];
 			out_uv[nOutsidePointCount - 1] = in_tri.uvs[2];
 			out_d[nOutsidePointCount - 1] = in_tri.vertices[2].w;
@@ -578,7 +574,7 @@ public:
 			out_tri1 = in_tri;
 
 			// The inside point is valid, so keep that...
-			out_tri1.vertices[0] = *inside_points[0];
+			out_tri1.vertices[0] = inside_points[0];
 			out_tri1.normals[0] = in_normals[0];
 			out_tri1.uvs[0] = in_uv[0];
 
@@ -588,7 +584,7 @@ public:
 			float t = 0.0;
 
 			// First intersection
-			out_tri1.vertices[1] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0], t);
+			out_tri1.vertices[1] = Vector_IntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
 
 			// Correct vertex normal due to clipping
 			out_tri1.normals[1].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
@@ -600,7 +596,7 @@ public:
 
 
 			// Second intersection
-			out_tri1.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[1], t);
+			out_tri1.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, inside_points[0], outside_points[1], t);
 
 			out_tri1.normals[2].x = t * (out_normals[1].x - in_normals[0].x) + in_normals[0].x;
 			out_tri1.normals[2].y = t * (out_normals[1].y - in_normals[0].y) + in_normals[0].y;
@@ -625,18 +621,18 @@ public:
 			// The first triangle consists of the two inside points and a new
 			// point determined by the location where one side of the triangle
 			// intersects with the plane
-			out_tri1.vertices[0] = *inside_points[0];
+			out_tri1.vertices[0] = inside_points[0];
 			out_tri1.normals[0] = in_normals[0];
 			out_tri1.uvs[0] = in_uv[0];
 
-			out_tri1.vertices[1] = *inside_points[1];
+			out_tri1.vertices[1] = inside_points[1];
 			out_tri1.normals[1] = in_normals[1];
 			out_tri1.uvs[1] = in_uv[1];
 
 			float t = 0.0;
 
 			// First intersection
-			out_tri1.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0], t);
+			out_tri1.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
 
 			// Correct the vertex normal due to clipping
 			out_tri1.normals[2].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
@@ -648,7 +644,7 @@ public:
 
 
 			// 2nd intersection
-			out_tri2.vertices[0] = *inside_points[1];
+			out_tri2.vertices[0] = inside_points[1];
 			out_tri2.normals[0] = in_normals[1];
 			out_tri2.uvs[0] = in_uv[1];
 
@@ -656,7 +652,7 @@ public:
 			out_tri2.normals[1] = out_tri1.normals[2];
 			out_tri2.uvs[1] = out_tri1.uvs[2];
 
-			out_tri2.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[1], *outside_points[0], t);
+			out_tri2.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, inside_points[1], outside_points[0], t);
 
 
 			// Correct the vertex normal due to clipping
@@ -767,9 +763,17 @@ public:
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
-				//if ((test.vertices[0].z < -0.1) ||
-				//	(test.vertices[1].z < -0.1) ||
-				//	(test.vertices[2].z < -0.1))
+
+				// needs back face culled  after MVP (needing view/camera)
+				if (check_winding(test.vertices[0], test.vertices[1], test.vertices[2]) < 0)
+				{
+					test.backFaceCulled = true;
+					continue;
+				}
+				 
+				if ((test.vertices[0].z < 0) ||
+					(test.vertices[1].z < 0) ||
+					(test.vertices[2].z < 0))
 				{
 					game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
 					game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
@@ -803,14 +807,15 @@ public:
 
 					quad.emplace_back(out1);
 				}
-				//else
-				//{
-				//	PerpectiveDivide(test);
-				//	ScaleToScreen(test);
-				//	quad.emplace_back(test);
-				//}
+				else
+				{
+					PerpectiveDivide(test);
+					ScaleToScreen(test);
+					quad.emplace_back(test);
+				}
 			}
 		}
+		//std::cout << quad.size() << "\n";
 
 		uint32_t fenceCount = 0;
 		for (uint32_t c = 0; c < numclips; c++)
