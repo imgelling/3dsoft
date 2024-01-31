@@ -390,13 +390,13 @@ namespace game
 						++depthBufferPtr;
 						continue;
 					}
-					else
-					{
-						if (!renderColor)
-						{
-							*colorBuffer = game::Colors::Black.packedARGB;
-						}
-					}
+					//else
+					//{
+					//	if (!renderColor)
+					//	{
+					//		*colorBuffer = game::Colors::Black.packedARGB;
+					//	}
+					//}
 				}
 
 				// Color filled
