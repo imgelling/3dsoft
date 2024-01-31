@@ -422,7 +422,7 @@ namespace game
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
 					float_t luminanceAmbient(luminance + 0.05f);
-					luminanceAmbient = 1.0f;// min(luminanceAmbient, 1.0f);
+					luminanceAmbient = min(luminanceAmbient, 1.0f);
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;

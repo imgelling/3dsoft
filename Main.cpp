@@ -56,6 +56,7 @@ public:
 	void SetRotation(const float x, const float y, const float z)
 	{
 		// Setup rotation matrices
+
 		if (x)
 		{
 			rotation.x += x;
@@ -123,21 +124,14 @@ inline game::Matrix4x4f Camera::GenerateView()
 
 inline Camera::Camera()
 {
-	yaw = 3.14159f / 2.0f;
+	yaw = -3.14159f / 2.0f; // y is 90 degrees off
 	pitch = 0.0f;
 	roll = 0.0f;
 	position = { 0.0f,0.0f,0.0f };
-	forward.x = -cos(yaw) * -cos(pitch);
-	forward.y = -sin(pitch);
-	forward.z = sin(yaw) * -cos(pitch);
-	forward.Normalize();
-
-	game::Vector3f newUp(0.0f, 1.0f, 0.0f);
-	right = newUp.Cross(forward);
-	right.Normalize();
-
-	up = (forward.Cross(right));
-	up.Normalize();
+	forward = defaultForward;
+	up = defaultUp;
+	right = defaultRight;
+	GenerateView();
 }
 
 inline Camera::Camera(const game::Vector3f& inPosition, const game::Vector3f& inRotation)
@@ -145,7 +139,6 @@ inline Camera::Camera(const game::Vector3f& inPosition, const game::Vector3f& in
 	position = inPosition;
 	rotation = inRotation;
 	pitch = yaw = roll = 0.0f;
-
 }
 
 
@@ -383,6 +376,8 @@ public:
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 		quad.reserve(1000);
+
+		camera.position.z = -2.0f;
 	}
 
 	void Shutdown()
@@ -435,102 +430,102 @@ public:
 			scene = 2;
 		}
 
-		//if (geKeyboard.IsKeyHeld(geK_W))
-		//{
-		//	if (geKeyboard.IsKeyHeld(geK_SHIFT))
-		//	{
-		//		//tz -= 5.0f * (msElapsed / 1000.0f);
-		//		//camera.position.z += 5.0f * (msElapsed / 1000.0f);
-		//		camera.position += (camera.forward * (5.0f * msElapsed / 1000.0f));
-		//	}
-		//	else
-		//	{
-		//		//tz -= 0.5f * (msElapsed / 1000.0f);
-		//		//camera.position.z += 0.1f * (msElapsed / 1000.0f);
-		//		camera.position += (camera.forward * (0.1f * msElapsed / 1000.0f));
-		//	}			
-		//}
+		if (geKeyboard.IsKeyHeld(geK_W))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz -= 5.0f * (msElapsed / 1000.0f);
+				//camera.position.z += 5.0f * (msElapsed / 1000.0f);
+				camera.position += (camera.forward * (5.0f * msElapsed / 1000.0f));
+			}
+			else
+			{
+				//tz -= 0.5f * (msElapsed / 1000.0f);
+				//camera.position.z += 0.1f * (msElapsed / 1000.0f);
+				camera.position += (camera.forward * (0.1f * msElapsed / 1000.0f));
+			}			
+		}
 
-		//if (geKeyboard.IsKeyHeld(geK_S))
-		//{
-		//	if (geKeyboard.IsKeyHeld(geK_SHIFT))
-		//	{
-		//		//tz += 5.0f * (msElapsed / 1000.0f);
-		//		//camera.position.z -= 5.0f * (msElapsed / 1000.0f);
-		//		camera.position -= (camera.forward * (5.0f * msElapsed / 1000.0f));
-		//	}
-		//	else
-		//	{
-		//		//tz _= 0.5f * (msElapsed / 1000.0f);
-		//		//camera.position.z -= 0.1f * (msElapsed / 1000.0f);
-		//		camera.position += (camera.forward * (0.1f * msElapsed / 1000.0f));
-		//	}
-		//}
+		if (geKeyboard.IsKeyHeld(geK_S))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz += 5.0f * (msElapsed / 1000.0f);
+				//camera.position.z -= 5.0f * (msElapsed / 1000.0f);
+				camera.position -= (camera.forward * (5.0f * msElapsed / 1000.0f));
+			}
+			else
+			{
+				//tz _= 0.5f * (msElapsed / 1000.0f);
+				//camera.position.z -= 0.1f * (msElapsed / 1000.0f);
+				camera.position += (camera.forward * (0.1f * msElapsed / 1000.0f));
+			}
+		}
 
 
-		//// strafe left
-		//if (geKeyboard.IsKeyHeld(geK_Q))
-		//{
-		//	if (geKeyboard.IsKeyHeld(geK_SHIFT))
-		//	{
-		//		//tz -= 5.0f * (msElapsed / 1000.0f);
-		//		//camera.position.x -= 5.0f * (msElapsed / 1000.0f);
-		//		camera.position -= camera.right * (5.0f * msElapsed / 1000.0f);
-		//	}
-		//	else
-		//	{
-		//		//tz -= 0.5f * (msElapsed / 1000.0f);
-		//		//camera.position.x -= 0.1f * (msElapsed / 1000.0f);
-		//		camera.position -= camera.right * (0.5f * msElapsed / 1000.0f);
-		//	}
-		//}
+		// strafe left
+		if (geKeyboard.IsKeyHeld(geK_Q))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz -= 5.0f * (msElapsed / 1000.0f);
+				//camera.position.x -= 5.0f * (msElapsed / 1000.0f);
+				camera.position -= camera.right * (5.0f * msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz -= 0.5f * (msElapsed / 1000.0f);
+				//camera.position.x -= 0.1f * (msElapsed / 1000.0f);
+				camera.position -= camera.right * (0.5f * msElapsed / 1000.0f);
+			}
+		}
 
-		//// strafe right
-		//if (geKeyboard.IsKeyHeld(geK_E))
-		//{
-		//	if (geKeyboard.IsKeyHeld(geK_SHIFT))
-		//	{
-		//		//tz += 5.0f * (msElapsed / 1000.0f);
-		//		//camera.position.x += 5.0f * (msElapsed / 1000.0f);
-		//		camera.position += camera.right * (5.0f * msElapsed / 1000.0f);
-		//	}
-		//	else
-		//	{
-		//		//tz _= 0.5f * (msElapsed / 1000.0f);
-		//		//camera.position.x += 0.1f * (msElapsed / 1000.0f);
-		//		camera.position += camera.right * (5.0f * msElapsed / 1000.0f);
-		//	}
-		//}
+		// strafe right
+		if (geKeyboard.IsKeyHeld(geK_E))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz += 5.0f * (msElapsed / 1000.0f);
+				//camera.position.x += 5.0f * (msElapsed / 1000.0f);
+				camera.position += camera.right * (5.0f * msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz _= 0.5f * (msElapsed / 1000.0f);
+				//camera.position.x += 0.1f * (msElapsed / 1000.0f);
+				camera.position += camera.right * (5.0f * msElapsed / 1000.0f);
+			}
+		}
 
-		//// y is invertex because....
-		//if (geKeyboard.IsKeyHeld(geK_UP))
-		//{
-		//	if (geKeyboard.IsKeyHeld(geK_SHIFT))
-		//	{
-		//		//tz -= 5.0f * (msElapsed / 1000.0f);
-		//		camera.position.y -= 5.0f * (msElapsed / 1000.0f);
-		//	}
-		//	else
-		//	{
-		//		//tz -= 0.5f * (msElapsed / 1000.0f);
-		//		camera.position.y -= 0.1f * (msElapsed / 1000.0f);
-		//	}
-		//}
+		// y is invertex because....
+		if (geKeyboard.IsKeyHeld(geK_UP))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz -= 5.0f * (msElapsed / 1000.0f);
+				camera.position.y -= 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz -= 0.5f * (msElapsed / 1000.0f);
+				camera.position.y -= 0.1f * (msElapsed / 1000.0f);
+			}
+		}
 
-		//// strafe right
-		//if (geKeyboard.IsKeyHeld(geK_DOWN))
-		//{
-		//	if (geKeyboard.IsKeyHeld(geK_SHIFT))
-		//	{
-		//		//tz += 5.0f * (msElapsed / 1000.0f);
-		//		camera.position.y += 5.0f * (msElapsed / 1000.0f);
-		//	}
-		//	else
-		//	{
-		//		//tz _= 0.5f * (msElapsed / 1000.0f);
-		//		camera.position.y += 0.1f * (msElapsed / 1000.0f);
-		//	}
-		//}
+		// strafe right
+		if (geKeyboard.IsKeyHeld(geK_DOWN))
+		{
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				//tz += 5.0f * (msElapsed / 1000.0f);
+				camera.position.y += 5.0f * (msElapsed / 1000.0f);
+			}
+			else
+			{
+				//tz _= 0.5f * (msElapsed / 1000.0f);
+				camera.position.y += 0.1f * (msElapsed / 1000.0f);
+			}
+		}
 
 		game::Pointi mouse = geMouse.GetPositionRelative();
 		if (mouse.x)
@@ -585,14 +580,13 @@ public:
 
 	game::Vector3f Vector_IntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t) noexcept
 	{
-		//plane_n.Normalize();// Vector_Normalise(plane_n);
-		float plane_d = -plane_n.Dot(plane_p);// Vector_DotProduct(plane_n, plane_p);
-		float ad = lineStart.Dot(plane_n);// Vector_DotProduct(lineStart, plane_n);
-		float bd = lineEnd.Dot(plane_n);// Vector_DotProduct(lineEnd, plane_n);
+		float plane_d = -plane_n.Dot(plane_p);
+		float ad = lineStart.Dot(plane_n);
+		float bd = lineEnd.Dot(plane_n);
 		t = (-plane_d - ad) / (bd - ad);
-		game::Vector3f lineStartToEnd = lineEnd - lineStart;// Vector_Sub(lineEnd, lineStart);
-		game::Vector3f lineToIntersect = lineStartToEnd * t;// Vector_Mul(lineStartToEnd, t);
-		return lineStart + lineToIntersect;// Vector_Add(lineStart, lineToIntersect);
+		game::Vector3f lineStartToEnd = lineEnd - lineStart;
+		game::Vector3f lineToIntersect = lineStartToEnd * t;
+		return lineStart + lineToIntersect;
 	}
 
 
@@ -812,22 +806,22 @@ public:
 
 		quad.clear();
 
-		game::Vector3f t(0.0f, 0.0f, 2.0f);
+		//game::Vector3f t(0.0f, 0.0f, 2.0f);
 		//t -= camera.position;
 
-		game::Matrix4x4f rotx;
-		game::Matrix4x4f roty;
-		game::Matrix4x4f rotz;
-		game::Matrix4x4f rotationMat;
-		game::Matrix4x4f translateMat;
+		//game::Matrix4x4f rotx; // 
+		//game::Matrix4x4f roty;
+		//game::Matrix4x4f rotz;
+		//game::Matrix4x4f rotationMat;
+		//game::Matrix4x4f translateMat;
+
 		game::Matrix4x4f viewMat;
-		game::Triangle div;
 		game::Matrix4x4f mvpMat;
 		//translateMat.SetTranslation(t.x, t.y, t.z); // workw
-		rotx.SetRotationX(-camOrig.x);	// works
-		roty.SetRotationY(-camOrig.y);	// works
-		rotz.SetRotationZ(0);					// works
-		rotationMat = rotx * roty * rotz;  // works
+		//rotx.SetRotationX(-camOrig.x);	// works
+		//roty.SetRotationY(-camOrig.y);	// works
+		//rotz.SetRotationZ(0);					// works
+		//rotationMat = rotx * roty * rotz;  // works
 		viewMat = camera.GenerateView();// translateMat* rotationMat; // works
 		mvpMat = projMat * viewMat;// *viewMat;// *rotationMat;// *viewMat; //  * mesh.modelMat; // works
 
@@ -835,10 +829,10 @@ public:
 		if (scene == 0)
 		{
 			test = topLeftTri;
-			test.faceNormal = test.faceNormal * rotationMat;
-			test.normals[0] = test.normals[0] * rotationMat;
-			test.normals[1] = test.normals[1] * rotationMat;
-			test.normals[2] = test.normals[2] * rotationMat;
+			test.faceNormal = test.faceNormal;// *rotationMat;
+			test.normals[0] = test.normals[0];// *rotationMat;
+			test.normals[1] = test.normals[1];// *rotationMat;
+			test.normals[2] = test.normals[2];// *rotationMat;
 			test.vertices[0] = (topLeftTri.vertices[0] * mvpMat);
 			test.vertices[1] = (topLeftTri.vertices[1] * mvpMat);
 			test.vertices[2] = (topLeftTri.vertices[2] * mvpMat);
@@ -848,10 +842,10 @@ public:
 			quad.emplace_back(test);
 
 			test = bottomRightTri;
-			test.faceNormal = test.faceNormal * rotationMat;
-			test.normals[0] = test.normals[0] * rotationMat;
-			test.normals[1] = test.normals[1] * rotationMat;
-			test.normals[2] = test.normals[2] * rotationMat;
+			test.faceNormal = test.faceNormal;// * rotationMat;
+			test.normals[0] = test.normals[0];// * rotationMat;
+			test.normals[1] = test.normals[1];// * rotationMat;
+			test.normals[2] = test.normals[2];// * rotationMat;
 			test.vertices[0] = bottomRightTri.vertices[0] * mvpMat;
 			test.vertices[1] = bottomRightTri.vertices[1] * mvpMat;
 			test.vertices[2] = bottomRightTri.vertices[2] * mvpMat;
@@ -866,10 +860,10 @@ public:
 			for (int i = 0; i < tris.size(); i++)
 			{
 				test = tris[i];
-				test.faceNormal = test.faceNormal * rotationMat;
-				test.normals[0] = test.normals[0] * rotationMat;
-				test.normals[1] = test.normals[1] * rotationMat;
-				test.normals[2] = test.normals[2] * rotationMat;
+				test.faceNormal = test.faceNormal;// * rotationMat;
+				test.normals[0] = test.normals[0];// * rotationMat;
+				test.normals[1] = test.normals[1];// * rotationMat;
+				test.normals[2] = test.normals[2];// * rotationMat;
 				test.vertices[0] = (tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (tris[i].vertices[2] * mvpMat);
@@ -885,27 +879,14 @@ public:
 			for (int i = 0; i < model.tris.size(); i++)
 			{
 				test = model.tris[i];
-				test.faceNormal = test.faceNormal * rotationMat;
-				test.normals[0] = test.normals[0] * rotationMat;
-				test.normals[1] = test.normals[1] * rotationMat;
-				test.normals[2] = test.normals[2] * rotationMat;
+				test.faceNormal = test.faceNormal;// * rotationMat;
+				test.normals[0] = test.normals[0];// * rotationMat;
+				test.normals[1] = test.normals[1];// * rotationMat;
+				test.normals[2] = test.normals[2];// * rotationMat;
 				test.vertices[0] = (model.tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
-
-
-				//// needs back face culled  after MVP (needing view/camera)
-				//if (check_winding(div.vertices[0], div.vertices[1], div.vertices[2]) <= 0)
-				//{
-				//	test.backFaceCulled = true;
-				//	continue;
-				//}
-				//test.faceNormal.Normalize();
-				//if (test.faceNormal.z >= 0)
-				//{
-				//	continue;
-				//}
 				 
 				if ((test.vertices[0].z < 0) ||
 					(test.vertices[1].z < 0) ||
