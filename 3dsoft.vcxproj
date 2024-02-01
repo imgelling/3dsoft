@@ -140,6 +140,7 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameSoftware3D_Camera3D.h" />
     <ClInclude Include="GameSoftware3D.h" />
     <ClInclude Include="GameSoftware3D_Data.h" />
     <ClInclude Include="GameSoftware3D_Math.h" />

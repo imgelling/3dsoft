@@ -5,6 +5,7 @@
 #include "GameMath.h"
 #include "GameColor.h"
 #include "GamePixelMode.h"
+#include "GameSoftware3D_Camera3D.h"
 #include "GameSoftware3D_Data.h"
 #include "GameSoftware3D_Math.h"
 #include "GameThreadPool.h"
