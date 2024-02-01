@@ -119,7 +119,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/room.obj", model))
+		if (!LoadObj("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -358,7 +358,7 @@ public:
 		}
 	}
 
-	inline void PerpectiveDivide(game::Triangle& triangle)
+	inline void PerspectiveDivide(game::Triangle& triangle)
 	{
 		triangle.vertices[0] /= triangle.vertices[0].w;
 		triangle.vertices[1] /= triangle.vertices[1].w;
@@ -621,28 +621,28 @@ public:
 		if (scene == 0)
 		{
 			test = topLeftTri;
-			test.faceNormal = test.faceNormal;
-			test.normals[0] = test.normals[0];
-			test.normals[1] = test.normals[1];
-			test.normals[2] = test.normals[2];
+			//test.faceNormal = test.faceNormal;
+			//test.normals[0] = test.normals[0];
+			//test.normals[1] = test.normals[1];
+			//test.normals[2] = test.normals[2];
 			test.vertices[0] = (topLeftTri.vertices[0] * mvpMat);
 			test.vertices[1] = (topLeftTri.vertices[1] * mvpMat);
 			test.vertices[2] = (topLeftTri.vertices[2] * mvpMat);
 
-			PerpectiveDivide(test);
+			PerspectiveDivide(test);
 			ScaleToScreen(test);
 			quad.emplace_back(test);
 
 			test = bottomRightTri;
-			test.faceNormal = test.faceNormal;
-			test.normals[0] = test.normals[0];
-			test.normals[1] = test.normals[1];
-			test.normals[2] = test.normals[2];
+			//test.faceNormal = test.faceNormal;
+			//test.normals[0] = test.normals[0];
+			//test.normals[1] = test.normals[1];
+			//test.normals[2] = test.normals[2];
 			test.vertices[0] = bottomRightTri.vertices[0] * mvpMat;
 			test.vertices[1] = bottomRightTri.vertices[1] * mvpMat;
 			test.vertices[2] = bottomRightTri.vertices[2] * mvpMat;
 
-			PerpectiveDivide(test);
+			PerspectiveDivide(test);
 			ScaleToScreen(test);
 			quad.emplace_back(test);
 		}
@@ -652,15 +652,15 @@ public:
 			for (int i = 0; i < tris.size(); i++)
 			{
 				test = tris[i];
-				test.faceNormal = test.faceNormal;
-				test.normals[0] = test.normals[0];
-				test.normals[1] = test.normals[1];
-				test.normals[2] = test.normals[2];
+				//test.faceNormal = test.faceNormal;
+				//test.normals[0] = test.normals[0];
+				//test.normals[1] = test.normals[1];
+				//test.normals[2] = test.normals[2];
 				test.vertices[0] = (tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (tris[i].vertices[2] * mvpMat);
 
-				PerpectiveDivide(test);
+				PerspectiveDivide(test);
 				ScaleToScreen(test);
 				quad.emplace_back(test);
 			}
@@ -671,18 +671,23 @@ public:
 			for (int i = 0; i < model.tris.size(); i++)
 			{
 				test = model.tris[i];
-				test.faceNormal = test.faceNormal;
-				test.normals[0] = test.normals[0];
-				test.normals[1] = test.normals[1];
-				test.normals[2] = test.normals[2];
+				//test.faceNormal = test.faceNormal;
+				//test.normals[0] = test.normals[0];
+				//test.normals[1] = test.normals[1];
+				//test.normals[2] = test.normals[2];
 				test.vertices[0] = (model.tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
+				//if (test.faceNormal.z > 0)  // somewhat works, but doesn't take account camera
+				//{
+				//	culled++;
+				//	continue;
+				//}				
 	 
-				if ((test.vertices[0].z < 0.001) ||
-					(test.vertices[1].z < 0.001) ||
-					(test.vertices[2].z < 0.001))
+				if ((test.vertices[0].z < 0.0) ||
+					(test.vertices[1].z < 0.0) ||
+					(test.vertices[2].z < 0.0))
 				{
 					game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
 					game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
@@ -692,7 +697,7 @@ public:
 					uint32_t numtris = ClipAgainstPlane(planePoint, planeNormal, test, out1, out2);
 					if (numtris == 2)
 					{
-						PerpectiveDivide(out2);
+						PerspectiveDivide(out2);
 						ScaleToScreen(out2);
 
 						if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
@@ -704,7 +709,7 @@ public:
 						}
 						quad.emplace_back(out2);
 					}
-					PerpectiveDivide(out1);
+					PerspectiveDivide(out1);
 					ScaleToScreen(out1);
 					if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
 					{
@@ -718,11 +723,12 @@ public:
 				}
 				else
 				{
-					PerpectiveDivide(test);
+					PerspectiveDivide(test);
 					ScaleToScreen(test);
 					quad.emplace_back(test);
 				}
 			}
+			//std::cout << culled << "\n";
 		}
 
 		uint32_t fenceCount = 0;
