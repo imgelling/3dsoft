@@ -8,93 +8,96 @@ namespace game
 	class Camera3D
 	{
 	public:
-		game::Vector3f position;
-		game::Vector3f rotation;
-		const game::Vector3f defaultForward = { 0.0f, 0.0f, 1.0f };
-		const game::Vector3f defaultUp = { 0.0f,1.0f,0.0f };
-		const game::Vector3f defaultRight = { 1.0f,0.0f,0.0f };
-		game::Vector3f forward;
-		game::Vector3f right;
-		game::Vector3f up;
-		game::Matrix4x4f view;
+		Vector3f position;
+		Vector3f rotation;
+		const Vector3f defaultForward = { 0.0f, 0.0f, 1.0f };
+		const Vector3f defaultUp = { 0.0f,1.0f,0.0f };
+		const Vector3f defaultRight = { 1.0f,0.0f,0.0f };
+		Vector3f forward;
+		Vector3f right;
+		Vector3f up;
+		Matrix4x4f view;
 		Camera3D();
-		Camera3D(const game::Vector3f& inPosition, const game::Vector3f& inRotation);
-		game::Matrix4x4f GenerateView();
+		Camera3D(const Vector3f& inPosition, const Vector3f& inRotation);
+		Matrix4x4f GenerateView() const noexcept;
 		//float yaw, pitch, roll;
-		game::Matrix4x4f rotateM(const float ang, const game::Vector3f& axis)
-		{
-			float c = cos(ang);
-			float s = sin(ang);
-			float x = axis.x;
-			float y = axis.y;
-			float z = axis.z;
-			game::Vector3f temp(axis);
-			temp.x = temp.x * (1.0f - c);
-			temp.y = temp.y * (1.0f - c);
-			temp.z = temp.z * (1.0f - c);
-
-
-			game::Matrix4x4f ret;
-			ret.m[0] = temp.x * x + c;
-			ret.m[1] = temp.x * y + z * s;
-			ret.m[2] = temp.x * z - y * s;
-
-			ret.m[4] = temp.y * x - z * s;
-			ret.m[5] = c + temp.y * y;
-			ret.m[6] = temp.y * z + x * s;
-
-			ret.m[8] = temp.z * x + y * s;
-			ret.m[9] = temp.z * y - x * s;
-			ret.m[10] = c + temp.z * z;
-
-			return ret;
-		}
-
-		void SetRotation(const float x, const float y, const float z)
-		{
-			// Setup rotation matrices
-
-			if (x)
-			{
-				rotation.x += x;
-				//pitch += x;
-				// limits over rotaion
-				rotation.x = min(rotation.x, 3.1415f / 2.0f);
-				rotation.x = max(rotation.x, -3.1415f / 2.0f);
-				//pitch = min(pitch, 3.1415f / 2.0f);
-				//pitch = max(pitch, -3.1415f / 2.0f);
-			}
-			else if (y)
-			{
-				rotation.y += y;
-				//yaw += y;
-			}
-			else if (z)
-			{
-				// nothing yet
-				rotation.z += z;
-				//roll += z;
-			}
-
-			forward.x = -cos(rotation.y) * -cos(rotation.x);
-			forward.y = -sin(rotation.x);
-			forward.z = sin(rotation.y) * -cos(rotation.x);
-			forward.Normalize();
-
-			game::Vector3f newUp(0.0f, 1.0f, 0.0f);
-			right = newUp.Cross(forward);
-			right.Normalize();
-
-			up = (forward.Cross(right));
-			up.Normalize();
-		}
+		Matrix4x4f rotateM(const float ang, const Vector3f& axis) noexcept;
+		void SetRotation(const float x, const float y, const float z) noexcept;
 
 	private:
 	};
 
-	inline game::Matrix4x4f Camera3D::GenerateView()
+	inline Matrix4x4f Camera3D::rotateM(const float ang, const Vector3f& axis) noexcept
 	{
-		game::Matrix4x4f view;
+		float c = cos(ang);
+		float s = sin(ang);
+		float x = axis.x;
+		float y = axis.y;
+		float z = axis.z;
+		Vector3f temp(axis);
+		temp.x = temp.x * (1.0f - c);
+		temp.y = temp.y * (1.0f - c);
+		temp.z = temp.z * (1.0f - c);
+
+
+		Matrix4x4f ret;
+		ret.m[0] = temp.x * x + c;
+		ret.m[1] = temp.x * y + z * s;
+		ret.m[2] = temp.x * z - y * s;
+
+		ret.m[4] = temp.y * x - z * s;
+		ret.m[5] = c + temp.y * y;
+		ret.m[6] = temp.y * z + x * s;
+
+		ret.m[8] = temp.z * x + y * s;
+		ret.m[9] = temp.z * y - x * s;
+		ret.m[10] = c + temp.z * z;
+
+		return ret;
+	}
+
+	inline void Camera3D::SetRotation(const float x, const float y, const float z) noexcept
+	{
+		// Setup rotation matrices
+
+		if (x)
+		{
+			rotation.x += x;
+			//pitch += x;
+			// limits over rotaion
+			rotation.x = min(rotation.x, 3.1415f / 2.0f);
+			rotation.x = max(rotation.x, -3.1415f / 2.0f);
+			//pitch = min(pitch, 3.1415f / 2.0f);
+			//pitch = max(pitch, -3.1415f / 2.0f);
+		}
+		else if (y)
+		{
+			rotation.y += y;
+			//yaw += y;
+		}
+		else if (z)
+		{
+			// nothing yet
+			rotation.z += z;
+			//roll += z;
+		}
+
+		forward.x = -cos(rotation.y) * -cos(rotation.x);
+		forward.y = -sin(rotation.x);
+		forward.z = sin(rotation.y) * -cos(rotation.x);
+		forward.Normalize();
+
+		Vector3f newUp(0.0f, 1.0f, 0.0f);
+		right = newUp.Cross(forward);
+		right.Normalize();
+
+		up = (forward.Cross(right));
+		up.Normalize();
+	}
+
+	inline Matrix4x4f Camera3D::GenerateView() const noexcept
+	{
+		Matrix4x4f view;
 
 		// Rotation stuff
 
@@ -110,11 +113,11 @@ namespace game
 		view.m[6] = forward.y;
 		view.m[10] = forward.z;
 
-		game::Matrix4x4f r;// = rotateM(roll, forward);
+		Matrix4x4f r;// = rotateM(roll, forward);
 
 		view = view * r;
 
-		game::Matrix4x4f ct;
+		Matrix4x4f ct;
 		ct.SetTranslation(-position.x, -position.y, -position.z);
 		view = view * ct;
 
@@ -132,7 +135,7 @@ namespace game
 		right = defaultRight;
 	}
 
-	inline Camera3D::Camera3D(const game::Vector3f& inPosition, const game::Vector3f& inRotation)
+	inline Camera3D::Camera3D(const Vector3f& inPosition, const Vector3f& inRotation)
 	{
 		position = inPosition;
 		rotation = inRotation;
