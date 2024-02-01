@@ -61,6 +61,11 @@ public:
 		{
 			rotation.x += x;
 			pitch += x;
+			// limits over rotaion
+			rotation.x = min(rotation.x, 3.1415f / 2.0f);
+			rotation.x = max(rotation.x, -3.1415f / 2.0f);
+			pitch = min(pitch, 3.1415f / 2.0f);
+			pitch = max(pitch, -3.1415f / 2.0f);
 		}
 		else if (y)
 		{
@@ -74,12 +79,9 @@ public:
 			roll += z;
 		}
 
-		//forward = game::RotateXYZ(forward,pitch,yaw,roll);
-
 		forward.x = -cos(yaw) * -cos(pitch);
 		forward.y = -sin(pitch);
 		forward.z = sin(yaw) * -cos(pitch);
-		//forward *= -1.0f;
 		forward.Normalize();
 
 		game::Vector3f newUp(0.0f, 1.0f, 0.0f);
@@ -131,7 +133,6 @@ inline Camera::Camera()
 	forward = defaultForward;
 	up = defaultUp;
 	right = defaultRight;
-	GenerateView();
 }
 
 inline Camera::Camera(const game::Vector3f& inPosition, const game::Vector3f& inRotation)
@@ -160,8 +161,6 @@ public:
 	game::Matrix4x4f projMat;
 	std::vector<game::Triangle> tris;
 	game::Mesh model;
-	//Camera cam;
-	game::Vector3f camOrig;
 
 	std::vector<game::Triangle> quad;
 	game::Triangle test;
@@ -253,7 +252,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/cubetest.obj", model))
+		if (!Load("Content/room.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -267,14 +266,14 @@ public:
 		software3D._texW = texW;
 
 
-		//game::ImageLoader imageLoader;
-		//uint32_t t = 0;
-		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
-		//texture = new uint32_t[texW * texH];
-		//memcpy(texture, temp, (size_t)texW * texH * 4);
-		//software3D._currentTexture = texture;
-		//software3D._texH = texH;
-		//software3D._texW = texW;
+		game::ImageLoader imageLoader;
+		uint32_t t = 0;
+		uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
+		texture = new uint32_t[texW * texH];
+		memcpy(texture, temp, (size_t)texW * texH * 4);
+		software3D._currentTexture = texture;
+		software3D._texH = texH;
+		software3D._texW = texW;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -403,8 +402,6 @@ public:
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 		}
 
-
-
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, -1);
@@ -430,101 +427,46 @@ public:
 			scene = 2;
 		}
 
+		float_t speed = 0.1f * msElapsed / 1000.0f;
+		if (geKeyboard.IsKeyHeld(geK_SHIFT))
+		{
+			speed = 5.0f * msElapsed / 1000.0f;
+		}
+
+		// Move forward
 		if (geKeyboard.IsKeyHeld(geK_W))
 		{
-			if (geKeyboard.IsKeyHeld(geK_SHIFT))
-			{
-				//tz -= 5.0f * (msElapsed / 1000.0f);
-				//camera.position.z += 5.0f * (msElapsed / 1000.0f);
-				camera.position += (camera.forward * (5.0f * msElapsed / 1000.0f));
-			}
-			else
-			{
-				//tz -= 0.5f * (msElapsed / 1000.0f);
-				//camera.position.z += 0.1f * (msElapsed / 1000.0f);
-				camera.position += (camera.forward * (0.1f * msElapsed / 1000.0f));
-			}			
+			camera.position += (camera.forward * speed);
 		}
 
+		// Move backward
 		if (geKeyboard.IsKeyHeld(geK_S))
 		{
-			if (geKeyboard.IsKeyHeld(geK_SHIFT))
-			{
-				//tz += 5.0f * (msElapsed / 1000.0f);
-				//camera.position.z -= 5.0f * (msElapsed / 1000.0f);
-				camera.position -= (camera.forward * (5.0f * msElapsed / 1000.0f));
-			}
-			else
-			{
-				//tz _= 0.5f * (msElapsed / 1000.0f);
-				//camera.position.z -= 0.1f * (msElapsed / 1000.0f);
-				camera.position += (camera.forward * (0.1f * msElapsed / 1000.0f));
-			}
+			camera.position -= (camera.forward * speed);
 		}
-
 
 		// strafe left
 		if (geKeyboard.IsKeyHeld(geK_Q))
 		{
-			if (geKeyboard.IsKeyHeld(geK_SHIFT))
-			{
-				//tz -= 5.0f * (msElapsed / 1000.0f);
-				//camera.position.x -= 5.0f * (msElapsed / 1000.0f);
-				camera.position -= camera.right * (5.0f * msElapsed / 1000.0f);
-			}
-			else
-			{
-				//tz -= 0.5f * (msElapsed / 1000.0f);
-				//camera.position.x -= 0.1f * (msElapsed / 1000.0f);
-				camera.position -= camera.right * (0.5f * msElapsed / 1000.0f);
-			}
+			camera.position -= camera.right * speed;
 		}
 
 		// strafe right
 		if (geKeyboard.IsKeyHeld(geK_E))
 		{
-			if (geKeyboard.IsKeyHeld(geK_SHIFT))
-			{
-				//tz += 5.0f * (msElapsed / 1000.0f);
-				//camera.position.x += 5.0f * (msElapsed / 1000.0f);
-				camera.position += camera.right * (5.0f * msElapsed / 1000.0f);
-			}
-			else
-			{
-				//tz _= 0.5f * (msElapsed / 1000.0f);
-				//camera.position.x += 0.1f * (msElapsed / 1000.0f);
-				camera.position += camera.right * (5.0f * msElapsed / 1000.0f);
-			}
+			camera.position += camera.right * speed;
 		}
 
-		// y is invertex because....
+		// y is inverted because....
 		if (geKeyboard.IsKeyHeld(geK_UP))
 		{
-			if (geKeyboard.IsKeyHeld(geK_SHIFT))
-			{
-				//tz -= 5.0f * (msElapsed / 1000.0f);
-				camera.position.y -= 5.0f * (msElapsed / 1000.0f);
-			}
-			else
-			{
-				//tz -= 0.5f * (msElapsed / 1000.0f);
-				camera.position.y -= 0.1f * (msElapsed / 1000.0f);
-			}
+			camera.position.y -= speed;
 		}
 
-		// strafe right
+		// move actually down
 		if (geKeyboard.IsKeyHeld(geK_DOWN))
 		{
-			if (geKeyboard.IsKeyHeld(geK_SHIFT))
-			{
-				//tz += 5.0f * (msElapsed / 1000.0f);
-				camera.position.y += 5.0f * (msElapsed / 1000.0f);
-			}
-			else
-			{
-				//tz _= 0.5f * (msElapsed / 1000.0f);
-				camera.position.y += 0.1f * (msElapsed / 1000.0f);
-			}
+			camera.position.y += speed;
 		}
 
 		game::Pointi mouse = geMouse.GetPositionRelative();
@@ -532,7 +474,6 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camOrig.y += mouse.x * (3.14159f / 180.0f);
 				camera.SetRotation(0.0f, mouse.x * (3.14159f / 180.0f), 0.0f);
 			}
 		}
@@ -540,7 +481,6 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camOrig.x += -mouse.y * (3.14159f / 180.0f);
 				camera.SetRotation(-mouse.y * (3.14159f / 180.0f), 0.0f, 0.0f);
 			}
 		}
@@ -580,9 +520,9 @@ public:
 
 	game::Vector3f Vector_IntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t) noexcept
 	{
-		float plane_d = -plane_n.Dot(plane_p);
-		float ad = lineStart.Dot(plane_n);
-		float bd = lineEnd.Dot(plane_n);
+		float_t plane_d = -plane_n.Dot(plane_p);
+		float_t ad = lineStart.Dot(plane_n);
+		float_t bd = lineEnd.Dot(plane_n);
 		t = (-plane_d - ad) / (bd - ad);
 		game::Vector3f lineStartToEnd = lineEnd - lineStart;
 		game::Vector3f lineToIntersect = lineStartToEnd * t;
@@ -806,33 +746,18 @@ public:
 
 		quad.clear();
 
-		//game::Vector3f t(0.0f, 0.0f, 2.0f);
-		//t -= camera.position;
-
-		//game::Matrix4x4f rotx; // 
-		//game::Matrix4x4f roty;
-		//game::Matrix4x4f rotz;
-		//game::Matrix4x4f rotationMat;
-		//game::Matrix4x4f translateMat;
-
 		game::Matrix4x4f viewMat;
 		game::Matrix4x4f mvpMat;
-		//translateMat.SetTranslation(t.x, t.y, t.z); // workw
-		//rotx.SetRotationX(-camOrig.x);	// works
-		//roty.SetRotationY(-camOrig.y);	// works
-		//rotz.SetRotationZ(0);					// works
-		//rotationMat = rotx * roty * rotz;  // works
-		viewMat = camera.GenerateView();// translateMat* rotationMat; // works
-		mvpMat = projMat * viewMat;// *viewMat;// *rotationMat;// *viewMat; //  * mesh.modelMat; // works
-
+		viewMat = camera.GenerateView();
+		mvpMat = projMat * viewMat;
 
 		if (scene == 0)
 		{
 			test = topLeftTri;
-			test.faceNormal = test.faceNormal;// *rotationMat;
-			test.normals[0] = test.normals[0];// *rotationMat;
-			test.normals[1] = test.normals[1];// *rotationMat;
-			test.normals[2] = test.normals[2];// *rotationMat;
+			test.faceNormal = test.faceNormal;
+			test.normals[0] = test.normals[0];
+			test.normals[1] = test.normals[1];
+			test.normals[2] = test.normals[2];
 			test.vertices[0] = (topLeftTri.vertices[0] * mvpMat);
 			test.vertices[1] = (topLeftTri.vertices[1] * mvpMat);
 			test.vertices[2] = (topLeftTri.vertices[2] * mvpMat);
@@ -842,10 +767,10 @@ public:
 			quad.emplace_back(test);
 
 			test = bottomRightTri;
-			test.faceNormal = test.faceNormal;// * rotationMat;
-			test.normals[0] = test.normals[0];// * rotationMat;
-			test.normals[1] = test.normals[1];// * rotationMat;
-			test.normals[2] = test.normals[2];// * rotationMat;
+			test.faceNormal = test.faceNormal;
+			test.normals[0] = test.normals[0];
+			test.normals[1] = test.normals[1];
+			test.normals[2] = test.normals[2];
 			test.vertices[0] = bottomRightTri.vertices[0] * mvpMat;
 			test.vertices[1] = bottomRightTri.vertices[1] * mvpMat;
 			test.vertices[2] = bottomRightTri.vertices[2] * mvpMat;
@@ -860,10 +785,10 @@ public:
 			for (int i = 0; i < tris.size(); i++)
 			{
 				test = tris[i];
-				test.faceNormal = test.faceNormal;// * rotationMat;
-				test.normals[0] = test.normals[0];// * rotationMat;
-				test.normals[1] = test.normals[1];// * rotationMat;
-				test.normals[2] = test.normals[2];// * rotationMat;
+				test.faceNormal = test.faceNormal;
+				test.normals[0] = test.normals[0];
+				test.normals[1] = test.normals[1];
+				test.normals[2] = test.normals[2];
 				test.vertices[0] = (tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (tris[i].vertices[2] * mvpMat);
@@ -879,10 +804,10 @@ public:
 			for (int i = 0; i < model.tris.size(); i++)
 			{
 				test = model.tris[i];
-				test.faceNormal = test.faceNormal;// * rotationMat;
-				test.normals[0] = test.normals[0];// * rotationMat;
-				test.normals[1] = test.normals[1];// * rotationMat;
-				test.normals[2] = test.normals[2];// * rotationMat;
+				test.faceNormal = test.faceNormal;
+				test.normals[0] = test.normals[0];
+				test.normals[1] = test.normals[1];
+				test.normals[2] = test.normals[2];
 				test.vertices[0] = (model.tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);

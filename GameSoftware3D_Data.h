@@ -156,7 +156,7 @@ namespace game
 		}
 
 		// Evaluate the parameter equation for the given point.
-		float_t evaluate(const float_t x, const float_t y) const noexcept
+		inline float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
 			return a * x + b * y + c;
 		}
