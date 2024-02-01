@@ -101,8 +101,6 @@ public:
 		attributes.DebugMode = false;
 		geSetAttributes(attributes);
 
-		//geSetFrameLock(10);
-
 		GenerateClips(numclips, clip, resolution);
 	}
 
@@ -121,7 +119,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!Load("Content/room.obj", model))
+		if (!LoadObj("Content/room.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -134,15 +132,14 @@ public:
 		software3D._texH = texH;
 		software3D._texW = texW;
 
-
-		game::ImageLoader imageLoader;
-		uint32_t t = 0;
-		uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
-		texture = new uint32_t[texW * texH];
-		memcpy(texture, temp, (size_t)texW * texH * 4);
-		software3D._currentTexture = texture;
-		software3D._texH = texH;
-		software3D._texW = texW;
+		//game::ImageLoader imageLoader;
+		//uint32_t t = 0;
+		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
+		//texture = new uint32_t[texW * texH];
+		//memcpy(texture, temp, (size_t)texW * texH * 4);
+		//software3D._currentTexture = texture;
+		//software3D._texH = texH;
+		//software3D._texW = texW;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -240,7 +237,7 @@ public:
 		}
 
 		// Pre calc projection numbers
-		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
+		//game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 		quad.reserve(1000);
@@ -387,7 +384,16 @@ public:
 		triangle.vertices[2].y *= 0.5f * (float_t)resolution.y;
 	}
 
-	game::Vector3f Vector_IntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t) noexcept
+	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear
+	float_t CheckWinding(game::Vector3f A, game::Vector3f B, game::Vector3f C)
+	{
+		game::Vector3f AB = B - A; // Vector from A to B
+		game::Vector3f AC = C - A; // Vector from A to C
+		game::Vector3f N = AB.Cross(AC); // Cross product of AB and AC
+		return (N.z); // Sign of the z-component of N
+	}
+
+	game::Vector3f VectorIntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t) noexcept
 	{
 		float_t plane_d = -plane_n.Dot(plane_p);
 		float_t ad = lineStart.Dot(plane_n);
@@ -398,17 +404,7 @@ public:
 		return lineStart + lineToIntersect;
 	}
 
-
-	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear
-	float check_winding(game::Vector3f A, game::Vector3f B, game::Vector3f C)
-	{
-		game::Vector3f AB = B - A; // Vector from A to B
-		game::Vector3f AC = C - A; // Vector from A to C
-		game::Vector3f N = AB.Cross(AC); // Cross product of AB and AC
-		return (N.z); // Sign of the z-component of N
-	}
-
-	int Triangle_ClipAgainstPlane(game::Vector3f plane_p, game::Vector3f plane_n, game::Triangle& in_tri, game::Triangle& out_tri1, game::Triangle& out_tri2)
+	uint32_t ClipAgainstPlane(game::Vector3f plane_p, game::Vector3f plane_n, game::Triangle& in_tri, game::Triangle& out_tri1, game::Triangle& out_tri2)
 	{
 		//// Make sure plane normal is indeed normal
 		//plane_n.Normalize();// plane_n = Vector_Normalise(plane_n);
@@ -517,7 +513,7 @@ public:
 			float t = 0.0;
 
 			// First intersection
-			out_tri1.vertices[1] = Vector_IntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
+			out_tri1.vertices[1] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
 
 			// Correct vertex normal due to clipping
 			out_tri1.normals[1].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
@@ -529,7 +525,7 @@ public:
 
 
 			// Second intersection
-			out_tri1.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, inside_points[0], outside_points[1], t);
+			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[1], t);
 
 			out_tri1.normals[2].x = t * (out_normals[1].x - in_normals[0].x) + in_normals[0].x;
 			out_tri1.normals[2].y = t * (out_normals[1].y - in_normals[0].y) + in_normals[0].y;
@@ -565,7 +561,7 @@ public:
 			float t = 0.0;
 
 			// First intersection
-			out_tri1.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
+			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
 
 			// Correct the vertex normal due to clipping
 			out_tri1.normals[2].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
@@ -585,7 +581,7 @@ public:
 			out_tri2.normals[1] = out_tri1.normals[2];
 			out_tri2.uvs[1] = out_tri1.uvs[2];
 
-			out_tri2.vertices[2] = Vector_IntersectPlane(plane_p, plane_n, inside_points[1], outside_points[0], t);
+			out_tri2.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[1], outside_points[0], t);
 
 
 			// Correct the vertex normal due to clipping
@@ -601,22 +597,24 @@ public:
 		return -1; // I added for all return paths warning
 	}
 
+
 	void Render(const float_t msElapsed)
 	{
 		static float_t rotation = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
-		software3D.time = rotation;
+		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		//software3D.time = rotation;
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
-		software3D._colorBuffer = pixelMode.videoBuffer;
+		software3D.renderTarget = pixelMode.videoBuffer;
 		software3D.ClearDepth(100.0f);
 
 		quad.clear();
 
 		game::Matrix4x4f viewMat;
 		game::Matrix4x4f mvpMat;
+
 		viewMat = camera.GenerateView();
 		mvpMat = projMat * viewMat;
 
@@ -681,22 +679,23 @@ public:
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
-				 
-				if ((test.vertices[0].z < 0) ||
-					(test.vertices[1].z < 0) ||
-					(test.vertices[2].z < 0))
+	 
+				if ((test.vertices[0].z < 0.001) ||
+					(test.vertices[1].z < 0.001) ||
+					(test.vertices[2].z < 0.001))
 				{
 					game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
 					game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
 
 					game::Triangle out1;
 					game::Triangle out2;
-					uint32_t numtris = Triangle_ClipAgainstPlane(planePoint, planeNormal, test, out1, out2);
+					uint32_t numtris = ClipAgainstPlane(planePoint, planeNormal, test, out1, out2);
 					if (numtris == 2)
 					{
 						PerpectiveDivide(out2);
 						ScaleToScreen(out2);
-						if (check_winding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
+
+						if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
 						{
 							std::swap(out2.vertices[1], out2.vertices[0]);
 							std::swap(out2.normals[1], out2.normals[0]);
@@ -707,7 +706,7 @@ public:
 					}
 					PerpectiveDivide(out1);
 					ScaleToScreen(out1);
-					if (check_winding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
+					if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
 					{
 						std::swap(out1.vertices[1], out1.vertices[0]);
 						std::swap(out1.normals[1], out1.normals[0]);
@@ -796,7 +795,6 @@ public:
 		}
 	}
 
-
 	void GenerateCheckerboard(uint32_t* buff, unsigned int w, unsigned int h)
 	{
 		game::Color col1 = game::Colors::Red;
@@ -818,55 +816,23 @@ public:
 	{
 		for (int tri = 0; tri < mesh.tris.size(); tri++)
 		{
-
-			// make left handed
-			//mesh.tris[tri].vertices[0].z = -mesh.tris[tri].vertices[0].z;
-			//mesh.tris[tri].vertices[1].z = -mesh.tris[tri].vertices[1].z;
-			//mesh.tris[tri].vertices[2].z = -mesh.tris[tri].vertices[2].z;
-
 			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
 			std::swap(mesh.tris[tri].vertices[1].y, mesh.tris[tri].vertices[1].z);
 			std::swap(mesh.tris[tri].vertices[2].y, mesh.tris[tri].vertices[2].z);
-			//mesh.tris[tri].vertices[0].y = -mesh.tris[tri].vertices[0].y;
-			//mesh.tris[tri].vertices[1].y = -mesh.tris[tri].vertices[1].y;
-			//mesh.tris[tri].vertices[2].y = -mesh.tris[tri].vertices[2].y;
-			//mesh.tris[tri].vertices[0].x = -mesh.tris[tri].vertices[0].x;
-			//mesh.tris[tri].vertices[1].x = -mesh.tris[tri].vertices[1].x;
-			//mesh.tris[tri].vertices[2].x = -mesh.tris[tri].vertices[2].x;
 
-			//mesh.tris[tri].normals[0].z = -mesh.tris[tri].normals[0].z;
-			//mesh.tris[tri].normals[1].z = -mesh.tris[tri].normals[1].z;
-			//mesh.tris[tri].normals[2].z = -mesh.tris[tri].normals[2].z;
-			//mesh.tris[tri].normals[0].y = -mesh.tris[tri].normals[0].y;
-			//mesh.tris[tri].normals[1].y = -mesh.tris[tri].normals[1].y;
-			//mesh.tris[tri].normals[2].y = -mesh.tris[tri].normals[2].y;
 			std::swap(mesh.tris[tri].normals[0].y, mesh.tris[tri].normals[0].z);
 			std::swap(mesh.tris[tri].normals[1].y, mesh.tris[tri].normals[1].z);
 			std::swap(mesh.tris[tri].normals[2].y, mesh.tris[tri].normals[2].z);
-			//mesh.tris[tri].normals[0].x = -mesh.tris[tri].normals[0].x;
-			//mesh.tris[tri].normals[1].x = -mesh.tris[tri].normals[1].x;
-			//mesh.tris[tri].normals[2].x = -mesh.tris[tri].normals[2].x;
 
 			std::swap(mesh.tris[tri].faceNormal.y, mesh.tris[tri].faceNormal.z);
-			//mesh.tris[tri].faceNormal.z = mesh.tris[tri].faceNormal.z * -1.0f;
-			//mesh.tris[tri].faceNormal.y = mesh.tris[tri].faceNormal.y * -1.0f;
-			//mesh.tris[tri].faceNormal.x = mesh.tris[tri].faceNormal.x * -1.0f;
-
-			//std::swap(mesh.tris[tri].uvs[0].u, mesh.tris[tri].uvs[0].v);
-			//std::swap(mesh.tris[tri].uvs[1].u, mesh.tris[tri].uvs[1].v);
-			//std::swap(mesh.tris[tri].uvs[2].u, mesh.tris[tri].uvs[2].v);
 
 			mesh.tris[tri].uvs[0].v = 1.0f - mesh.tris[tri].uvs[0].v;
 			mesh.tris[tri].uvs[1].v = 1.0f - mesh.tris[tri].uvs[1].v;
 			mesh.tris[tri].uvs[2].v = 1.0f - mesh.tris[tri].uvs[2].v;
-
-			//mesh.tris[tri].uvs[0].u = 1.0f - mesh.tris[tri].uvs[0].u;
-			//mesh.tris[tri].uvs[1].u = 1.0f - mesh.tris[tri].uvs[1].u;
-			//mesh.tris[tri].uvs[2].u = 1.0f - mesh.tris[tri].uvs[2].u;
 		}
 	}
 
-	bool Load(std::string file, game::Mesh& mesh)
+	bool LoadObj(std::string file, game::Mesh& mesh)
 	{
 		std::ifstream f(file.c_str());
 		std::vector<game::Vector3f> verts;

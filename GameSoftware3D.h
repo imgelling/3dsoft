@@ -42,7 +42,7 @@ namespace game
 		uint32_t* _currentTexture;
 		uint32_t _texW;
 		uint32_t _texH;
-		uint32_t* _colorBuffer;
+		uint32_t* renderTarget;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
@@ -54,7 +54,7 @@ namespace game
 
 	Software3D::Software3D()
 	{
-		_colorBuffer = nullptr;
+		renderTarget = nullptr;
 		fence = 0;
 		_colorBufferStride = 0;
 		_totalBufferSize = 0;
@@ -135,7 +135,7 @@ namespace game
 
 	inline bool Software3D::Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads = -1)
 	{
-		_colorBuffer = colorBuffer;
+		renderTarget = colorBuffer;
 		fence = 0;
 		_colorBufferStride = colorBufferSize.width;
 		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
@@ -290,7 +290,7 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* colorBuffer = _colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
+		uint32_t* colorBuffer = renderTarget + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		float_t* depthBufferPtr = depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		uint32_t xLoopCount = 0;
 
