@@ -358,244 +358,7 @@ public:
 		}
 	}
 
-	inline void PerspectiveDivide(game::Triangle& triangle)
-	{
-		triangle.vertices[0] /= triangle.vertices[0].w;
-		triangle.vertices[1] /= triangle.vertices[1].w;
-		triangle.vertices[2] /= triangle.vertices[2].w;
-	}
 
-	inline void ScaleToScreen(game::Triangle& triangle) const
-	{
-		triangle.vertices[0].x += 1.0f;
-		triangle.vertices[1].x += 1.0f;
-		triangle.vertices[2].x += 1.0f;
-
-		triangle.vertices[0].y += 1.0f;
-		triangle.vertices[1].y += 1.0f;
-		triangle.vertices[2].y += 1.0f;
-
-		triangle.vertices[0].x *= 0.5f * (float_t)resolution.x;
-		triangle.vertices[1].x *= 0.5f * (float_t)resolution.x;
-		triangle.vertices[2].x *= 0.5f * (float_t)resolution.x;
-
-		triangle.vertices[0].y *= 0.5f * (float_t)resolution.y;
-		triangle.vertices[1].y *= 0.5f * (float_t)resolution.y;
-		triangle.vertices[2].y *= 0.5f * (float_t)resolution.y;
-	}
-
-	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear
-	float_t CheckWinding(game::Vector3f A, game::Vector3f B, game::Vector3f C)
-	{
-		game::Vector3f AB = B - A; // Vector from A to B
-		game::Vector3f AC = C - A; // Vector from A to C
-		game::Vector3f N = AB.Cross(AC); // Cross product of AB and AC
-		return (N.z); // Sign of the z-component of N
-	}
-
-	game::Vector3f VectorIntersectPlane(game::Vector3f& plane_p, game::Vector3f& plane_n, game::Vector3f& lineStart, game::Vector3f& lineEnd, float& t) noexcept
-	{
-		float_t plane_d = -plane_n.Dot(plane_p);
-		float_t ad = lineStart.Dot(plane_n);
-		float_t bd = lineEnd.Dot(plane_n);
-		t = (-plane_d - ad) / (bd - ad);
-		game::Vector3f lineStartToEnd = lineEnd - lineStart;
-		game::Vector3f lineToIntersect = lineStartToEnd * t;
-		return lineStart + lineToIntersect;
-	}
-
-	uint32_t ClipAgainstPlane(game::Vector3f plane_p, game::Vector3f plane_n, game::Triangle& in_tri, game::Triangle& out_tri1, game::Triangle& out_tri2)
-	{
-		//// Make sure plane normal is indeed normal
-		//plane_n.Normalize();// plane_n = Vector_Normalise(plane_n);
-
-
-		// Return signed shortest distance from point to plane, plane normal must be normalised
-		auto dist = [&](game::Vector3f& p)
-			{
-				//Vector3f n = p;// Vector_Normalise(p);
-				//n.Normalize();
-				return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - (plane_n.Dot(plane_p)));// Vector_DotProduct(plane_n, plane_p));
-			};
-
-		// Create two temporary storage arrays to classify points either side of plane
-		// If distance sign is positive, point lies on "inside" of plane
-		game::Vector3f inside_points[3] = {};  int nInsidePointCount = 0;
-		game::Vector3f outside_points[3] = {}; int nOutsidePointCount = 0;
-
-		// Get signed distance of each point in triangle to plane
-		float d0 = dist(in_tri.vertices[0]);
-		float d1 = dist(in_tri.vertices[1]);
-		float d2 = dist(in_tri.vertices[2]);
-
-		game::Vector3f in_normals[3];
-		game::Vector3f out_normals[3];
-
-		game::Vector2f in_uv[3];
-		game::Vector2f out_uv[3];
-
-		float in_d[3]{};
-		float out_d[3]{};
-
-
-		if (d0 >= 0.0f)
-		{
-			inside_points[nInsidePointCount++] = in_tri.vertices[0];
-			in_normals[nInsidePointCount - 1] = in_tri.normals[0];
-			in_uv[nInsidePointCount - 1] = in_tri.uvs[0];
-			in_d[nInsidePointCount - 1] = in_tri.vertices[0].w;
-		}
-		else
-		{
-			outside_points[nOutsidePointCount++] = in_tri.vertices[0];
-			out_normals[nOutsidePointCount - 1] = in_tri.normals[0];
-			out_uv[nOutsidePointCount - 1] = in_tri.uvs[0];
-			out_d[nOutsidePointCount - 1] = in_tri.vertices[0].w;
-		}
-		if (d1 >= 0.0f)
-		{
-			inside_points[nInsidePointCount++] = in_tri.vertices[1];
-			in_normals[nInsidePointCount - 1] = in_tri.normals[1];
-			in_uv[nInsidePointCount - 1] = in_tri.uvs[1];
-			in_d[nInsidePointCount - 1] = in_tri.vertices[1].w;
-		}
-		else
-		{
-			outside_points[nOutsidePointCount++] = in_tri.vertices[1];
-			out_normals[nOutsidePointCount - 1] = in_tri.normals[1];
-			out_uv[nOutsidePointCount - 1] = in_tri.uvs[1];
-			out_d[nOutsidePointCount - 1] = in_tri.vertices[1].w;
-		}
-		if (d2 >= 0.0f)
-		{
-			inside_points[nInsidePointCount++] = in_tri.vertices[2];
-			in_normals[nInsidePointCount - 1] = in_tri.normals[2];
-			in_uv[nInsidePointCount - 1] = in_tri.uvs[2];
-			in_d[nInsidePointCount - 1] = in_tri.vertices[2].w;
-		}
-		else
-		{
-			outside_points[nOutsidePointCount++] = in_tri.vertices[2];
-			out_normals[nOutsidePointCount - 1] = in_tri.normals[2];
-			out_uv[nOutsidePointCount - 1] = in_tri.uvs[2];
-			out_d[nOutsidePointCount - 1] = in_tri.vertices[2].w;
-		}
-
-
-
-		if (nInsidePointCount == 0)
-		{
-			return 0; // No returned triangles are valid
-		}
-
-		if (nInsidePointCount == 3)
-		{
-			out_tri1 = in_tri;
-			return 1; // Same triangle returned as didn't get clipped
-		}
-
-		if (nInsidePointCount == 1 && nOutsidePointCount == 2)
-		{
-			// Triangle should be clipped. As two points lie outside
-			// the plane, the triangle simply becomes a smaller triangle
-
-			// Copy appearance info to new triangle
-			out_tri1 = in_tri;
-
-			// The inside point is valid, so keep that...
-			out_tri1.vertices[0] = inside_points[0];
-			out_tri1.normals[0] = in_normals[0];
-			out_tri1.uvs[0] = in_uv[0];
-
-
-			// but the two new points are at the locations where the 
-			// original sides of the triangle (lines) intersect with the plane
-			float t = 0.0;
-
-			// First intersection
-			out_tri1.vertices[1] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
-
-			// Correct vertex normal due to clipping
-			out_tri1.normals[1].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
-			out_tri1.normals[1].y = t * (out_normals[0].y - in_normals[0].y) + in_normals[0].y;
-			out_tri1.normals[1].z = t * (out_normals[0].z - in_normals[0].z) + in_normals[0].z;
-			out_tri1.vertices[1].w = t * (out_d[0] - in_d[0]) + in_d[0];
-			out_tri1.uvs[1].x = t * (out_uv[0].x - in_uv[0].x) + in_uv[0].x;
-			out_tri1.uvs[1].y = t * (out_uv[0].y - in_uv[0].y) + in_uv[0].y;
-
-
-			// Second intersection
-			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[1], t);
-
-			out_tri1.normals[2].x = t * (out_normals[1].x - in_normals[0].x) + in_normals[0].x;
-			out_tri1.normals[2].y = t * (out_normals[1].y - in_normals[0].y) + in_normals[0].y;
-			out_tri1.normals[2].z = t * (out_normals[1].z - in_normals[0].z) + in_normals[0].z;
-			out_tri1.vertices[2].w = t * (out_d[1] - in_d[0]) + in_d[0];
-			out_tri1.uvs[2].x = t * (out_uv[1].x - in_uv[0].x) + in_uv[0].x;
-			out_tri1.uvs[2].y = t * (out_uv[1].y - in_uv[0].y) + in_uv[0].y;
-
-			return 1; // Return the newly formed single triangle
-		}
-
-		if (nInsidePointCount == 2 && nOutsidePointCount == 1)
-		{
-			// Triangle should be clipped. As two points lie inside the plane,
-			// the clipped triangle becomes a "quad". Fortunately, we can
-			// represent a quad with two new triangles
-
-			// Copy appearance info to new triangles
-			out_tri1 = in_tri;
-			out_tri2 = in_tri;
-
-			// The first triangle consists of the two inside points and a new
-			// point determined by the location where one side of the triangle
-			// intersects with the plane
-			out_tri1.vertices[0] = inside_points[0];
-			out_tri1.normals[0] = in_normals[0];
-			out_tri1.uvs[0] = in_uv[0];
-
-			out_tri1.vertices[1] = inside_points[1];
-			out_tri1.normals[1] = in_normals[1];
-			out_tri1.uvs[1] = in_uv[1];
-
-			float t = 0.0;
-
-			// First intersection
-			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
-
-			// Correct the vertex normal due to clipping
-			out_tri1.normals[2].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
-			out_tri1.normals[2].y = t * (out_normals[0].y - in_normals[0].y) + in_normals[0].y;
-			out_tri1.normals[2].z = t * (out_normals[0].z - in_normals[0].z) + in_normals[0].z;
-			out_tri1.vertices[2].w = t * (out_d[0] - in_d[0]) + in_d[0];
-			out_tri1.uvs[2].x = t * (out_uv[0].x - in_uv[0].x) + in_uv[0].x;
-			out_tri1.uvs[2].y = t * (out_uv[0].y - in_uv[0].y) + in_uv[0].y;
-
-
-			// 2nd intersection
-			out_tri2.vertices[0] = inside_points[1];
-			out_tri2.normals[0] = in_normals[1];
-			out_tri2.uvs[0] = in_uv[1];
-
-			out_tri2.vertices[1] = out_tri1.vertices[2];
-			out_tri2.normals[1] = out_tri1.normals[2];
-			out_tri2.uvs[1] = out_tri1.uvs[2];
-
-			out_tri2.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[1], outside_points[0], t);
-
-
-			// Correct the vertex normal due to clipping
-			out_tri2.normals[2].x = t * (out_normals[0].x - in_normals[1].x) + in_normals[1].x;
-			out_tri2.normals[2].y = t * (out_normals[0].y - in_normals[1].y) + in_normals[1].y;
-			out_tri2.normals[2].z = t * (out_normals[0].z - in_normals[1].z) + in_normals[1].z;
-			out_tri2.vertices[2].w = t * (out_d[0] - in_d[1]) + in_d[1];
-			out_tri2.uvs[2].x = t * (out_uv[0].x - in_uv[1].x) + in_uv[1].x;
-			out_tri2.uvs[2].y = t * (out_uv[0].y - in_uv[1].y) + in_uv[1].y;
-
-			return 2; // Return two newly formed triangles which form a quad
-		}
-		return -1; // I added for all return paths warning
-	}
 
 
 	void Render(const float_t msElapsed)
@@ -630,7 +393,7 @@ public:
 			test.vertices[2] = (topLeftTri.vertices[2] * mvpMat);
 
 			PerspectiveDivide(test);
-			ScaleToScreen(test);
+			ScaleToScreen(test, resolution);
 			quad.emplace_back(test);
 
 			test = bottomRightTri;
@@ -643,7 +406,7 @@ public:
 			test.vertices[2] = bottomRightTri.vertices[2] * mvpMat;
 
 			PerspectiveDivide(test);
-			ScaleToScreen(test);
+			ScaleToScreen(test, resolution);
 			quad.emplace_back(test);
 		}
 
@@ -661,7 +424,7 @@ public:
 				test.vertices[2] = (tris[i].vertices[2] * mvpMat);
 
 				PerspectiveDivide(test);
-				ScaleToScreen(test);
+				ScaleToScreen(test, resolution);
 				quad.emplace_back(test);
 			}
 		}
@@ -698,7 +461,7 @@ public:
 					if (numtris == 2)
 					{
 						PerspectiveDivide(out2);
-						ScaleToScreen(out2);
+						ScaleToScreen(out2, resolution);
 
 						if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
 						{
@@ -710,7 +473,7 @@ public:
 						quad.emplace_back(out2);
 					}
 					PerspectiveDivide(out1);
-					ScaleToScreen(out1);
+					ScaleToScreen(out1, resolution);
 					if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
 					{
 						std::swap(out1.vertices[1], out1.vertices[0]);
@@ -724,7 +487,7 @@ public:
 				else
 				{
 					PerspectiveDivide(test);
-					ScaleToScreen(test);
+					ScaleToScreen(test, resolution);
 					quad.emplace_back(test);
 				}
 			}
@@ -838,198 +601,6 @@ public:
 		}
 	}
 
-	bool LoadObj(std::string file, game::Mesh& mesh)
-	{
-		std::ifstream f(file.c_str());
-		std::vector<game::Vector3f> verts;
-		std::vector<game::Vector3f> norms;
-		std::vector<float> vcount;
-		std::vector<game::Vector3i> fcount;
-		std::vector<game::Vector3f> vnorms;
-
-		std::vector<game::Vector2f> uvs;
-		game::Vector3f vert;
-		bool hasNormals = false;
-		bool hasUVs = false;
-		char line[256];
-
-		// Check to see if file has normals
-		if (f.is_open())
-		{
-			while (!f.eof())
-			{
-				f.getline(line, 256);
-				if (line[0] == 'v' && line[1] == 'n') hasNormals = true;
-				if (line[0] == 'v' && line[1] == 't') hasUVs = true;
-			}
-		}
-		// Reset file
-		f.clear();
-		f.seekg(0);
-		hasNormals = false;
-
-		// Parse the file
-		if (f.is_open())
-		{
-			uint8_t junk = 0;
-			uint32_t p1 = 0, p2 = 0, p3 = 0;
-			uint32_t n1 = 0, n2 = 0, n3 = 0;
-			uint32_t uv1 = 0, uv2 = 0, uv3 = 0;
-			while (!f.eof())
-			{
-				junk = 0;
-				f.getline(line, 256);
-				std::stringstream ss;
-				ss << line;
-
-				if (line[0] == 'v')
-				{
-					if (line[1] == 'n') // Vertex normals
-					{
-						ss >> junk >> junk >> vert.x >> vert.y >> vert.z;
-						//vert.z = -vert.z;
-						norms.emplace_back(vert);
-						continue;
-					}
-					else if (line[1] == 't')  // texture uvs
-					{
-						ss >> junk >> junk >> vert.x >> vert.y;
-						uvs.emplace_back(game::Vector2f(vert.x, vert.y));
-						continue;
-					}
-					else
-					{
-						ss >> junk >> vert.x >> vert.y >> vert.z;
-						verts.emplace_back(vert);
-						// start counting verts
-						vcount.emplace_back(1.0f);
-						// if it has no normals make temporary ones
-						if (!hasNormals)
-						{
-							norms.emplace_back(game::Vector3f(0, 0, 0));
-						}
-						continue;
-					}
-				}
-				if (line[0] == 'f')
-				{
-					if (hasUVs && hasNormals)
-					{
-						ss >> junk >> p1 >> junk >> uv1 >> junk >> n1;
-						ss >> p2 >> junk >> uv2 >> junk >> n2;
-						ss >> p3 >> junk >> uv3 >> junk >> n3;
-					}
-					else if (hasNormals)
-					{
-						ss >> junk >> p1 >> junk >> junk >> n1;
-						ss >> p2 >> junk >> junk >> n2;
-						ss >> p3 >> junk >> junk >> n3;
-					}
-					else if (hasUVs)
-					{
-						// may have to get rid of the ns as junk
-						ss >> junk >> p1 >> junk >> uv1 >> junk >> n1;
-						ss >> p2 >> junk >> uv2 >> junk >> n2;
-						ss >> p3 >> junk >> uv3 >> junk >> n3;
-					}
-					else
-					{
-						ss >> junk >> p1 >> p2 >> p3;
-					}
-					game::Triangle tri;
-					// Vertices
-					tri.vertices[0] = verts[(size_t)p1 - 1];
-					tri.vertices[1] = verts[(size_t)p2 - 1];
-					tri.vertices[2] = verts[(size_t)p3 - 1];
-					// UV (texture) coords
-					if (hasUVs)
-					{
-						tri.uvs[0] = uvs[(size_t)uv1 - 1];// Vector2d(uvs[uv1 - 1].x, uvs[uv1 - 1].y);
-						tri.uvs[1] = uvs[(size_t)uv2 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
-						tri.uvs[2] = uvs[(size_t)uv3 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
-					}
-					else
-					{
-						tri.uvs[0];// = game::Vector2f(0, 0);
-						tri.uvs[1];// = game::Vector2f(0, 0);
-						tri.uvs[2];// = game::Vector2f(0, 0);
-					}
-
-
-					// count the vertices
-					if (!hasNormals)
-					{
-						vcount[(size_t)p1 - 1]++;
-						vcount[(size_t)p2 - 1]++;
-						vcount[(size_t)p3 - 1]++;
-						game::Vector3i t;
-						t.x = p1 - 1;
-						t.y = p2 - 1;
-						t.z = p3 - 1;
-						fcount.emplace_back(t);
-					}
-
-
-					game::Vector3f a, b;
-					// Calculate the face normal of the triangle
-					a = tri.vertices[1] - tri.vertices[0];
-					b = tri.vertices[2] - tri.vertices[0];
-					// this was changed to make face normals work with gamelib2
-					//tri.faceNormal = b.Cross(a);
-					tri.faceNormal = a.Cross(b);  // orig
-
-
-					if (hasNormals)
-					{
-						// Add the face normal to the vertex normals
-						tri.faceNormal.Normalize();
-						tri.normals[0] = norms[(size_t)n1 - 1];// * -1.0f;
-						tri.normals[1] = norms[(size_t)n2 - 1];// * -1.0f;
-						tri.normals[2] = norms[(size_t)n3 - 1];// * -1.0f;
-						tri.normals[0].Normalize();
-						tri.normals[1].Normalize();
-						tri.normals[2].Normalize();
-					}
-					else
-					{
-						// Sum the normals
-						norms[(size_t)p1 - 1] += tri.faceNormal;// *-1.0f;
-						norms[(size_t)p2 - 1] += tri.faceNormal;// *-1.0f;
-						norms[(size_t)p3 - 1] += tri.faceNormal;// *-1.0f;
-						tri.faceNormal.Normalize();
-
-					}
-
-					mesh.tris.emplace_back(tri);
-
-					continue;
-				}
-			}
-
-			if (!hasNormals)
-			{
-				for (int i = 0; i < mesh.tris.size(); i++)
-				{
-					mesh.tris[i].normals[0] = norms[fcount[i].x] / vcount[fcount[i].x];
-					mesh.tris[i].normals[1] = norms[fcount[i].y] / vcount[fcount[i].y];
-					mesh.tris[i].normals[2] = norms[fcount[i].z] / vcount[fcount[i].z];
-					mesh.tris[i].normals[0].Normalize();
-					mesh.tris[i].normals[1].Normalize();
-					mesh.tris[i].normals[2].Normalize();
-				}
-			}
-			for (int i = 0; i < mesh.tris.size(); i++)
-			{
-				mesh.tris[i].color[0] = game::Colors::White;
-				mesh.tris[i].color[1] = game::Colors::White;
-				mesh.tris[i].color[2] = game::Colors::White;
-			}
-
-			return true;
-		}
-		else return false;
-
-	}
 };
 
 int32_t main()

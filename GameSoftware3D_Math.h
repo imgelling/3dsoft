@@ -216,7 +216,6 @@ namespace game
 		return ret;
 	}
 
-
 	inline Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) noexcept
 	{
 		Triangle ret(tri);
@@ -266,6 +265,255 @@ namespace game
 		ret.vertices[2].w = triangle.vertices[2].z;
 
 		return ret;
+	}
+
+	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear
+	inline float_t CheckWinding(Vector3f A, Vector3f B, Vector3f C)
+	{
+		Vector3f AB = B - A; // Vector from A to B
+		Vector3f AC = C - A; // Vector from A to C
+		Vector3f N = AB.Cross(AC); // Cross product of AB and AC
+		return (N.z); // Sign of the z-component of N
+	}
+
+	inline Vector3f VectorIntersectPlane(Vector3f& plane_p, Vector3f& plane_n, Vector3f& lineStart, Vector3f& lineEnd, float& t) noexcept
+	{
+		float_t plane_d = -plane_n.Dot(plane_p);
+		float_t ad = lineStart.Dot(plane_n);
+		float_t bd = lineEnd.Dot(plane_n);
+		t = (-plane_d - ad) / (bd - ad);
+		Vector3f lineStartToEnd = lineEnd - lineStart;
+		Vector3f lineToIntersect = lineStartToEnd * t;
+		return lineStart + lineToIntersect;
+	}
+
+	inline uint32_t ClipAgainstPlane(Vector3f plane_p, Vector3f plane_n, Triangle& in_tri, Triangle& out_tri1, Triangle& out_tri2)
+	{
+		//// Make sure plane normal is indeed normal
+		//plane_n.Normalize();// plane_n = Vector_Normalise(plane_n);
+		float_t d = plane_n.Dot(plane_p);
+
+		// Return signed shortest distance from point to plane, plane normal must be normalised
+		auto dist = [&](Vector3f& p)
+			{
+				//Vector3f n = p;// Vector_Normalise(p);
+				//n.Normalize();
+				return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - d);// Vector_DotProduct(plane_n, plane_p));
+			};
+
+		// Create two temporary storage arrays to classify points either side of plane
+		// If distance sign is positive, point lies on "inside" of plane
+		Vector3f inside_points[3] = {};  uint32_t nInsidePointCount = 0;
+		Vector3f outside_points[3] = {}; uint32_t nOutsidePointCount = 0;
+
+		// Get signed distance of each point in triangle to plane
+		float_t d0 = dist(in_tri.vertices[0]);
+		float_t d1 = dist(in_tri.vertices[1]);
+		float_t d2 = dist(in_tri.vertices[2]);
+
+		Vector3f in_normals[3];
+		Vector3f out_normals[3];
+
+		Vector2f in_uv[3];
+		Vector2f out_uv[3];
+
+		float_t in_d[3]{};
+		float_t out_d[3]{};
+
+
+		if (d0 >= 0.0f)
+		{
+			inside_points[nInsidePointCount++] = in_tri.vertices[0];
+			in_normals[nInsidePointCount - 1] = in_tri.normals[0];
+			in_uv[nInsidePointCount - 1] = in_tri.uvs[0];
+			in_d[nInsidePointCount - 1] = in_tri.vertices[0].w;
+		}
+		else
+		{
+			outside_points[nOutsidePointCount++] = in_tri.vertices[0];
+			out_normals[nOutsidePointCount - 1] = in_tri.normals[0];
+			out_uv[nOutsidePointCount - 1] = in_tri.uvs[0];
+			out_d[nOutsidePointCount - 1] = in_tri.vertices[0].w;
+		}
+		if (d1 >= 0.0f)
+		{
+			inside_points[nInsidePointCount++] = in_tri.vertices[1];
+			in_normals[nInsidePointCount - 1] = in_tri.normals[1];
+			in_uv[nInsidePointCount - 1] = in_tri.uvs[1];
+			in_d[nInsidePointCount - 1] = in_tri.vertices[1].w;
+		}
+		else
+		{
+			outside_points[nOutsidePointCount++] = in_tri.vertices[1];
+			out_normals[nOutsidePointCount - 1] = in_tri.normals[1];
+			out_uv[nOutsidePointCount - 1] = in_tri.uvs[1];
+			out_d[nOutsidePointCount - 1] = in_tri.vertices[1].w;
+		}
+		if (d2 >= 0.0f)
+		{
+			inside_points[nInsidePointCount++] = in_tri.vertices[2];
+			in_normals[nInsidePointCount - 1] = in_tri.normals[2];
+			in_uv[nInsidePointCount - 1] = in_tri.uvs[2];
+			in_d[nInsidePointCount - 1] = in_tri.vertices[2].w;
+		}
+		else
+		{
+			outside_points[nOutsidePointCount++] = in_tri.vertices[2];
+			out_normals[nOutsidePointCount - 1] = in_tri.normals[2];
+			out_uv[nOutsidePointCount - 1] = in_tri.uvs[2];
+			out_d[nOutsidePointCount - 1] = in_tri.vertices[2].w;
+		}
+
+
+
+		if (nInsidePointCount == 0)
+		{
+			return 0; // No returned triangles are valid
+		}
+
+		if (nInsidePointCount == 3)
+		{
+			out_tri1 = in_tri;
+			return 1; // Same triangle returned as didn't get clipped
+		}
+
+		if (nInsidePointCount == 1 && nOutsidePointCount == 2)
+		{
+			// Triangle should be clipped. As two points lie outside
+			// the plane, the triangle simply becomes a smaller triangle
+
+			// Copy appearance info to new triangle
+			out_tri1.color[0] = in_tri.color[0];
+			out_tri1.color[1] = in_tri.color[1];
+			out_tri1.color[2] = in_tri.color[2];
+			out_tri1.faceNormal = in_tri.faceNormal;
+
+
+			// The inside point is valid, so keep that...
+			out_tri1.vertices[0] = inside_points[0];
+			out_tri1.normals[0] = in_normals[0];
+			out_tri1.uvs[0] = in_uv[0];
+
+
+			// but the two new points are at the locations where the 
+			// original sides of the triangle (lines) intersect with the plane
+			float t = 0.0;
+
+			// First intersection
+			out_tri1.vertices[1] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
+
+			// Correct vertex normal due to clipping
+			out_tri1.normals[1].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
+			out_tri1.normals[1].y = t * (out_normals[0].y - in_normals[0].y) + in_normals[0].y;
+			out_tri1.normals[1].z = t * (out_normals[0].z - in_normals[0].z) + in_normals[0].z;
+			out_tri1.vertices[1].w = t * (out_d[0] - in_d[0]) + in_d[0];
+			out_tri1.uvs[1].x = t * (out_uv[0].x - in_uv[0].x) + in_uv[0].x;
+			out_tri1.uvs[1].y = t * (out_uv[0].y - in_uv[0].y) + in_uv[0].y;
+
+
+			// Second intersection
+			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[1], t);
+
+			out_tri1.normals[2].x = t * (out_normals[1].x - in_normals[0].x) + in_normals[0].x;
+			out_tri1.normals[2].y = t * (out_normals[1].y - in_normals[0].y) + in_normals[0].y;
+			out_tri1.normals[2].z = t * (out_normals[1].z - in_normals[0].z) + in_normals[0].z;
+			out_tri1.vertices[2].w = t * (out_d[1] - in_d[0]) + in_d[0];
+			out_tri1.uvs[2].x = t * (out_uv[1].x - in_uv[0].x) + in_uv[0].x;
+			out_tri1.uvs[2].y = t * (out_uv[1].y - in_uv[0].y) + in_uv[0].y;
+
+			return 1; // Return the newly formed single triangle
+		}
+
+		if (nInsidePointCount == 2 && nOutsidePointCount == 1)
+		{
+			// Triangle should be clipped. As two points lie inside the plane,
+			// the clipped triangle becomes a "quad". Fortunately, we can
+			// represent a quad with two new triangles
+
+			// Copy appearance info to new triangles
+			out_tri1.color[0] = in_tri.color[0];
+			out_tri1.color[1] = in_tri.color[1];
+			out_tri1.color[2] = in_tri.color[2];
+			out_tri1.faceNormal = in_tri.faceNormal;
+			out_tri2.color[0] = in_tri.color[0];
+			out_tri2.color[1] = in_tri.color[1];
+			out_tri2.color[2] = in_tri.color[2];
+			out_tri2.faceNormal = in_tri.faceNormal;
+
+			// The first triangle consists of the two inside points and a new
+			// point determined by the location where one side of the triangle
+			// intersects with the plane
+			out_tri1.vertices[0] = inside_points[0];
+			out_tri1.normals[0] = in_normals[0];
+			out_tri1.uvs[0] = in_uv[0];
+
+			out_tri1.vertices[1] = inside_points[1];
+			out_tri1.normals[1] = in_normals[1];
+			out_tri1.uvs[1] = in_uv[1];
+
+			float t = 0.0;
+
+			// First intersection
+			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
+
+			// Correct the vertex normal due to clipping
+			out_tri1.normals[2].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
+			out_tri1.normals[2].y = t * (out_normals[0].y - in_normals[0].y) + in_normals[0].y;
+			out_tri1.normals[2].z = t * (out_normals[0].z - in_normals[0].z) + in_normals[0].z;
+			out_tri1.vertices[2].w = t * (out_d[0] - in_d[0]) + in_d[0];
+			out_tri1.uvs[2].x = t * (out_uv[0].x - in_uv[0].x) + in_uv[0].x;
+			out_tri1.uvs[2].y = t * (out_uv[0].y - in_uv[0].y) + in_uv[0].y;
+
+
+			// 2nd intersection
+			out_tri2.vertices[0] = inside_points[1];
+			out_tri2.normals[0] = in_normals[1];
+			out_tri2.uvs[0] = in_uv[1];
+
+			out_tri2.vertices[1] = out_tri1.vertices[2];
+			out_tri2.normals[1] = out_tri1.normals[2];
+			out_tri2.uvs[1] = out_tri1.uvs[2];
+
+			out_tri2.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[1], outside_points[0], t);
+
+
+			// Correct the vertex normal due to clipping
+			out_tri2.normals[2].x = t * (out_normals[0].x - in_normals[1].x) + in_normals[1].x;
+			out_tri2.normals[2].y = t * (out_normals[0].y - in_normals[1].y) + in_normals[1].y;
+			out_tri2.normals[2].z = t * (out_normals[0].z - in_normals[1].z) + in_normals[1].z;
+			out_tri2.vertices[2].w = t * (out_d[0] - in_d[1]) + in_d[1];
+			out_tri2.uvs[2].x = t * (out_uv[0].x - in_uv[1].x) + in_uv[1].x;
+			out_tri2.uvs[2].y = t * (out_uv[0].y - in_uv[1].y) + in_uv[1].y;
+
+			return 2; // Return two newly formed triangles which form a quad
+		}
+		return -1; // I added for all return paths warning
+	}
+
+	inline void PerspectiveDivide(Triangle& triangle)
+	{
+		triangle.vertices[0] /= triangle.vertices[0].w;
+		triangle.vertices[1] /= triangle.vertices[1].w;
+		triangle.vertices[2] /= triangle.vertices[2].w;
+	}
+
+	inline void ScaleToScreen(Triangle& triangle, const Pointi& bufferSize) noexcept
+	{
+		triangle.vertices[0].x += 1.0f;
+		triangle.vertices[1].x += 1.0f;
+		triangle.vertices[2].x += 1.0f;
+
+		triangle.vertices[0].y += 1.0f;
+		triangle.vertices[1].y += 1.0f;
+		triangle.vertices[2].y += 1.0f;
+
+		triangle.vertices[0].x *= 0.5f * (float_t)bufferSize.x;
+		triangle.vertices[1].x *= 0.5f * (float_t)bufferSize.x;
+		triangle.vertices[2].x *= 0.5f * (float_t)bufferSize.x;
+
+		triangle.vertices[0].y *= 0.5f * (float_t)bufferSize.y;
+		triangle.vertices[1].y *= 0.5f * (float_t)bufferSize.y;
+		triangle.vertices[2].y *= 0.5f * (float_t)bufferSize.y;
 	}
 }
 

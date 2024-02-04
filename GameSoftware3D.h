@@ -47,6 +47,7 @@ namespace game
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
 		bool _multiThreaded;
 		ThreadPool _threadPool;
+		Pointi _colorBufferSize;
 		uint32_t _colorBufferStride;
 		uint32_t _totalBufferSize;
 		FillMode _FillMode;
@@ -137,6 +138,7 @@ namespace game
 	{
 		renderTarget = colorBuffer;
 		fence = 0;
+		_colorBufferSize = colorBufferSize;
 		_colorBufferStride = colorBufferSize.width;
 		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
 		if (threads < 0)
@@ -543,6 +545,200 @@ namespace game
 			out.emplace_back(outTri);
 		}
 	}
+
+
+	bool LoadObj(std::string file, game::Mesh& mesh)
+	{
+		std::ifstream f(file.c_str());
+		std::vector<game::Vector3f> verts;
+		std::vector<game::Vector3f> norms;
+		std::vector<float> vcount;
+		std::vector<game::Vector3i> fcount;
+		std::vector<game::Vector3f> vnorms;
+
+		std::vector<game::Vector2f> uvs;
+		game::Vector3f vert;
+		bool hasNormals = false;
+		bool hasUVs = false;
+		char line[256] = {};
+
+		// Check to see if file has normals
+		if (f.is_open())
+		{
+			while (!f.eof())
+			{
+				f.getline(line, 256);
+				if (line[0] == 'v' && line[1] == 'n') hasNormals = true;
+				if (line[0] == 'v' && line[1] == 't') hasUVs = true;
+			}
+		}
+		// Reset file
+		f.clear();
+		f.seekg(0);
+		hasNormals = false;
+
+		// Parse the file
+		if (f.is_open())
+		{
+			uint8_t junk = 0;
+			uint32_t p1 = 0, p2 = 0, p3 = 0;
+			uint32_t n1 = 0, n2 = 0, n3 = 0;
+			uint32_t uv1 = 0, uv2 = 0, uv3 = 0;
+			while (!f.eof())
+			{
+				junk = 0;
+				f.getline(line, 256);
+				std::stringstream ss;
+				ss << line;
+
+				if (line[0] == 'v')
+				{
+					if (line[1] == 'n') // Vertex normals
+					{
+						ss >> junk >> junk >> vert.x >> vert.y >> vert.z;
+						//vert.z = -vert.z;
+						norms.emplace_back(vert);
+						continue;
+					}
+					else if (line[1] == 't')  // texture uvs
+					{
+						ss >> junk >> junk >> vert.x >> vert.y;
+						uvs.emplace_back(game::Vector2f(vert.x, vert.y));
+						continue;
+					}
+					else
+					{
+						ss >> junk >> vert.x >> vert.y >> vert.z;
+						verts.emplace_back(vert);
+						// start counting verts
+						vcount.emplace_back(1.0f);
+						// if it has no normals make temporary ones
+						if (!hasNormals)
+						{
+							norms.emplace_back(game::Vector3f(0, 0, 0));
+						}
+						continue;
+					}
+				}
+				if (line[0] == 'f')
+				{
+					if (hasUVs && hasNormals)
+					{
+						ss >> junk >> p1 >> junk >> uv1 >> junk >> n1;
+						ss >> p2 >> junk >> uv2 >> junk >> n2;
+						ss >> p3 >> junk >> uv3 >> junk >> n3;
+					}
+					else if (hasNormals)
+					{
+						ss >> junk >> p1 >> junk >> junk >> n1;
+						ss >> p2 >> junk >> junk >> n2;
+						ss >> p3 >> junk >> junk >> n3;
+					}
+					else if (hasUVs)
+					{
+						// may have to get rid of the ns as junk
+						ss >> junk >> p1 >> junk >> uv1 >> junk >> n1;
+						ss >> p2 >> junk >> uv2 >> junk >> n2;
+						ss >> p3 >> junk >> uv3 >> junk >> n3;
+					}
+					else
+					{
+						ss >> junk >> p1 >> p2 >> p3;
+					}
+					game::Triangle tri;
+					// Vertices
+					tri.vertices[0] = verts[(size_t)p1 - 1];
+					tri.vertices[1] = verts[(size_t)p2 - 1];
+					tri.vertices[2] = verts[(size_t)p3 - 1];
+					// UV (texture) coords
+					if (hasUVs)
+					{
+						tri.uvs[0] = uvs[(size_t)uv1 - 1];// Vector2d(uvs[uv1 - 1].x, uvs[uv1 - 1].y);
+						tri.uvs[1] = uvs[(size_t)uv2 - 1];// Vector2d(uvs[uv2 - 1].x, uvs[uv2 - 1].y);
+						tri.uvs[2] = uvs[(size_t)uv3 - 1];// Vector2d(uvs[uv3 - 1].x, uvs[uv3 - 1].y);
+					}
+					else
+					{
+						tri.uvs[0];// = game::Vector2f(0, 0);
+						tri.uvs[1];// = game::Vector2f(0, 0);
+						tri.uvs[2];// = game::Vector2f(0, 0);
+					}
+
+
+					// count the vertices
+					if (!hasNormals)
+					{
+						vcount[(size_t)p1 - 1]++;
+						vcount[(size_t)p2 - 1]++;
+						vcount[(size_t)p3 - 1]++;
+						game::Vector3i t;
+						t.x = p1 - 1;
+						t.y = p2 - 1;
+						t.z = p3 - 1;
+						fcount.emplace_back(t);
+					}
+
+
+					game::Vector3f a, b;
+					// Calculate the face normal of the triangle
+					a = tri.vertices[1] - tri.vertices[0];
+					b = tri.vertices[2] - tri.vertices[0];
+					// this was changed to make face normals work with gamelib2
+					//tri.faceNormal = b.Cross(a);
+					tri.faceNormal = a.Cross(b);  // orig
+
+
+					if (hasNormals)
+					{
+						// Add the face normal to the vertex normals
+						tri.faceNormal.Normalize();
+						tri.normals[0] = norms[(size_t)n1 - 1];// * -1.0f;
+						tri.normals[1] = norms[(size_t)n2 - 1];// * -1.0f;
+						tri.normals[2] = norms[(size_t)n3 - 1];// * -1.0f;
+						tri.normals[0].Normalize();
+						tri.normals[1].Normalize();
+						tri.normals[2].Normalize();
+					}
+					else
+					{
+						// Sum the normals
+						norms[(size_t)p1 - 1] += tri.faceNormal;// *-1.0f;
+						norms[(size_t)p2 - 1] += tri.faceNormal;// *-1.0f;
+						norms[(size_t)p3 - 1] += tri.faceNormal;// *-1.0f;
+						tri.faceNormal.Normalize();
+
+					}
+
+					mesh.tris.emplace_back(tri);
+
+					continue;
+				}
+			}
+
+			if (!hasNormals)
+			{
+				for (int i = 0; i < mesh.tris.size(); i++)
+				{
+					mesh.tris[i].normals[0] = norms[fcount[i].x] / vcount[fcount[i].x];
+					mesh.tris[i].normals[1] = norms[fcount[i].y] / vcount[fcount[i].y];
+					mesh.tris[i].normals[2] = norms[fcount[i].z] / vcount[fcount[i].z];
+					mesh.tris[i].normals[0].Normalize();
+					mesh.tris[i].normals[1].Normalize();
+					mesh.tris[i].normals[2].Normalize();
+				}
+			}
+			for (int i = 0; i < mesh.tris.size(); i++)
+			{
+				mesh.tris[i].color[0] = game::Colors::White;
+				mesh.tris[i].color[1] = game::Colors::White;
+				mesh.tris[i].color[2] = game::Colors::White;
+			}
+
+			return true;
+		}
+		else return false;
+
+	}
 }
 
 static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
@@ -650,5 +846,7 @@ static void testmy_PerspectiveFOV2(const float_t fov, const float_t aspect, cons
 	std::cout << "error = " << e << "\n";
 
 }
+
+
 
 #endif
