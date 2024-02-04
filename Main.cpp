@@ -134,7 +134,7 @@ public:
 
 		//game::ImageLoader imageLoader;
 		//uint32_t t = 0;
-		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/skin_adventurer.png", texW, texH, t);
+		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
 		//texture = new uint32_t[texW * texH];
 		//memcpy(texture, temp, (size_t)texW * texH * 4);
 		//software3D._currentTexture = texture;
@@ -358,14 +358,13 @@ public:
 		}
 	}
 
-
-
-
 	void Render(const float_t msElapsed)
 	{
 		static float_t rotation = 0.0f;
+		static float_t pos = 0.0f;
 
-		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		pos += 1 * (msElapsed / 1000.0f);
 		//software3D.time = rotation;
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
@@ -375,11 +374,8 @@ public:
 
 		quad.clear();
 
-		game::Matrix4x4f viewMat;
 		game::Matrix4x4f mvpMat;
-
-		viewMat = camera.GenerateView();
-		mvpMat = projMat * viewMat;
+		mvpMat = projMat * camera.CreateViewMatrix();
 
 		if (scene == 0)
 		{
@@ -431,20 +427,24 @@ public:
 
 		if (scene == 2)
 		{
+			model.SetTranslation(cos(pos), sin(pos), cos(pos));
+			model.SetRotation(rotation, -rotation, rotation*0.25f);
+			game::Matrix4x4f modelMat = model.CreateModelMatrix();
+			mvpMat = mvpMat * modelMat;
 			for (int i = 0; i < model.tris.size(); i++)
 			{
 				test = model.tris[i];
-				//test.faceNormal = test.faceNormal;
-				//test.normals[0] = test.normals[0];
-				//test.normals[1] = test.normals[1];
-				//test.normals[2] = test.normals[2];
+				test.faceNormal = test.faceNormal * model.rotation;
+				test.normals[0] = test.normals[0] * model.rotation;
+				test.normals[1] = test.normals[1] * model.rotation;
+				test.normals[2] = test.normals[2] * model.rotation;
 				test.vertices[0] = (model.tris[i].vertices[0] * mvpMat);
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
-				//if (test.faceNormal.z > 0)  // somewhat works, but doesn't take account camera
+				//if (camera.forward.Dot(test.faceNormal) > 0)  // somewhat works, but doesn't take account camera
 				//{
-				//	culled++;
+				//	//culled++;
 				//	continue;
 				//}				
 	 

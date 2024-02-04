@@ -360,7 +360,7 @@ namespace game
 
 				// depth buffer test
 				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
-				if (oneOverDepthEval < *depthBufferPtr)
+				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				{
 
 					*depthBufferPtr = oneOverDepthEval;
@@ -424,8 +424,8 @@ namespace game
 					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-					float_t luminanceAmbient(luminance + 0.05f);
-					luminanceAmbient = 1.0f;// min(luminanceAmbient, 1.0f);
+					float_t luminanceAmbient(luminance + 0.25f);
+					luminanceAmbient = min(luminanceAmbient, 1.0f);
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;

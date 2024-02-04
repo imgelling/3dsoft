@@ -19,7 +19,7 @@ namespace game
 		Matrix4x4f view;
 		Camera3D();
 		Camera3D(const Vector3f& inPosition, const Vector3f& inRotation);
-		Matrix4x4f GenerateView() const noexcept;
+		Matrix4x4f CreateViewMatrix() noexcept;
 		//float yaw, pitch, roll;
 		Matrix4x4f rotateM(const float ang, const Vector3f& axis) noexcept;
 		void SetRotation(const float x, const float y, const float z) noexcept;
@@ -95,12 +95,9 @@ namespace game
 		up.Normalize();
 	}
 
-	inline Matrix4x4f Camera3D::GenerateView() const noexcept
+	inline Matrix4x4f Camera3D::CreateViewMatrix() noexcept
 	{
-		Matrix4x4f view;
-
-		// Rotation stuff
-
+		view.SetIdentity();
 		view.m[0] = right.x;
 		view.m[4] = right.y;
 		view.m[8] = right.z;

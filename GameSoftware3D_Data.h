@@ -108,7 +108,6 @@ namespace game
 	struct Triangle
 	{
 		Vector3f vertices[3];
-		//game::Vector3f clippedVertices[3];
 		Color color[3];
 		Vector3f faceNormal;
 		Vector3f normals[3];
@@ -130,7 +129,37 @@ namespace game
 	struct Mesh
 	{
 		std::vector<Triangle> tris;
-		Matrix4x4f modelMat;
+		Matrix4x4f model;
+		Matrix4x4f translate;
+		Matrix4x4f rotation;
+		inline void SetTranslation(const float_t x, const float_t y, const float_t z) noexcept
+		{
+			translate.SetTranslation(x, y, z);
+		}
+		inline void SetRotation(const float_t x, const float_t y, const float_t z) noexcept
+		{
+			Matrix4x4f rotX;
+			Matrix4x4f rotY;
+			Matrix4x4f rotZ;
+			if (x)
+			{
+				rotX.SetRotationX(x);
+			}
+			if (y)
+			{
+				rotY.SetRotationY(y);
+			}
+			if (z)
+			{
+				rotZ.SetRotationZ(z);
+			}
+			rotation = rotZ * rotY * rotX;
+		}
+		inline Matrix4x4f CreateModelMatrix()
+		{
+			model.SetIdentity();
+			return model = translate * rotation;
+		}
 	};
 
 	struct ParameterEquation 
