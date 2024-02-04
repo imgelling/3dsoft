@@ -87,8 +87,8 @@ namespace game
 		forward.z = sin(rotation.y) * -cos(rotation.x);
 		forward.Normalize();
 
-		Vector3f newUp(0.0f, 1.0f, 0.0f);
-		right = newUp.Cross(forward);
+		//Vector3f newUp(0.0f, 1.0f, 0.0f);
+		right = defaultUp.Cross(forward);
 		right.Normalize();
 
 		up = (forward.Cross(right));

@@ -24,6 +24,7 @@ public:
 	// 3D stuff
 	game::Triangle topLeftTri;
 	game::Triangle bottomRightTri;
+	game::Mesh plane;
 	game::Recti clip[16];  // in renderer
 	std::vector<game::Triangle> clippedTris[16];
 	game::Projection projection;
@@ -37,7 +38,6 @@ public:
 	game::Camera3D camera;
 	uint32_t maxFPS;
 	uint32_t scene;
-	float_t tz;
 	uint32_t* texture;
 	uint32_t texW;
 	uint32_t texH;
@@ -51,7 +51,6 @@ public:
 		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
 		scene = 2;
-		tz = 0.0f;
 		showText = true;
 		texture = nullptr;
 		texW = 64;
@@ -90,11 +89,10 @@ public:
 	void Initialize()
 	{
 //#if defined(DEBUG) | defined(_DEBUG)
-		//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		//_CrtSetBreakAlloc(613);
+//		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+//		//_CrtSetBreakAlloc(613);
 //#endif
 		game::Attributes attributes;
-
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
@@ -293,10 +291,10 @@ public:
 			scene = 2;
 		}
 
-		float_t speed = 0.1f * msElapsed / 1000.0f;
+		float_t speed = 5.0f * msElapsed / 1000.0f;
 		if (geKeyboard.IsKeyHeld(geK_SHIFT))
 		{
-			speed = 5.0f * msElapsed / 1000.0f;
+			speed = 0.1f * msElapsed / 1000.0f;
 		}
 
 		// Move forward
@@ -323,7 +321,17 @@ public:
 			camera.position += camera.right * speed;
 		}
 
-		// y is inverted because....
+		if (geKeyboard.IsKeyHeld(geK_A))
+		{
+			camera.SetRotation(0.0f, -0.3f * (3.14159f / 180.0f), 0.0f);
+		}
+
+		if (geKeyboard.IsKeyHeld(geK_D))
+		{
+			camera.SetRotation(0.0f, 0.3f * (3.14159f / 180.0f), 0.0f);
+		}
+
+		// y is inverted because.... we are in Q4
 		if (geKeyboard.IsKeyHeld(geK_UP))
 		{
 			camera.position.y -= speed;
@@ -424,11 +432,11 @@ public:
 				quad.emplace_back(test);
 			}
 		}
-
+		//int culled = 0;
 		if (scene == 2)
 		{
-			model.SetTranslation(cos(pos), sin(pos), cos(pos));
-			model.SetRotation(rotation, -rotation, rotation*0.25f);
+			//model.SetTranslation(cos(pos), sin(pos), cos(pos));
+			//model.SetRotation(rotation, -rotation, rotation*0.25f);
 			game::Matrix4x4f modelMat = model.CreateModelMatrix();
 			mvpMat = mvpMat * modelMat;
 			for (int i = 0; i < model.tris.size(); i++)
@@ -442,11 +450,16 @@ public:
 				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
 				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
 
-				//if (camera.forward.Dot(test.faceNormal) > 0)  // somewhat works, but doesn't take account camera
+				//if (test.faceNormal.z > 0)  // somewhat works, but doesn't take account camera
 				//{
-				//	//culled++;
+				//	culled++;
 				//	continue;
 				//}				
+				if (test.faceNormal.Dot(camera.forward) > 0.75f)// acos(90 * 3.14156f / 180.0f))
+				{
+					//culled++;
+					continue;
+				}
 	 
 				if ((test.vertices[0].z < 0.0) ||
 					(test.vertices[1].z < 0.0) ||
@@ -494,7 +507,7 @@ public:
 			//std::cout << culled << "\n";
 		}
 
-		uint32_t fenceCount = 0;
+		uint64_t fenceCount = 0;
 		for (uint32_t c = 0; c < numclips; c++)
 		{
 			clippedTris[c].clear();
@@ -508,12 +521,12 @@ public:
 				});
 			//pixelMode.Rect(clip[c], game::Colors::Yellow);
 			software3D.Render(clippedTris[c], clip[c]);
-			fenceCount += (uint32_t)clippedTris[c].size();
+			fenceCount += clippedTris[c].size();
 		}
 		software3D.Fence(fenceCount);
 
 		// show depth buffer 468
-		if (geKeyboard.IsKeyHeld(geK_D))
+		if (geKeyboard.IsKeyHeld(geK_SPACE))
 		{
 
 			game::Color dColor;

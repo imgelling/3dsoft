@@ -276,7 +276,7 @@ namespace game
 		return (N.z); // Sign of the z-component of N
 	}
 
-	inline Vector3f VectorIntersectPlane(Vector3f& plane_p, Vector3f& plane_n, Vector3f& lineStart, Vector3f& lineEnd, float& t) noexcept
+	inline Vector3f VectorIntersectPlane(const Vector3f& plane_p, const Vector3f& plane_n, Vector3f& lineStart, Vector3f& lineEnd, float_t& t) noexcept
 	{
 		float_t plane_d = -plane_n.Dot(plane_p);
 		float_t ad = lineStart.Dot(plane_n);
@@ -294,12 +294,13 @@ namespace game
 		float_t d = plane_n.Dot(plane_p);
 
 		// Return signed shortest distance from point to plane, plane normal must be normalised
-		auto dist = [&](Vector3f& p)
-			{
-				//Vector3f n = p;// Vector_Normalise(p);
-				//n.Normalize();
-				return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - d);// Vector_DotProduct(plane_n, plane_p));
-			};
+		//auto dist = [&](Vector3f& p)
+		//	{
+		//		//Vector3f n = p;// Vector_Normalise(p);
+		//		//n.Normalize();
+		//		//return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - d);// Vector_DotProduct(plane_n, plane_p));
+		//		return (p.z - d);
+		//	};
 
 		// Create two temporary storage arrays to classify points either side of plane
 		// If distance sign is positive, point lies on "inside" of plane
@@ -307,9 +308,9 @@ namespace game
 		Vector3f outside_points[3] = {}; uint32_t nOutsidePointCount = 0;
 
 		// Get signed distance of each point in triangle to plane
-		float_t d0 = dist(in_tri.vertices[0]);
-		float_t d1 = dist(in_tri.vertices[1]);
-		float_t d2 = dist(in_tri.vertices[2]);
+		float_t d0 = in_tri.vertices[0].z - d;// dist(in_tri.vertices[0]);
+		float_t d1 = in_tri.vertices[1].z - d;// dist(in_tri.vertices[1]);
+		float_t d2 = in_tri.vertices[2].z - d;// dist(in_tri.vertices[2]);
 
 		Vector3f in_normals[3];
 		Vector3f out_normals[3];
