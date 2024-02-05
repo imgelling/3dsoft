@@ -33,13 +33,12 @@ public:
 	std::vector<game::Triangle> quad;
 	game::Triangle workingTriangle;
 
+	game::Texture currentTexture;
+
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
 	uint32_t scene;
-	uint32_t* texture;
-	uint32_t texW;
-	uint32_t texH;
 
 	game::FillMode state = game::FillMode::FilledColor;
 	game::Pointi resolution = { 1280, 720 }; //2560, 1440 };
@@ -50,9 +49,6 @@ public:
 		maxFPS = 0;
 		scene = 2;
 		showText = true;
-		texture = nullptr;
-		texW = 64;
-		texH = 64;
 		currentMesh = nullptr;
 	}
 
@@ -123,20 +119,16 @@ public:
 
 		ConvertBlenderToThis(model);
 
-		texture = new uint32_t[texW * texH];
-		GenerateCheckerboard(texture, texW, texH);
-		software3D._currentTexture = texture;
-		software3D._texH = texH;
-		software3D._texW = texW;
-
 		//game::ImageLoader imageLoader;
 		//uint32_t t = 0;
+		//uint32_t texW = 0;
+		//uint32_t texH = 0;
 		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
-		//texture = new uint32_t[texW * texH];
-		//memcpy(texture, temp, (size_t)texW * texH * 4);
-		//software3D._currentTexture = texture;
-		//software3D._texH = texH;
-		//software3D._texW = texW;
+		//currentTexture.data = new uint32_t[texW * texH];
+		//memcpy(currentTexture.data, temp, (size_t)texW * texH * 4);
+		//currentTexture.size.width = texW;
+		//currentTexture.size.height = texH;
+		//software3D.SetTexture(currentTexture);
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -251,7 +243,11 @@ public:
 
 	void Shutdown()
 	{
-
+		if (currentTexture.data)
+		{
+			delete[] currentTexture.data;
+			currentTexture.data = nullptr;
+		}
 	}
 
 	void Update(const float_t msElapsed)
@@ -504,6 +500,10 @@ public:
 			//pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
 			game::Pointi m = pixelMode.GetScaledMousePosition();
 			float_t* zb = software3D.depthBuffer;
+			m.x = min(m.x, pixelMode.GetPixelFrameBufferSize().width - 1);
+			m.y = min(m.y, pixelMode.GetPixelFrameBufferSize().height - 1);
+			m.x = max(m.x, 0);
+			m.y = max(m.y, 0);
 			float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
 			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 40, game::Colors::Yellow, 1);
 
@@ -524,23 +524,6 @@ public:
 			if (!save.Save(pixelMode.videoBuffer, "test.png", resolution.width, resolution.height, 0))
 			{
 				std::cout << "save failed---- :(\n";
-			}
-		}
-	}
-
-	void GenerateCheckerboard(uint32_t* buff, unsigned int w, unsigned int h)
-	{
-		game::Color col1 = game::Colors::Red;
-		game::Color col2 = game::Colors::Blue;
-		for (uint32_t y = 0; y < h; y++)
-		{
-			if (y % 2 == 0)
-				std::swap(col1, col2);
-			for (uint32_t x = 0; x < w; x++)
-			{
-				if (x % 2 == 0)
-					std::swap(col1, col2);
-				buff[y * w + x] = col1.packedABGR;
 			}
 		}
 	}

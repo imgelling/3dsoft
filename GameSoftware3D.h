@@ -24,6 +24,7 @@ namespace game
 		~Software3D();
 		bool Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
+		bool SetTexture(const Texture& texture) noexcept;
 		void Fence(uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
 		void Render(std::vector<Triangle>& tris, const Recti& clip) noexcept;
@@ -36,16 +37,15 @@ namespace game
 		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
-		uint32_t numbuffers;
-		uint32_t currentDepth = 0;
-		float_t time = 0.0f;
-		uint32_t* _currentTexture;
-		uint32_t _texW;
-		uint32_t _texH;
 		uint32_t* renderTarget;
 	private:
 		void _Render(std::vector<Triangle>& tris, const Recti& clip);
+		void _GenerateDefaultTexture(uint32_t* buff, unsigned int w, unsigned int h);
 		bool _multiThreaded;
+		Texture _defaultTexture;
+		uint32_t _numbuffers;
+		uint32_t _currentDepth;
+		Texture _currentTexture;
 		ThreadPool _threadPool;
 		Pointi _colorBufferSize;
 		uint32_t _colorBufferStride;
@@ -57,25 +57,68 @@ namespace game
 	{
 		renderTarget = nullptr;
 		fence = 0;
+		_currentDepth = 0;
 		_colorBufferStride = 0;
 		_totalBufferSize = 0;
 		_multiThreaded = false;
 		depthBuffer = nullptr;
-		numbuffers = 5;
+		_numbuffers = 5;
 		for (uint32_t i = 0; i < 10; i++)
 			clearDepthBuffer[i] = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
-		_currentTexture = nullptr;
-		_texW = 0;
-		_texH = 0;
+		_defaultTexture.data = new uint32_t[64 * 64];
+		_defaultTexture.size.width = 64;
+		_defaultTexture.size.height = 64;
+		_defaultTexture.oneOverSize.width = 1.0f / 64.0f;
+		_defaultTexture.oneOverSize.height = 1.0f / 64.0f;
+		_GenerateDefaultTexture(_defaultTexture.data, 64, 64);
+		SetTexture(_defaultTexture);
 	}
 
 	Software3D::~Software3D()
 	{
 		_threadPool.Stop();
-		for (uint32_t i = 0; i < numbuffers; i++)
-			if (clearDepthBuffer[i] != nullptr) delete[] clearDepthBuffer[i];
+		for (uint32_t i = 0; i < _numbuffers; i++)
+		{
+			if (clearDepthBuffer[i] != nullptr)
+			{
+				delete[] clearDepthBuffer[i];
+				clearDepthBuffer[i] = nullptr;
+			}
+		}
+		if (_defaultTexture.data)
+		{
+			delete[] _defaultTexture.data;
+			_defaultTexture.data = nullptr;
+		}
 		depthBuffer = nullptr;
+	}
+
+	inline bool Software3D::SetTexture(const Texture& texture) noexcept
+	{
+		if (texture.data == nullptr)
+		{
+			return false;
+		}
+		_currentTexture = texture;
+		return true;
+	}
+
+	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, unsigned int w, unsigned int h)
+	{
+		game::Color col1 = game::Colors::Red;
+		game::Color col2 = game::Colors::Blue;
+		for (uint32_t y = 0; y < h; y++)
+		{
+			if (y % 2 == 0)
+				std::swap(col1, col2);
+			for (uint32_t x = 0; x < w; x++)
+			{
+				if (x % 2 == 0)
+					std::swap(col1, col2);
+				buff[y * w + x] = col1.packedABGR;
+			}
+		}
 	}
 
 	inline void Software3D::Fence(uint64_t fenceValue) noexcept
@@ -86,12 +129,12 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		if (_multiThreaded) //1235 torus no move
+		if (_multiThreaded) 
 		{
-			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[currentDepth], _totalBufferSize, depth));
-			currentDepth++;
-			if (currentDepth > numbuffers - 1) currentDepth = 0;
-			depthBuffer = clearDepthBuffer[currentDepth];
+			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
+			_currentDepth++;
+			if (_currentDepth > _numbuffers - 1) _currentDepth = 0;
+			depthBuffer = clearDepthBuffer[_currentDepth];
 		}
 		else
 		{
@@ -153,14 +196,14 @@ namespace game
 		depthBuffer = new float_t[colorBufferSize.width * colorBufferSize.height];
 		//ClearDepth(1000.0f);
 		std::fill_n(depthBuffer, _totalBufferSize, 100.0f); //5.14
-		for (uint32_t i = 0; i < numbuffers; i++)
+		for (uint32_t i = 0; i < _numbuffers; i++)
 		{
 			clearDepthBuffer[i] = new float_t[_totalBufferSize];
 			memcpy(clearDepthBuffer[i], depthBuffer, (size_t)_totalBufferSize * 4);
 		}
-		currentDepth = 0;
+		_currentDepth = 0;
 		delete[] depthBuffer;
-		depthBuffer = clearDepthBuffer[currentDepth];
+		depthBuffer = clearDepthBuffer[_currentDepth];
 		return true;
 	}
 
@@ -450,14 +493,14 @@ namespace game
 					// calculate texture lookup
 					up = min(up, 1.0f);
 					vp = min(vp, 1.0f);
-					int32_t tx = max((int32_t)(up * (_texW-1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-					int32_t ty = max((int32_t)(vp * (_texH-1) + 0.5f), 0);
+					int32_t tx = max((int32_t)(up * (_currentTexture.size.width-1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+					int32_t ty = max((int32_t)(vp * (_currentTexture.size.height-1) + 0.5f), 0);
 
 					// texture lighting
 					//uint32_t color = _currentTexture[(int32_t)ty * _texW + (int32_t)tx];
-					uint32_t rc = (_currentTexture[ty * _texW + tx] >> 0) & 0xFF;  // 5.07
-					uint32_t gc = (_currentTexture[ty * _texW + tx] >> 8) & 0xFF;
-					uint32_t bc = (_currentTexture[ty * _texW + tx] >> 16) & 0xFF;
+					uint32_t rc = (_currentTexture.data[ty * _currentTexture.size.width + tx] >> 0) & 0xFF;  // 5.07
+					uint32_t gc = (_currentTexture.data[ty * _currentTexture.size.width + tx] >> 8) & 0xFF;
+					uint32_t bc = (_currentTexture.data[ty * _currentTexture.size.width + tx] >> 16) & 0xFF;
 					rc = (uint32_t)(rc * luminanceAmbient);
 					gc = (uint32_t)(gc * luminanceAmbient);
 					bc = (uint32_t)(bc * luminanceAmbient); // 10.55

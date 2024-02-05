@@ -126,6 +126,13 @@ namespace game
 		float_t area = 0.0;
 	};
 
+	struct Texture
+	{
+		uint32_t* data = nullptr;
+		Pointi size;
+		Pointf oneOverSize;
+	};
+
 	struct Mesh
 	{
 		std::vector<Triangle> tris;
