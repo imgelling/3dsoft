@@ -110,9 +110,9 @@ namespace game
 		view.m[6] = forward.y;
 		view.m[10] = forward.z;
 
-		Matrix4x4f r;// = rotateM(roll, forward);
+		//Matrix4x4f r;// = rotateM(roll, forward);
 
-		view = view * r;
+		//view = view * r;
 
 		Matrix4x4f ct;
 		ct.SetTranslation(-position.x, -position.y, -position.z);
@@ -124,8 +124,6 @@ namespace game
 	inline Camera3D::Camera3D()
 	{
 		rotation.y = -3.14159f / 2.0f; // y is 90 degrees off
-		//pitch = 0.0f;
-		//roll = 0.0f;
 		position = { 0.0f,0.0f,0.0f };
 		forward = defaultForward;
 		up = defaultUp;

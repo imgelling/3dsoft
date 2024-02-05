@@ -468,14 +468,14 @@ public:
 				});
 			//pixelMode.Rect(clip[c], game::Colors::Yellow);
 			software3D.Render(clippedTris[c], clip[c]);
-			fenceCount += clippedTris[c].size();
+			fenceCount++;
 		}
 		software3D.Fence(fenceCount);
 
-		// show depth buffer 468
+
+		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))
 		{
-
 			game::Color dColor;
 			float_t depth = 0.0f;
 			float_t* zbuffer = software3D.depthBuffer;
@@ -497,7 +497,6 @@ public:
 
 		if (showText)
 		{
-			//pixelMode.Text("Translate Z : " + std::to_string(tz), 0, 40, game::Colors::Yellow, 1);
 			game::Pointi m = pixelMode.GetScaledMousePosition();
 			float_t* zb = software3D.depthBuffer;
 			m.x = min(m.x, pixelMode.GetPixelFrameBufferSize().width - 1);
@@ -509,14 +508,13 @@ public:
 
 
 			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
-			if (geGetFramesPerSecond() > maxFPS) maxFPS = geGetFramesPerSecond();
+			maxFPS = max(maxFPS, geGetFramesPerSecond());
 			pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Yellow, 1);
 			std::stringstream ss;
 			ss << "Fill Mode: " << state;
 			pixelMode.Text(ss.str(), 0, 20, game::Colors::Yellow, 1);
 			pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Yellow, 1);
 		}
-
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))
 		{

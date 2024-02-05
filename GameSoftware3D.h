@@ -123,7 +123,7 @@ namespace game
 
 	inline void Software3D::Fence(uint64_t fenceValue) noexcept
 	{
-		while (fence < fenceValue) {};
+		while (fence < fenceValue) {  };
 		fence = 0;
 	}
 
@@ -180,7 +180,6 @@ namespace game
 	inline bool Software3D::Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads = -1)
 	{
 		renderTarget = colorBuffer;
-		fence = 0;
 		_colorBufferSize = colorBufferSize;
 		_colorBufferStride = colorBufferSize.width;
 		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
@@ -231,10 +230,11 @@ namespace game
 		default: break;
 		}
 
-		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount) //52.6
+		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
 		{
 				renderer(tris[triangleCount]);
 		}
+		fence++;
 	}
 
 	inline const Recti Software3D::TriangleBoundingBox(const Triangle& tri) const noexcept
@@ -272,10 +272,10 @@ namespace game
 
 
 		// Color parameter	
-		Color colorAtPixel;
-		ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation gColorParam(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation bColorParam(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		//Color colorAtPixel;
+		//ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		//ParameterEquation gColorParam(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		//ParameterEquation bColorParam(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Depth parameter
 		float_t oneOverDepthEval(0.0f);
@@ -287,9 +287,9 @@ namespace game
 		lightNormal.Normalize();
 		//rot += (2 * 3.14f / 10.0f) * (time / 1000.0f);
 		//lightNormal = RotateXYZ(lightNormal, 0, time , 0);
-		Color lightColor = Colors::Yellow;
+		//Color lightColor = Colors::Yellow;
 		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
-		luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
+		luminance = max(0.0f, luminance);
 
 		// Vertex normal parameters (directional light)
 		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -402,7 +402,8 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
+				oneOverDepthEval = (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
+				oneOverDepthEval = 1.0f / oneOverDepthEval;
 				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				{
 
@@ -420,8 +421,8 @@ namespace game
 				{
 					auto distanceFromPointToLineSq = [&](const float_t x0, const float_t y0, const float_t yy, const float_t xx, const float_t xyyx, const float_t denominator)
 						{
-							float_t num = yy * x0 - xx * y0 + xyyx;
-							float_t numerator = num * num;
+							float_t numerator = yy * x0 - xx * y0 + xyyx;
+							numerator = numerator * numerator;
 							return (numerator * denominator);
 						};
 					for (uint32_t dist = 0; dist < 3; dist++)
@@ -493,20 +494,21 @@ namespace game
 					// calculate texture lookup
 					up = min(up, 1.0f);
 					vp = min(vp, 1.0f);
-					int32_t tx = max((int32_t)(up * (_currentTexture.size.width-1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-					int32_t ty = max((int32_t)(vp * (_currentTexture.size.height-1) + 0.5f), 0);
+					// changed to unsigned 02/05
+					uint32_t tx = max((int32_t)(up * (_currentTexture.size.width-1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+					uint32_t ty = max((int32_t)(vp * (_currentTexture.size.height-1) + 0.5f), 0);
 
 					// texture lighting
-					//uint32_t color = _currentTexture[(int32_t)ty * _texW + (int32_t)tx];
-					uint32_t rc = (_currentTexture.data[ty * _currentTexture.size.width + tx] >> 0) & 0xFF;  // 5.07
-					uint32_t gc = (_currentTexture.data[ty * _currentTexture.size.width + tx] >> 8) & 0xFF;
-					uint32_t bc = (_currentTexture.data[ty * _currentTexture.size.width + tx] >> 16) & 0xFF;
+					uint32_t color = _currentTexture.data[ty * _currentTexture.size.width + tx];
+					uint32_t rc = (color >> 0) & 0xFF;  
+					uint32_t gc = (color >> 8) & 0xFF;
+					uint32_t bc = (color >> 16) & 0xFF;
 					rc = (uint32_t)(rc * luminanceAmbient);
 					gc = (uint32_t)(gc * luminanceAmbient);
-					bc = (uint32_t)(bc * luminanceAmbient); // 10.55
+					bc = (uint32_t)(bc * luminanceAmbient); 
 					//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
-					*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; //0.91
+					*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; 
 				}
 				++colorBuffer;
 				++depthBufferPtr;
@@ -514,7 +516,7 @@ namespace game
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;
 		}
-		fence++;
+		//fence++;
 	}
 
 	// clipping  
