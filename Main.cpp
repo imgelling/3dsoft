@@ -8,10 +8,6 @@
 #include "GameSoftware3D.h"
 
 
-
-
-
-
 class Game : public game::Engine
 {
 
@@ -22,18 +18,17 @@ public:
 
 
 	// 3D stuff
-	game::Triangle topLeftTri;
-	game::Triangle bottomRightTri;
-	game::Mesh plane;
 	game::Recti clip[16];  // in renderer
 	std::vector<game::Triangle> clippedTris[16];
 	game::Projection projection;
 	game::Matrix4x4f projMat;
-	std::vector<game::Triangle> tris;
+	game::Mesh plane;
 	game::Mesh model;
+	game::Mesh oneKTris;
+	game::Mesh* currentMesh;
 
 	std::vector<game::Triangle> quad;
-	game::Triangle test;
+	game::Triangle workingTriangle;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -43,7 +38,7 @@ public:
 	uint32_t texH;
 
 	game::FillMode state = game::FillMode::FilledColor;
-	game::Pointi resolution = { 1280 , 720 }; //2560, 1440 };
+	game::Pointi resolution = { 1280 << 1, 720 << 1 }; //2560, 1440 };
 	bool showText;
 
 	Game() : game::Engine()
@@ -55,6 +50,7 @@ public:
 		texture = nullptr;
 		texW = 64;
 		texH = 64;
+		currentMesh = nullptr;
 	}
 
 	uint32_t numclips = 16;
@@ -117,7 +113,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/torus2.obj", model))
+		if (!LoadObj("Content/room.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -144,6 +140,8 @@ public:
 
 		float_t z = 0.0f;// 100.0f;
 		float_t size = 1.0f;
+		game::Triangle topLeftTri;
+		game::Triangle bottomRightTri;
 
 		// tl
 		topLeftTri.vertices[0].x = -size;
@@ -206,6 +204,9 @@ public:
 			bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
 		}
 
+		plane.tris.emplace_back(topLeftTri);
+		plane.tris.emplace_back(bottomRightTri);
+
 
 		// Generate a 1000 tris
 		for (uint32_t i = 0; i < 1000; i++)
@@ -231,7 +232,7 @@ public:
 			{
 				std::swap(temp.vertices[1], temp.vertices[2]);
 			}
-			tris.emplace_back(temp);
+			oneKTris.tris.emplace_back(temp);
 		}
 
 		// Pre calc projection numbers
@@ -241,6 +242,9 @@ public:
 		quad.reserve(1000);
 
 		camera.position.z = -2.0f;
+
+		currentMesh = &model;
+		geToggleFullscreen();
 	}
 
 	void Shutdown()
@@ -279,16 +283,22 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_1))
 		{
 			scene = 0;
+			maxFPS = 0;
+			currentMesh = &plane;
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_2))
 		{
 			scene = 1;
+			maxFPS = 0;
+			currentMesh = &oneKTris;
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_3))
 		{
 			scene = 2;
+			maxFPS = 0;
+			currentMesh = &model;
 		}
 
 		float_t speed = 5.0f * msElapsed / 1000.0f;
@@ -310,25 +320,15 @@ public:
 		}
 
 		// strafe left
-		if (geKeyboard.IsKeyHeld(geK_Q))
+		if (geKeyboard.IsKeyHeld(geK_A))
 		{
 			camera.position -= camera.right * speed;
 		}
 
 		// strafe right
-		if (geKeyboard.IsKeyHeld(geK_E))
-		{
-			camera.position += camera.right * speed;
-		}
-
-		if (geKeyboard.IsKeyHeld(geK_A))
-		{
-			camera.SetRotation(0.0f, -0.3f * (3.14159f / 180.0f), 0.0f);
-		}
-
 		if (geKeyboard.IsKeyHeld(geK_D))
 		{
-			camera.SetRotation(0.0f, 0.3f * (3.14159f / 180.0f), 0.0f);
+			camera.position += camera.right * speed;
 		}
 
 		// y is inverted because.... we are in Q4
@@ -384,126 +384,80 @@ public:
 
 		game::Matrix4x4f mvpMat;
 		mvpMat = projMat * camera.CreateViewMatrix();
-
 		if (scene == 0)
 		{
-			test = topLeftTri;
-			//test.faceNormal = test.faceNormal;
-			//test.normals[0] = test.normals[0];
-			//test.normals[1] = test.normals[1];
-			//test.normals[2] = test.normals[2];
-			test.vertices[0] = (topLeftTri.vertices[0] * mvpMat);
-			test.vertices[1] = (topLeftTri.vertices[1] * mvpMat);
-			test.vertices[2] = (topLeftTri.vertices[2] * mvpMat);
-
-			PerspectiveDivide(test);
-			ScaleToScreen(test, resolution);
-			quad.emplace_back(test);
-
-			test = bottomRightTri;
-			//test.faceNormal = test.faceNormal;
-			//test.normals[0] = test.normals[0];
-			//test.normals[1] = test.normals[1];
-			//test.normals[2] = test.normals[2];
-			test.vertices[0] = bottomRightTri.vertices[0] * mvpMat;
-			test.vertices[1] = bottomRightTri.vertices[1] * mvpMat;
-			test.vertices[2] = bottomRightTri.vertices[2] * mvpMat;
-
-			PerspectiveDivide(test);
-			ScaleToScreen(test, resolution);
-			quad.emplace_back(test);
+			//currentMesh->SetTranslation(0,0,1);
+			//currentMesh->SetScale(1, 1, abs(cos(pos)*20));
 		}
-
-		if (scene == 1)
-		{
-			for (int i = 0; i < tris.size(); i++)
-			{
-				test = tris[i];
-				//test.faceNormal = test.faceNormal;
-				//test.normals[0] = test.normals[0];
-				//test.normals[1] = test.normals[1];
-				//test.normals[2] = test.normals[2];
-				test.vertices[0] = (tris[i].vertices[0] * mvpMat);
-				test.vertices[1] = (tris[i].vertices[1] * mvpMat);
-				test.vertices[2] = (tris[i].vertices[2] * mvpMat);
-
-				PerspectiveDivide(test);
-				ScaleToScreen(test, resolution);
-				quad.emplace_back(test);
-			}
-		}
-		//int culled = 0;
 		if (scene == 2)
 		{
-			//model.SetTranslation(cos(pos), sin(pos), cos(pos));
-			//model.SetRotation(rotation, -rotation, rotation*0.25f);
-			game::Matrix4x4f modelMat = model.CreateModelMatrix();
-			mvpMat = mvpMat * modelMat;
-			for (int i = 0; i < model.tris.size(); i++)
+			//currentMesh = &model;
+			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+		}
+
+
+		mvpMat *= currentMesh->CreateModelMatrix();
+		for (int i = 0; i < currentMesh->tris.size(); i++)
+		{
+			workingTriangle = currentMesh->tris[i];
+			workingTriangle.faceNormal = workingTriangle.faceNormal * currentMesh->rotation;
+			workingTriangle.normals[0] = workingTriangle.normals[0] * currentMesh->rotation;
+			workingTriangle.normals[1] = workingTriangle.normals[1] * currentMesh->rotation;
+			workingTriangle.normals[2] = workingTriangle.normals[2] * currentMesh->rotation;
+			workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
+			workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
+			workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
+
+			if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
 			{
-				test = model.tris[i];
-				test.faceNormal = test.faceNormal * model.rotation;
-				test.normals[0] = test.normals[0] * model.rotation;
-				test.normals[1] = test.normals[1] * model.rotation;
-				test.normals[2] = test.normals[2] * model.rotation;
-				test.vertices[0] = (model.tris[i].vertices[0] * mvpMat);
-				test.vertices[1] = (model.tris[i].vertices[1] * mvpMat);
-				test.vertices[2] = (model.tris[i].vertices[2] * mvpMat);
-
-				//if (test.faceNormal.z > 0)  // somewhat works, but doesn't take account camera
-				//{
-				//	culled++;
-				//	continue;
-				//}				
-				if (test.faceNormal.Dot(camera.forward) > 0.75f)// acos(90 * 3.14156f / 180.0f))
-				{
-					//culled++;
-					continue;
-				}
-	 
-				if ((test.vertices[0].z < 0.0) ||
-					(test.vertices[1].z < 0.0) ||
-					(test.vertices[2].z < 0.0))
-				{
-					game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
-					game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
-
-					game::Triangle out1;
-					game::Triangle out2;
-					uint32_t numtris = ClipAgainstPlane(planePoint, planeNormal, test, out1, out2);
-					if (numtris == 2)
-					{
-						PerspectiveDivide(out2);
-						ScaleToScreen(out2, resolution);
-
-						if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
-						{
-							std::swap(out2.vertices[1], out2.vertices[0]);
-							std::swap(out2.normals[1], out2.normals[0]);
-							std::swap(out2.uvs[1], out2.uvs[0]);
-							std::swap(out2.color[1], out2.color[0]);
-						}
-						quad.emplace_back(out2);
-					}
-					PerspectiveDivide(out1);
-					ScaleToScreen(out1, resolution);
-					if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
-					{
-						std::swap(out1.vertices[1], out1.vertices[0]);
-						std::swap(out1.normals[1], out1.normals[0]);
-						std::swap(out1.uvs[1], out1.uvs[0]);
-						std::swap(out1.color[1], out1.color[0]);
-					}
-
-					quad.emplace_back(out1);
-				}
-				else
-				{
-					PerspectiveDivide(test);
-					ScaleToScreen(test, resolution);
-					quad.emplace_back(test);
-				}
+				continue;
 			}
+
+			if ((workingTriangle.vertices[0].z < 0.0) ||
+				(workingTriangle.vertices[1].z < 0.0) ||
+				(workingTriangle.vertices[2].z < 0.0))
+			{
+				game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
+				game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
+
+				game::Triangle out1;
+				game::Triangle out2;
+				uint32_t numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, out1, out2);
+				if (numtris == 2)
+				{
+					PerspectiveDivide(out2);
+					ScaleToScreen(out2, resolution);
+
+					if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
+					{
+						std::swap(out2.vertices[1], out2.vertices[0]);
+						std::swap(out2.normals[1], out2.normals[0]);
+						std::swap(out2.uvs[1], out2.uvs[0]);
+						std::swap(out2.color[1], out2.color[0]);
+					}
+					quad.emplace_back(out2);
+				}
+				PerspectiveDivide(out1);
+				ScaleToScreen(out1, resolution);
+				if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
+				{
+					std::swap(out1.vertices[1], out1.vertices[0]);
+					std::swap(out1.normals[1], out1.normals[0]);
+					std::swap(out1.uvs[1], out1.uvs[0]);
+					std::swap(out1.color[1], out1.color[0]);
+				}
+
+				quad.emplace_back(out1);
+			}
+			else
+			{
+				PerspectiveDivide(workingTriangle);
+				ScaleToScreen(workingTriangle, resolution);
+				quad.emplace_back(workingTriangle);
+			}
+
 			//std::cout << culled << "\n";
 		}
 

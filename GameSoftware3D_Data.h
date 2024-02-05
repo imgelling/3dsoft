@@ -132,9 +132,14 @@ namespace game
 		Matrix4x4f model;
 		Matrix4x4f translate;
 		Matrix4x4f rotation;
+		Matrix4x4f scale;
 		inline void SetTranslation(const float_t x, const float_t y, const float_t z) noexcept
 		{
 			translate.SetTranslation(x, y, z);
+		}
+		inline void SetScale(const float_t x, const float_t y, const float_t z) noexcept
+		{
+			scale.SetScale(x, y, z);
 		}
 		inline void SetRotation(const float_t x, const float_t y, const float_t z) noexcept
 		{
@@ -155,10 +160,10 @@ namespace game
 			}
 			rotation = rotZ * rotY * rotX;
 		}
-		inline Matrix4x4f CreateModelMatrix()
+		inline Matrix4x4f CreateModelMatrix() noexcept
 		{
 			model.SetIdentity();
-			return model = translate * rotation;
+			return model = translate * rotation * scale;
 		}
 	};
 

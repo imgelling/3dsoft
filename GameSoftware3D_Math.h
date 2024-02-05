@@ -308,9 +308,9 @@ namespace game
 		Vector3f outside_points[3] = {}; uint32_t nOutsidePointCount = 0;
 
 		// Get signed distance of each point in triangle to plane
-		float_t d0 = in_tri.vertices[0].z - d;// dist(in_tri.vertices[0]);
-		float_t d1 = in_tri.vertices[1].z - d;// dist(in_tri.vertices[1]);
-		float_t d2 = in_tri.vertices[2].z - d;// dist(in_tri.vertices[2]);
+		//float_t d0 = in_tri.vertices[0].z - d;// dist(in_tri.vertices[0]);
+		//float_t d1 = in_tri.vertices[1].z - d;// dist(in_tri.vertices[1]);
+		//float_t d2 = in_tri.vertices[2].z - d;// dist(in_tri.vertices[2]);
 
 		Vector3f in_normals[3];
 		Vector3f out_normals[3];
@@ -322,7 +322,7 @@ namespace game
 		float_t out_d[3]{};
 
 
-		if (d0 >= 0.0f)
+		if (in_tri.vertices[0].z - d >= 0.0f)
 		{
 			inside_points[nInsidePointCount++] = in_tri.vertices[0];
 			in_normals[nInsidePointCount - 1] = in_tri.normals[0];
@@ -336,7 +336,7 @@ namespace game
 			out_uv[nOutsidePointCount - 1] = in_tri.uvs[0];
 			out_d[nOutsidePointCount - 1] = in_tri.vertices[0].w;
 		}
-		if (d1 >= 0.0f)
+		if (in_tri.vertices[1].z - d >= 0.0f)
 		{
 			inside_points[nInsidePointCount++] = in_tri.vertices[1];
 			in_normals[nInsidePointCount - 1] = in_tri.normals[1];
@@ -350,7 +350,7 @@ namespace game
 			out_uv[nOutsidePointCount - 1] = in_tri.uvs[1];
 			out_d[nOutsidePointCount - 1] = in_tri.vertices[1].w;
 		}
-		if (d2 >= 0.0f)
+		if (in_tri.vertices[2].z - d >= 0.0f)
 		{
 			inside_points[nInsidePointCount++] = in_tri.vertices[2];
 			in_normals[nInsidePointCount - 1] = in_tri.normals[2];
