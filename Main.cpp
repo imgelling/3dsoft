@@ -17,18 +17,22 @@ public:
 	game::Software3D software3D;
 
 
-	// 3D stuff
+	// 3D rendering stuff
 	game::Recti clip[16];  // in renderer
 	std::vector<game::Triangle> clippedTris[16];
-	game::Projection projection;
 	game::Matrix4x4f projMat;
+	game::Matrix4x4f mvpMat;
+
+	// Meshes for scenes
 	game::Mesh plane;
 	game::Mesh model;
 	game::Mesh oneKTris;
 	game::Mesh* currentMesh;
 
+	// Triangles to be rendered
 	std::vector<game::Triangle> quad;
 	game::Triangle workingTriangle;
+
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -38,12 +42,11 @@ public:
 	uint32_t texH;
 
 	game::FillMode state = game::FillMode::FilledColor;
-	game::Pointi resolution = { 1280 << 1, 720 << 1 }; //2560, 1440 };
+	game::Pointi resolution = { 1280, 720 }; //2560, 1440 };
 	bool showText;
 
 	Game() : game::Engine()
 	{
-		ZeroMemory(&projection, sizeof(game::Projection));
 		maxFPS = 0;
 		scene = 2;
 		showText = true;
@@ -113,7 +116,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/room.obj", model))
+		if (!LoadObj("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -244,7 +247,6 @@ public:
 		camera.position.z = -2.0f;
 
 		currentMesh = &model;
-		geToggleFullscreen();
 	}
 
 	void Shutdown()
@@ -283,21 +285,18 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_1))
 		{
 			scene = 0;
-			maxFPS = 0;
 			currentMesh = &plane;
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_2))
 		{
 			scene = 1;
-			maxFPS = 0;
 			currentMesh = &oneKTris;
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_3))
 		{
 			scene = 2;
-			maxFPS = 0;
 			currentMesh = &model;
 		}
 
@@ -382,7 +381,7 @@ public:
 
 		quad.clear();
 
-		game::Matrix4x4f mvpMat;
+		
 		mvpMat = projMat * camera.CreateViewMatrix();
 		if (scene == 0)
 		{
@@ -457,8 +456,6 @@ public:
 				ScaleToScreen(workingTriangle, resolution);
 				quad.emplace_back(workingTriangle);
 			}
-
-			//std::cout << culled << "\n";
 		}
 
 		uint64_t fenceCount = 0;
