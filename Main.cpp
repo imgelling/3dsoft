@@ -338,7 +338,9 @@ public:
 			camera.position.y += speed;
 		}
 
+		// Mouse look
 		game::Pointi mouse = geMouse.GetPositionRelative();
+		// Y rotation
 		if (mouse.x)
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
@@ -346,6 +348,7 @@ public:
 				camera.SetRotation(0.0f, mouse.x * (3.14159f / 180.0f), 0.0f);
 			}
 		}
+		// X rotation
 		if (mouse.y)
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
@@ -377,8 +380,6 @@ public:
 
 		quad.clear();
 
-		
-		mvpMat = projMat * camera.CreateViewMatrix();
 		if (scene == 0)
 		{
 			//currentMesh->SetTranslation(0,0,1);
@@ -391,9 +392,14 @@ public:
 			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
 			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
+		
+		// for render send this info
+		mvpMat = projMat * camera.CreateViewMatrix();
 
-
+		// Below is render
+		// will need model view and projection
 		mvpMat *= currentMesh->CreateModelMatrix();
+		//int culled = 0;
 		for (int i = 0; i < currentMesh->tris.size(); i++)
 		{
 			workingTriangle = currentMesh->tris[i];
@@ -407,6 +413,7 @@ public:
 
 			if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
 			{
+				//culled++;
 				continue;
 			}
 
@@ -434,17 +441,21 @@ public:
 					}
 					quad.emplace_back(out2);
 				}
-				PerspectiveDivide(out1);
-				ScaleToScreen(out1, resolution);
-				if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
+				if (numtris)
 				{
-					std::swap(out1.vertices[1], out1.vertices[0]);
-					std::swap(out1.normals[1], out1.normals[0]);
-					std::swap(out1.uvs[1], out1.uvs[0]);
-					std::swap(out1.color[1], out1.color[0]);
-				}
+					PerspectiveDivide(out1);
+					ScaleToScreen(out1, resolution);
+					if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
+					{
+						std::swap(out1.vertices[1], out1.vertices[0]);
+						std::swap(out1.normals[1], out1.normals[0]);
+						std::swap(out1.uvs[1], out1.uvs[0]);
+						std::swap(out1.color[1], out1.color[0]);
+					}
 
-				quad.emplace_back(out1);
+					quad.emplace_back(out1);
+				}
+				//else culled++;
 			}
 			else
 			{
@@ -453,6 +464,7 @@ public:
 				quad.emplace_back(workingTriangle);
 			}
 		}
+		//std::cout << culled << "\n";
 
 		uint64_t fenceCount = 0;
 		for (uint32_t c = 0; c < numclips; c++)

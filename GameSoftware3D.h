@@ -25,11 +25,11 @@ namespace game
 		bool Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
 		bool SetTexture(const Texture& texture) noexcept;
-		void Fence(uint64_t fenceValue) noexcept;
+		void Fence(const uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
-		void Render(std::vector<Triangle>& tris, const Recti& clip) noexcept;
+		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled>
-		void DrawColored(const Triangle& tri, const Recti& clip);
+		void DrawColored(const Triangle& tri, const Recti& clip) noexcept;
 		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		// Must be called, sets the current frame buffer (for now)
@@ -39,7 +39,7 @@ namespace game
 		float_t* clearDepthBuffer[10];
 		uint32_t* renderTarget;
 	private:
-		void _Render(std::vector<Triangle>& tris, const Recti& clip);
+		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, unsigned int w, unsigned int h);
 		bool _multiThreaded;
 		Texture _defaultTexture;
@@ -121,7 +121,7 @@ namespace game
 		}
 	}
 
-	inline void Software3D::Fence(uint64_t fenceValue) noexcept
+	inline void Software3D::Fence(const uint64_t fenceValue) noexcept
 	{
 		while (fence < fenceValue) {  };
 		fence = 0;
@@ -206,7 +206,7 @@ namespace game
 		return true;
 	}
 
-	inline void Software3D::Render(std::vector<Triangle>& tris, const Recti& clip) noexcept
+	inline void Software3D::Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept
 	{
 		if (_multiThreaded)
 		{
@@ -218,7 +218,7 @@ namespace game
 		}
 	}
 
-	inline void Software3D::_Render(std::vector<Triangle>& tris, const Recti& clip)
+	inline void Software3D::_Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept
 	{
 		std::function<void(Triangle)> renderer;
 
@@ -257,7 +257,7 @@ namespace game
 	}
 
 	template<bool renderWireFrame, bool renderColor>
-	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip)
+	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip) noexcept
 	{
 		game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
 		game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
@@ -402,8 +402,7 @@ namespace game
 				foundTriangle = true;
 
 				// depth buffer test
-				oneOverDepthEval = (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
-				oneOverDepthEval = 1.0f / oneOverDepthEval;
+				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
 				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				{
 

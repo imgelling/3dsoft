@@ -128,6 +128,7 @@ namespace game
 		forward = defaultForward;
 		up = defaultUp;
 		right = defaultRight;
+		SetRotation(0, 0, 0);
 	}
 
 	inline Camera3D::Camera3D(const Vector3f& inPosition, const Vector3f& inRotation)
