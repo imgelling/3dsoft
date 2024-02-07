@@ -35,22 +35,24 @@ namespace game
 		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
 		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
+		bool CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept;
+		void DeleteTexture(Texture& texture);
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
 		uint32_t* renderTarget;
 	private:
 		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
-		void _GenerateDefaultTexture(uint32_t* buff, unsigned int w, unsigned int h);
+		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
 		bool _multiThreaded;
 		Texture _defaultTexture;
 		uint32_t _numbuffers;
 		uint32_t _currentDepth;
 		Texture _currentTexture;
 		ThreadPool _threadPool;
-		Pointi _colorBufferSize;
+		FillMode _FillMode;
+
 		uint32_t _colorBufferStride;
 		uint32_t _totalBufferSize;
-		FillMode _FillMode;
 	};
 
 	Software3D::Software3D()
@@ -66,11 +68,7 @@ namespace game
 		for (uint32_t i = 0; i < 10; i++)
 			clearDepthBuffer[i] = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
-		_defaultTexture.data = new uint32_t[64 * 64];
-		_defaultTexture.size.width = 64;
-		_defaultTexture.size.height = 64;
-		_defaultTexture.oneOverSize.width = 1.0f / 64.0f;
-		_defaultTexture.oneOverSize.height = 1.0f / 64.0f;
+		CreateTexture(64, 64, _defaultTexture);
 		_GenerateDefaultTexture(_defaultTexture.data, 64, 64);
 		SetTexture(_defaultTexture);
 	}
@@ -86,11 +84,7 @@ namespace game
 				clearDepthBuffer[i] = nullptr;
 			}
 		}
-		if (_defaultTexture.data)
-		{
-			delete[] _defaultTexture.data;
-			_defaultTexture.data = nullptr;
-		}
+		DeleteTexture(_defaultTexture);
 		depthBuffer = nullptr;
 	}
 
@@ -104,7 +98,35 @@ namespace game
 		return true;
 	}
 
-	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, unsigned int w, unsigned int h)
+	inline bool Software3D::CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept
+	{
+		texture.data = nullptr;
+		texture.data = new uint32_t[width * height];
+		if (texture.data == nullptr)
+		{
+			return false;
+		}
+		texture.size.width = width;
+		texture.size.height = height;
+		texture.oneOverSize.width = 1.0f / width;
+		texture.oneOverSize.height = 1.0f / height;
+		return true;
+	}
+
+	inline void Software3D::DeleteTexture(Texture& texture)
+	{
+		if (texture.data)
+		{
+			delete[] texture.data;
+			texture.data = nullptr;
+		}
+		texture.size.width = 0;
+		texture.size.height = 0;
+		texture.oneOverSize.width = 0;
+		texture.oneOverSize.height = 0;		
+	}
+
+	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h)
 	{
 		game::Color col1 = game::Colors::Red;
 		game::Color col2 = game::Colors::Blue;
@@ -180,7 +202,6 @@ namespace game
 	inline bool Software3D::Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads = -1)
 	{
 		renderTarget = colorBuffer;
-		_colorBufferSize = colorBufferSize;
 		_colorBufferStride = colorBufferSize.width;
 		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
 		if (threads < 0)
@@ -192,16 +213,13 @@ namespace game
 			_multiThreaded = true;
 			_threadPool.Start(threads);
 		}
-		depthBuffer = new float_t[colorBufferSize.width * colorBufferSize.height];
-		//ClearDepth(1000.0f);
-		std::fill_n(depthBuffer, _totalBufferSize, 100.0f); //5.14
+	
 		for (uint32_t i = 0; i < _numbuffers; i++)
 		{
 			clearDepthBuffer[i] = new float_t[_totalBufferSize];
-			memcpy(clearDepthBuffer[i], depthBuffer, (size_t)_totalBufferSize * 4);
+			std::fill_n(clearDepthBuffer[i], _totalBufferSize, 100.0f);
 		}
 		_currentDepth = 0;
-		delete[] depthBuffer;
 		depthBuffer = clearDepthBuffer[_currentDepth];
 		return true;
 	}
