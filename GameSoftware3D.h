@@ -25,6 +25,7 @@ namespace game
 		bool Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
 		bool SetTexture(const Texture& texture) noexcept;
+		bool SetDefaultTexture() noexcept;
 		void Fence(const uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
@@ -36,14 +37,24 @@ namespace game
 		void ClearDepth(const float_t depth);
 		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
 		bool CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept;
-		void DeleteTexture(Texture& texture);
+		bool CreateTexture(const Pointi size, Texture& texture) noexcept;
+		void DeleteTexture(Texture& texture) noexcept;
+		bool CreateRenderTarget(const uint32_t width, const uint32_t height, RenderTarget& target) noexcept;
+		bool CreateRenderTarget(const Pointi size, RenderTarget& target) noexcept;
+		void DeleteRenderTarget(RenderTarget& target) noexcept;
+		bool SetRenderTarget(const RenderTarget& target) noexcept;
+		void SetRenderTargetDefault() noexcept;
+
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
-		uint32_t* renderTarget;
+		//uint32_t* renderTarget;
+		RenderTarget _currentRenderTarget;
 	private:
 		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
 		bool _multiThreaded;
+		bool _usingRenderTarget;
+		RenderTarget _defaultRenderTarget;
 		Texture _defaultTexture;
 		uint32_t _numbuffers;
 		uint32_t _currentDepth;
@@ -57,7 +68,9 @@ namespace game
 
 	Software3D::Software3D()
 	{
-		renderTarget = nullptr;
+		_defaultRenderTarget = {};
+		_usingRenderTarget = false;
+		//renderTarget = nullptr;
 		fence = 0;
 		_currentDepth = 0;
 		_colorBufferStride = 0;
@@ -98,9 +111,22 @@ namespace game
 		return true;
 	}
 
+	inline bool Software3D::SetDefaultTexture() noexcept
+	{
+		_currentTexture = _defaultTexture;
+		return true;
+	}
+
 	inline bool Software3D::CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept
 	{
-		texture.data = nullptr;
+		if (texture.data != nullptr)
+		{
+			return false;
+		}
+		if (!width || !height)
+		{
+			return false;
+		}
 		texture.data = new uint32_t[width * height];
 		if (texture.data == nullptr)
 		{
@@ -113,7 +139,12 @@ namespace game
 		return true;
 	}
 
-	inline void Software3D::DeleteTexture(Texture& texture)
+	inline bool Software3D::CreateTexture(const Pointi size, Texture& texture) noexcept
+	{
+		return CreateTexture(size.width, size.height, texture);
+	}
+
+	inline void Software3D::DeleteTexture(Texture& texture) noexcept
 	{
 		if (texture.data)
 		{
@@ -143,6 +174,75 @@ namespace game
 		}
 	}
 
+	inline bool Software3D::CreateRenderTarget(const uint32_t width, const uint32_t height, RenderTarget& target) noexcept
+	{
+		if (target.colorBuffer != nullptr)
+		{
+			return false;
+		}
+		if (target.depthBuffer != nullptr)
+		{
+			return false;
+		}
+		if (!width || !height)
+		{
+			return false;
+		}
+		target.colorBuffer = new uint32_t[width * height];
+		if (target.colorBuffer == nullptr)
+		{
+			return false;
+		}
+		target.depthBuffer = new float_t[width * height];
+		if (target.depthBuffer == nullptr)
+		{
+			DeleteRenderTarget(target);
+			return false;
+		}
+		target.size.width = width;
+		target.size.height = height;
+		return true;
+	}
+
+	inline bool Software3D::SetRenderTarget(const RenderTarget& target) noexcept
+	{
+		if (!target.colorBuffer || !target.depthBuffer || !target.size.width || !target.size.height)
+		{
+			return false;
+		}
+		_usingRenderTarget = true;
+		_currentRenderTarget = target;
+		return true;
+	}
+
+	inline void Software3D::SetRenderTargetDefault() noexcept
+	{
+		_usingRenderTarget = false;
+		_currentRenderTarget = _defaultRenderTarget;
+		depthBuffer = _defaultRenderTarget.depthBuffer;
+	}
+
+	inline bool Software3D::CreateRenderTarget(const Pointi size, RenderTarget& target) noexcept
+	{
+		CreateRenderTarget(size.width, size.height, target);
+	}
+
+	inline void Software3D::DeleteRenderTarget(RenderTarget& target) noexcept
+	{
+		if (target.colorBuffer)
+		{
+			delete[] target.colorBuffer;
+			target.colorBuffer = nullptr;
+		}
+		if (target.depthBuffer)
+		{
+			delete[] target.depthBuffer;
+			target.depthBuffer = nullptr;
+		}
+		target.size.width = 0;
+		target.size.height = 0;
+	}
+
 	inline void Software3D::Fence(const uint64_t fenceValue) noexcept
 	{
 		while (fence < fenceValue) {  };
@@ -151,16 +251,24 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		if (_multiThreaded) 
+		if (!_usingRenderTarget)
 		{
-			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
-			_currentDepth++;
-			if (_currentDepth > _numbuffers - 1) _currentDepth = 0;
-			depthBuffer = clearDepthBuffer[_currentDepth];
+			if (_multiThreaded)
+			{
+				_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
+				_currentDepth++;
+				if (_currentDepth > _numbuffers - 1) _currentDepth = 0;
+				_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
+				depthBuffer = clearDepthBuffer[_currentDepth];
+			}
+			else
+			{
+				std::fill_n(_currentRenderTarget.depthBuffer, _totalBufferSize, depth);
+			}
 		}
 		else
 		{
-			std::fill_n(depthBuffer, _totalBufferSize, depth); 
+			std::fill_n(_currentRenderTarget.depthBuffer, _currentRenderTarget.size.width * _currentRenderTarget.size.height, depth);
 		}
 		//std::fill(depthBuffer, depthBuffer + _totalBufferSize, depth);
 		//FillMemory(depthBuffer, 255, _totalBufferSize*4);
@@ -201,7 +309,9 @@ namespace game
 
 	inline bool Software3D::Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads = -1)
 	{
-		renderTarget = colorBuffer;
+		_defaultRenderTarget.colorBuffer = colorBuffer;
+		_defaultRenderTarget.size = colorBufferSize;
+		//renderTarget = colorBuffer;
 		_colorBufferStride = colorBufferSize.width;
 		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
 		if (threads < 0)
@@ -220,7 +330,9 @@ namespace game
 			std::fill_n(clearDepthBuffer[i], _totalBufferSize, 100.0f);
 		}
 		_currentDepth = 0;
-		depthBuffer = clearDepthBuffer[_currentDepth];
+		_defaultRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
+		_currentRenderTarget = _defaultRenderTarget;
+		//depthBuffer = clearDepthBuffer[_currentDepth];
 		return true;
 	}
 
@@ -282,7 +394,7 @@ namespace game
 		game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
 
 		bool foundTriangle(false);
-		uint32_t videoBufferStride(_colorBufferStride);
+		uint32_t videoBufferStride(_currentRenderTarget.size.width);
 
 		game::Vector2f pixelOffset;
 
@@ -353,8 +465,8 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* colorBuffer = renderTarget + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
-		float_t* depthBufferPtr = depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
+		uint32_t* colorBuffer = _currentRenderTarget.colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
+		float_t* depthBufferPtr = _currentRenderTarget.depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		uint32_t xLoopCount = 0;
 
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)

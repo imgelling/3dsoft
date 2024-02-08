@@ -33,7 +33,9 @@ public:
 	std::vector<game::Triangle> quad;
 	game::Triangle workingTriangle;
 
+	// 
 	game::Texture currentTexture;
+	game::RenderTarget renderTarget;
 
 
 	game::Camera3D camera;
@@ -47,7 +49,7 @@ public:
 	Game() : game::Engine()
 	{
 		maxFPS = 0;
-		scene = 2;
+		scene = 0;
 		showText = true;
 		currentMesh = nullptr;
 	}
@@ -91,7 +93,7 @@ public:
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
-		attributes.DebugMode = false;
+		attributes.DebugMode = true;
 		geSetAttributes(attributes);
 
 		GenerateClips(numclips, clip, resolution);
@@ -118,6 +120,11 @@ public:
 		}
 
 		ConvertBlenderToThis(model);
+
+		if (!software3D.CreateRenderTarget(1280>>2, 720>>2, renderTarget))
+		{
+			std::cout << "Could not create render target\n";
+		}
 
 		//game::ImageLoader imageLoader;
 		//uint32_t t = 0;
@@ -243,11 +250,8 @@ public:
 
 	void Shutdown()
 	{
-		if (currentTexture.data)
-		{
-			delete[] currentTexture.data;
-			currentTexture.data = nullptr;
-		}
+		software3D.DeleteTexture(currentTexture);
+		software3D.DeleteRenderTarget(renderTarget);
 	}
 
 	void Update(const float_t msElapsed)
@@ -374,9 +378,11 @@ public:
 		//software3D.time = rotation;
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		pixelMode.Clear(game::Colors::Black);
-		software3D.renderTarget = pixelMode.videoBuffer;
+		pixelMode.Clear(game::Colors::CornFlowerBlue);
+		software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;
 		software3D.ClearDepth(100.0f);
+
+		software3D.SetDefaultTexture();
 
 		quad.clear();
 
@@ -384,6 +390,124 @@ public:
 		{
 			//currentMesh->SetTranslation(0,0,1);
 			//currentMesh->SetScale(1, 1, abs(cos(pos)*20));
+			software3D.SetRenderTarget(renderTarget);
+			software3D.ClearDepth(100.0f);
+			//std::fill_n(renderTarget.depthBuffer, renderTarget.size.width * renderTarget.size.height, 100.0f);
+			std::fill_n(renderTarget.colorBuffer, renderTarget.size.width * renderTarget.size.height, game::Colors::Black.packedABGR);
+			currentMesh = &model;
+			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+
+			game::Camera3D tempcam;
+			tempcam.position.z = -2.0f;
+			// for render send this info
+			mvpMat = projMat * tempcam.CreateViewMatrix();
+
+			// Below is render
+			// will need model view and projection
+			mvpMat *= currentMesh->CreateModelMatrix();
+			//int culled = 0;
+			for (int i = 0; i < currentMesh->tris.size(); i++)
+			{
+				workingTriangle = currentMesh->tris[i];
+				workingTriangle.faceNormal = workingTriangle.faceNormal * currentMesh->rotation;
+				workingTriangle.normals[0] = workingTriangle.normals[0] * currentMesh->rotation;
+				workingTriangle.normals[1] = workingTriangle.normals[1] * currentMesh->rotation;
+				workingTriangle.normals[2] = workingTriangle.normals[2] * currentMesh->rotation;
+				workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
+				workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
+				workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
+
+				if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
+				{
+					//culled++;
+					continue;
+				}
+
+				if ((workingTriangle.vertices[0].z < 0.0) ||
+					(workingTriangle.vertices[1].z < 0.0) ||
+					(workingTriangle.vertices[2].z < 0.0))
+				{
+					game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
+					game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
+
+					game::Triangle out1;
+					game::Triangle out2;
+					uint32_t numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, out1, out2);
+					if (numtris == 2)
+					{
+						PerspectiveDivide(out2);
+						ScaleToScreen(out2, renderTarget.size);
+
+						if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
+						{
+							std::swap(out2.vertices[1], out2.vertices[0]);
+							std::swap(out2.normals[1], out2.normals[0]);
+							std::swap(out2.uvs[1], out2.uvs[0]);
+							std::swap(out2.color[1], out2.color[0]);
+						}
+						quad.emplace_back(out2);
+					}
+					if (numtris)
+					{
+						PerspectiveDivide(out1);
+						ScaleToScreen(out1, renderTarget.size);
+						if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
+						{
+							std::swap(out1.vertices[1], out1.vertices[0]);
+							std::swap(out1.normals[1], out1.normals[0]);
+							std::swap(out1.uvs[1], out1.uvs[0]);
+							std::swap(out1.color[1], out1.color[0]);
+						}
+
+						quad.emplace_back(out1);
+					}
+					//else culled++;
+				}
+				else
+				{
+					PerspectiveDivide(workingTriangle);
+					ScaleToScreen(workingTriangle, renderTarget.size);
+					quad.emplace_back(workingTriangle);
+				}
+			}
+			//std::cout << culled << "\n";
+
+			uint64_t fenceCount = 0;
+			game::Recti cclip;
+			cclip.right = renderTarget.size.width - 1;
+			cclip.bottom = renderTarget.size.height - 1;
+			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, game::FillMode::FilledColor);
+			for (uint32_t c = 0; c < 1; c++)
+			{
+				clippedTris[c].clear();
+				software3D.ScreenClip(quad, cclip, clippedTris[c]);
+				if (!clippedTris[c].size()) continue;
+				std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
+					{
+						float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+						float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+						return az < bz;
+					});
+				//pixelMode.Rect(clip[c], game::Colors::Yellow);
+				software3D.Render(clippedTris[c], cclip);
+				fenceCount++;
+			}
+			software3D.Fence(fenceCount);
+
+			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
+			clippedTris[0].clear();
+			software3D.SetRenderTargetDefault();
+			software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;
+			currentMesh = &plane;
+			game::Texture tex;
+			tex.data = renderTarget.colorBuffer;
+			tex.size = renderTarget.size;
+			software3D.SetTexture(tex);
+			quad.clear();
+			software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;
+			software3D.ClearDepth(100.0f);
 		}
 		if (scene == 2)
 		{
@@ -467,6 +591,7 @@ public:
 		//std::cout << culled << "\n";
 
 		uint64_t fenceCount = 0;
+
 		for (uint32_t c = 0; c < numclips; c++)
 		{
 			clippedTris[c].clear();

@@ -133,6 +133,13 @@ namespace game
 		Pointf oneOverSize;
 	};
 
+	struct RenderTarget
+	{
+		uint32_t* colorBuffer = nullptr;
+		float_t* depthBuffer = nullptr;
+		Pointi size;
+	};
+
 	struct Mesh
 	{
 		std::vector<Triangle> tris;
