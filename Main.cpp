@@ -49,7 +49,7 @@ public:
 	Game() : game::Engine()
 	{
 		maxFPS = 0;
-		scene = 0;
+		scene = 2;
 		showText = true;
 		currentMesh = nullptr;
 	}
@@ -71,10 +71,10 @@ public:
 			for (uint32_t col = 0; col < cols; col++)
 			{
 				uint32_t access = row * cols + col;
-				clips2[access].left = (rc) * (colsize - 1);
+				clips2[access].left = (rc) * (colsize);// -1);
 				clips2[access].right = (clips2[access].left + colsize);
 				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
-				clips2[access].top = cc * (rowsize - 1);
+				clips2[access].top = cc * (rowsize);// -1);
 				clips2[access].bottom = clips2[access].top + rowsize;
 				if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
 				rc++;
@@ -408,22 +408,30 @@ public:
 			// will need model view and projection
 			mvpMat *= currentMesh->CreateModelMatrix();
 			//int culled = 0;
+			game::Triangle t;
 			for (int i = 0; i < currentMesh->tris.size(); i++)
 			{
 				workingTriangle = currentMesh->tris[i];
+				workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
+				workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
+				workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
+				t = workingTriangle;
+				PerspectiveDivide(t);
+				if (CheckWinding(t.vertices[0], t.vertices[1], t.vertices[2]) < 0)
+				{
+					continue;
+				}
+
 				workingTriangle.faceNormal = workingTriangle.faceNormal * currentMesh->rotation;
 				workingTriangle.normals[0] = workingTriangle.normals[0] * currentMesh->rotation;
 				workingTriangle.normals[1] = workingTriangle.normals[1] * currentMesh->rotation;
 				workingTriangle.normals[2] = workingTriangle.normals[2] * currentMesh->rotation;
-				workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
-				workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
-				workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
 
-				if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
-				{
-					//culled++;
-					continue;
-				}
+				//if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
+				//{
+				//	//culled++;
+				//	continue;
+				//}
 
 				if ((workingTriangle.vertices[0].z < 0.0) ||
 					(workingTriangle.vertices[1].z < 0.0) ||
@@ -512,9 +520,9 @@ public:
 		if (scene == 2)
 		{
 			//currentMesh = &model;
-			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		// for render send this info
@@ -523,23 +531,32 @@ public:
 		// Below is render
 		// will need model view and projection
 		mvpMat *= currentMesh->CreateModelMatrix();
-		//int culled = 0;
+		int culled = 0;
+		game::Triangle t;
 		for (int i = 0; i < currentMesh->tris.size(); i++)
 		{
 			workingTriangle = currentMesh->tris[i];
+			workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
+			workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
+			workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
+			// Back face cull most triangles
+			t = workingTriangle;
+			PerspectiveDivide(t);
+			if (CheckWinding(t.vertices[0],t.vertices[1],t.vertices[2]) < 0)
+			{
+				continue;
+			}
+			//if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
+			//{
+			//	culled++;
+			//	continue;
+			//}
+
 			workingTriangle.faceNormal = workingTriangle.faceNormal * currentMesh->rotation;
 			workingTriangle.normals[0] = workingTriangle.normals[0] * currentMesh->rotation;
 			workingTriangle.normals[1] = workingTriangle.normals[1] * currentMesh->rotation;
 			workingTriangle.normals[2] = workingTriangle.normals[2] * currentMesh->rotation;
-			workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
-			workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
-			workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
 
-			if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
-			{
-				//culled++;
-				continue;
-			}
 
 			if ((workingTriangle.vertices[0].z < 0.0) ||
 				(workingTriangle.vertices[1].z < 0.0) ||
@@ -608,7 +625,6 @@ public:
 			fenceCount++;
 		}
 		software3D.Fence(fenceCount);
-
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))

@@ -674,7 +674,7 @@ namespace game
 				continue;
 			}
 
-			// back face cull
+			// Calculate edges and backface cull
 			if (!in[tri].edgeCalculated)
 			{
 				in[tri].edge0.Set(in[tri].vertices[1], in[tri].vertices[2]);
