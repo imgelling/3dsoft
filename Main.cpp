@@ -121,7 +121,7 @@ public:
 
 		ConvertBlenderToThis(model);
 
-		if (!software3D.CreateRenderTarget(1280>>2, 720>>2, renderTarget))
+		if (!software3D.CreateRenderTarget(1280 >> 3, 720 >> 3, renderTarget))
 		{
 			std::cout << "Could not create render target\n";
 		}
@@ -375,11 +375,10 @@ public:
 
 		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 		pos += 1 * (msElapsed / 1000.0f);
-		//software3D.time = rotation;
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::CornFlowerBlue);
-		software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;
+		software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;  // pixel mode needs passed into it
 		software3D.ClearDepth(100.0f);
 
 		software3D.SetDefaultTexture();
@@ -387,13 +386,10 @@ public:
 		quad.clear();
 
 		if (scene == 0)
-		{
-			//currentMesh->SetTranslation(0,0,1);
-			//currentMesh->SetScale(1, 1, abs(cos(pos)*20));
+		{		
 			software3D.SetRenderTarget(renderTarget);
-			software3D.ClearDepth(100.0f);
-			//std::fill_n(renderTarget.depthBuffer, renderTarget.size.width * renderTarget.size.height, 100.0f);
-			std::fill_n(renderTarget.colorBuffer, renderTarget.size.width * renderTarget.size.height, game::Colors::Black.packedABGR);
+			software3D.ClearRenderTarget(game::Colors::Black, 100.0f);
+
 			currentMesh = &model;
 			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
 			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
@@ -471,7 +467,6 @@ public:
 
 						quad.emplace_back(out1);
 					}
-					//else culled++;
 				}
 				else
 				{
@@ -480,7 +475,6 @@ public:
 					quad.emplace_back(workingTriangle);
 				}
 			}
-			//std::cout << culled << "\n";
 
 			uint64_t fenceCount = 0;
 			game::Recti cclip;
@@ -498,37 +492,32 @@ public:
 						float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
 						return az < bz;
 					});
-				//pixelMode.Rect(clip[c], game::Colors::Yellow);
 				software3D.Render(clippedTris[c], cclip);
 				fenceCount++;
 			}
 			software3D.Fence(fenceCount);
 
+			// Reset what we changed
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
-			clippedTris[0].clear();
 			software3D.SetRenderTargetDefault();
-			software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;
+			software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer; // pixel mode needs passed into it
 			currentMesh = &plane;
-			game::Texture tex;
-			tex.data = renderTarget.colorBuffer;
-			tex.size = renderTarget.size;
-			software3D.SetTexture(tex);
+			software3D.SetTexture(renderTarget);
+			clippedTris[0].clear();
 			quad.clear();
-			software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;
-			software3D.ClearDepth(100.0f);
 		}
 		if (scene == 2)
 		{
 			//currentMesh = &model;
-			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		// for render send this info
 		mvpMat = projMat * camera.CreateViewMatrix();
 
-		// Below is render
+		// Below is render/vertex processing
 		// will need model view and projection
 		mvpMat *= currentMesh->CreateModelMatrix();
 		int culled = 0;

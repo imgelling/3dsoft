@@ -25,6 +25,7 @@ namespace game
 		bool Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value);
 		bool SetTexture(const Texture& texture) noexcept;
+		bool SetTexture(const RenderTarget& target) noexcept;
 		bool SetDefaultTexture() noexcept;
 		void Fence(const uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
@@ -35,6 +36,7 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
+		void ClearRenderTarget(const Color& color, const float_t depth);
 		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
 		bool CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept;
 		bool CreateTexture(const Pointi size, Texture& texture) noexcept;
@@ -47,7 +49,6 @@ namespace game
 
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
-		//uint32_t* renderTarget;
 		RenderTarget _currentRenderTarget;
 	private:
 		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
@@ -108,6 +109,30 @@ namespace game
 			return false;
 		}
 		_currentTexture = texture;
+		return true;
+	}
+
+	inline bool Software3D::SetTexture(const RenderTarget& target) noexcept
+	{
+		if (target.colorBuffer == nullptr)
+		{
+			return false;
+		}
+		if (target.depthBuffer == nullptr)
+		{
+			return false;
+		}
+		if (!target.size.width || !target.size.height)
+		{
+			return false;
+		}
+		Texture temp;
+		temp.data = target.colorBuffer;
+		temp.size.width = target.size.width;
+		temp.size.height = target.size.height;
+		temp.oneOverSize.width = 1.0f / (float_t)target.size.width;
+		temp.oneOverSize.height = 1.0f / (float_t)target.size.height;
+		_currentTexture = temp;
 		return true;
 	}
 
@@ -201,6 +226,7 @@ namespace game
 		}
 		target.size.width = width;
 		target.size.height = height;
+		target.totalBufferSize = width * height;
 		return true;
 	}
 
@@ -219,7 +245,8 @@ namespace game
 	{
 		_usingRenderTarget = false;
 		_currentRenderTarget = _defaultRenderTarget;
-		depthBuffer = _defaultRenderTarget.depthBuffer;
+		_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
+		depthBuffer = clearDepthBuffer[_currentDepth];
 	}
 
 	inline bool Software3D::CreateRenderTarget(const Pointi size, RenderTarget& target) noexcept
@@ -251,29 +278,36 @@ namespace game
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		if (!_usingRenderTarget)
+		//if (!_usingRenderTarget)
+		//{
+		if (_multiThreaded)
 		{
-			if (_multiThreaded)
-			{
-				_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
-				_currentDepth++;
-				if (_currentDepth > _numbuffers - 1) _currentDepth = 0;
-				_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
-				depthBuffer = clearDepthBuffer[_currentDepth];
-			}
-			else
-			{
-				std::fill_n(_currentRenderTarget.depthBuffer, _totalBufferSize, depth);
-			}
+			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
+			_currentDepth++;
+			if (_currentDepth > _numbuffers - 1) _currentDepth = 0;
+			_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
+			depthBuffer = clearDepthBuffer[_currentDepth];
 		}
 		else
 		{
-			std::fill_n(_currentRenderTarget.depthBuffer, _currentRenderTarget.size.width * _currentRenderTarget.size.height, depth);
+			std::fill_n(_currentRenderTarget.depthBuffer, _totalBufferSize, depth);
+			depthBuffer = clearDepthBuffer[_currentDepth];
 		}
+		//}
+		//else
+		//{
+		//	std::fill_n(_currentRenderTarget.depthBuffer, _currentRenderTarget.size.width * _currentRenderTarget.size.height, depth);
+		//}
 		//std::fill(depthBuffer, depthBuffer + _totalBufferSize, depth);
 		//FillMemory(depthBuffer, 255, _totalBufferSize*4);
 		//memcpy(depthBuffer, clearDepthBuffer, _totalBufferSize * 4);
 		//MoveMemory(depthBuffer, clearDepthBuffer, _totalBufferSize * 4);
+	}
+
+	inline void Software3D::ClearRenderTarget(const Color& color, const float_t depth)
+	{
+		std::fill_n(_currentRenderTarget.depthBuffer, _currentRenderTarget.totalBufferSize, depth);
+		std::fill_n(_currentRenderTarget.colorBuffer, _currentRenderTarget.totalBufferSize, color.packedABGR);
 	}
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)

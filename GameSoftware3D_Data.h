@@ -138,6 +138,7 @@ namespace game
 		uint32_t* colorBuffer = nullptr;
 		float_t* depthBuffer = nullptr;
 		Pointi size;
+		uint32_t totalBufferSize = 0;
 	};
 
 	struct Mesh
