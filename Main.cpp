@@ -106,7 +106,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode.videoBuffer, pixelMode.GetPixelFrameBufferSize(),0))
+		if (!software3D.Initialize(pixelMode, 0))
 		{
 			geLogLastError();
 		}
@@ -378,7 +378,6 @@ public:
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::CornFlowerBlue);
-		software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer;  // pixel mode needs passed into it
 		software3D.ClearDepth(100.0f);
 
 		software3D.SetDefaultTexture();
@@ -499,7 +498,6 @@ public:
 			// Reset what we changed
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 			software3D.SetRenderTargetDefault();
-			software3D._currentRenderTarget.colorBuffer = pixelMode.videoBuffer; // pixel mode needs passed into it
 			currentMesh = &plane;
 			software3D.SetTexture(renderTarget);
 			clippedTris[0].clear();
@@ -508,9 +506,9 @@ public:
 		if (scene == 2)
 		{
 			//currentMesh = &model;
-			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		// for render send this info

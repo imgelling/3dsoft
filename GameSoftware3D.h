@@ -22,8 +22,8 @@ namespace game
 	public:
 		Software3D();
 		~Software3D();
-		bool Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads);
-		int32_t SetState(const uint32_t state, const int32_t value);
+		bool Initialize(PixelMode& pixelMode, const int32_t threads);
+		int32_t SetState(const uint32_t state, const int32_t value) noexcept;
 		bool SetTexture(const Texture& texture) noexcept;
 		bool SetTexture(const RenderTarget& target) noexcept;
 		bool SetDefaultTexture() noexcept;
@@ -32,9 +32,7 @@ namespace game
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled>
 		void DrawColored(const Triangle& tri, const Recti& clip) noexcept;
-		std::atomic<uint32_t> fence;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
-		// Must be called, sets the current frame buffer (for now)
 		void ClearDepth(const float_t depth);
 		void ClearRenderTarget(const Color& color, const float_t depth);
 		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
@@ -53,6 +51,7 @@ namespace game
 	private:
 		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
+		std::atomic<uint32_t> _fence;
 		bool _multiThreaded;
 		bool _usingRenderTarget;
 		RenderTarget _defaultRenderTarget;
@@ -62,8 +61,7 @@ namespace game
 		Texture _currentTexture;
 		ThreadPool _threadPool;
 		FillMode _FillMode;
-
-		uint32_t _colorBufferStride;
+		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
 	};
 
@@ -71,10 +69,9 @@ namespace game
 	{
 		_defaultRenderTarget = {};
 		_usingRenderTarget = false;
-		//renderTarget = nullptr;
-		fence = 0;
+		_pixelMode = nullptr;
+		_fence = 0;
 		_currentDepth = 0;
-		_colorBufferStride = 0;
 		_totalBufferSize = 0;
 		_multiThreaded = false;
 		depthBuffer = nullptr;
@@ -245,6 +242,7 @@ namespace game
 	{
 		_usingRenderTarget = false;
 		_currentRenderTarget = _defaultRenderTarget;
+		_currentRenderTarget.colorBuffer = _pixelMode->videoBuffer;// = _defaultRenderTarget;
 		_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
 		depthBuffer = clearDepthBuffer[_currentDepth];
 	}
@@ -272,14 +270,12 @@ namespace game
 
 	inline void Software3D::Fence(const uint64_t fenceValue) noexcept
 	{
-		while (fence < fenceValue) {  };
-		fence = 0;
+		while (_fence < fenceValue) {  };
+		_fence = 0;
 	}
 
 	inline void Software3D::ClearDepth(const float_t depth)
 	{
-		//if (!_usingRenderTarget)
-		//{
 		if (_multiThreaded)
 		{
 			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
@@ -310,7 +306,7 @@ namespace game
 		std::fill_n(_currentRenderTarget.colorBuffer, _currentRenderTarget.totalBufferSize, color.packedABGR);
 	}
 
-	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value)
+	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value) noexcept
 	{
 		if (state == GAME_SOFTWARE3D_STATE_FILL_MODE)
 		{
@@ -341,13 +337,12 @@ namespace game
 		return false;
 	}
 
-	inline bool Software3D::Initialize(uint32_t* colorBuffer, const Pointi& colorBufferSize, const int32_t threads = -1)
+	inline bool Software3D::Initialize(PixelMode& pixelMode, const int32_t threads = -1)
 	{
-		_defaultRenderTarget.colorBuffer = colorBuffer;
-		_defaultRenderTarget.size = colorBufferSize;
-		//renderTarget = colorBuffer;
-		_colorBufferStride = colorBufferSize.width;
-		_totalBufferSize = _colorBufferStride * colorBufferSize.height;
+		_pixelMode = &pixelMode;
+		_defaultRenderTarget.colorBuffer = _pixelMode->videoBuffer;
+		_defaultRenderTarget.size = _pixelMode->GetPixelFrameBufferSize();
+		_totalBufferSize = _defaultRenderTarget.size.width * _defaultRenderTarget.size.height;
 		if (threads < 0)
 		{
 			_multiThreaded = false;
@@ -366,12 +361,15 @@ namespace game
 		_currentDepth = 0;
 		_defaultRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
 		_currentRenderTarget = _defaultRenderTarget;
-		//depthBuffer = clearDepthBuffer[_currentDepth];
 		return true;
 	}
 
 	inline void Software3D::Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept
 	{
+		if (!_usingRenderTarget)
+		{
+			_currentRenderTarget.colorBuffer = _pixelMode->videoBuffer;
+		}
 		if (_multiThreaded)
 		{
 			_threadPool.Queue(std::bind(&Software3D::_Render, this, tris,clip));
@@ -398,7 +396,7 @@ namespace game
 		{
 				renderer(tris[triangleCount]);
 		}
-		fence++;
+		_fence++;
 	}
 
 	inline const Recti Software3D::TriangleBoundingBox(const Triangle& tri) const noexcept
