@@ -394,7 +394,8 @@ namespace game
 		default: break;
 		}
 
-		for (uint32_t triangleCount = 0; triangleCount < tris.size(); ++triangleCount)
+		uint32_t trisSize = (uint32_t)tris.size();
+		for (uint32_t triangleCount = 0; triangleCount < trisSize; ++triangleCount)
 		{
 				renderer(tris[triangleCount]);
 		}
@@ -687,7 +688,8 @@ namespace game
 	{
 		out.clear();
 		Triangle outTri;
-		for (int tri = 0; tri < in.size(); tri++)
+		uint32_t inSize = (uint32_t)in.size();
+		for (uint32_t tri = 0; tri < inSize; tri++)
 		{
 			//Triangle outTri(in[tri]);
 			if (in[tri].backFaceCulled) continue; // was backface culled before
@@ -950,7 +952,8 @@ namespace game
 		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
 		game::Triangle newClippedTris[2];
 		uint32_t numtris = 0;
-		for (int i = 0; i < mesh.tris.size(); i++)
+		uint32_t meshSize = (uint32_t)mesh.tris.size(); // significant performance increase
+		for (uint32_t i = 0; i < meshSize; i++)
 		{
 			workingTriangle = mesh.tris[i];
 			workingTriangle.vertices[0] = (mesh.tris[i].vertices[0] * mvp);
@@ -979,8 +982,25 @@ namespace game
 				numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, newClippedTris[0], newClippedTris[1]);
 				for (uint32_t tri = 0; tri < numtris; ++tri)
 				{
-					PerspectiveDivide(newClippedTris[tri]);
-					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.size);
+					newClippedTris[tri].vertices[0] = newClippedTris[tri].vertices[0] / newClippedTris[tri].vertices[0].w;
+					newClippedTris[tri].vertices[1] = newClippedTris[tri].vertices[1] / newClippedTris[tri].vertices[1].w;
+					newClippedTris[tri].vertices[2] = newClippedTris[tri].vertices[2] / newClippedTris[tri].vertices[2].w;
+
+					newClippedTris[tri].vertices[0].x += 1.0f;
+					newClippedTris[tri].vertices[1].x += 1.0f;
+					newClippedTris[tri].vertices[2].x += 1.0f;
+
+					newClippedTris[tri].vertices[0].y += 1.0f;
+					newClippedTris[tri].vertices[1].y += 1.0f;
+					newClippedTris[tri].vertices[2].y += 1.0f;
+
+					newClippedTris[tri].vertices[0].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
+					newClippedTris[tri].vertices[1].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
+					newClippedTris[tri].vertices[2].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
+
+					newClippedTris[tri].vertices[0].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
+					newClippedTris[tri].vertices[1].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
+					newClippedTris[tri].vertices[2].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
 
 					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
 					{
@@ -994,8 +1014,23 @@ namespace game
 			}
 			else
 			{
-				PerspectiveDivide(workingTriangle);
-				ScaleToScreen(workingTriangle, _currentRenderTarget.size);
+				//PerspectiveDivide(workingTriangle); // 957
+				workingTriangle.vertices[0] = backFaceTestTri.vertices[0];
+				workingTriangle.vertices[0].x += 1.0f;
+				workingTriangle.vertices[0].y += 1.0f;
+				workingTriangle.vertices[0].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
+				workingTriangle.vertices[0].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
+				workingTriangle.vertices[1] = backFaceTestTri.vertices[1];
+				workingTriangle.vertices[1].x += 1.0f;
+				workingTriangle.vertices[1].y += 1.0f;
+				workingTriangle.vertices[1].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
+				workingTriangle.vertices[1].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
+				workingTriangle.vertices[2] = backFaceTestTri.vertices[2];
+				workingTriangle.vertices[2].x += 1.0f;
+				workingTriangle.vertices[2].y += 1.0f;
+				workingTriangle.vertices[2].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
+				workingTriangle.vertices[2].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
+				//ScaleToScreen(workingTriangle, _currentRenderTarget.size);
 				processedTris.emplace_back(workingTriangle);
 			}
 		}

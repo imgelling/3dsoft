@@ -70,10 +70,10 @@ public:
 			for (uint32_t col = 0; col < cols; col++)
 			{
 				uint32_t access = row * cols + col;
-				clips2[access].left = (rc) * (colsize);// -1);
+				clips2[access].left = (rc) * (colsize);
 				clips2[access].right = (clips2[access].left + colsize);
 				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
-				clips2[access].top = cc * (rowsize);// -1);
+				clips2[access].top = cc * (rowsize);
 				clips2[access].bottom = clips2[access].top + rowsize;
 				if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
 				rc++;
@@ -428,14 +428,14 @@ public:
 			software3D.SetRenderTargetDefault();
 			currentMesh = &plane;
 			software3D.SetTexture(renderTarget);
-			clippedTris[0].clear();
+			//clippedTris[0].clear();
 			quad.clear();
 		}
 		if (scene == 2)
 		{
-			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		mvpMat = projMat * camera.CreateViewMatrix();
@@ -467,7 +467,7 @@ public:
 			float_t depth = 0.0f;
 			float_t* zbuffer = software3D.depthBuffer;
 			uint32_t* vbuffer = pixelMode.videoBuffer;
-			for (int pos = 0; pos < pixelMode.GetPixelFrameBufferSize().y * pixelMode.GetPixelFrameBufferSize().x; pos++)
+			for (int pos = 0; pos < resolution.height * resolution.width; pos++)
 			{
 				depth = *zbuffer;
 				zbuffer++;
@@ -486,11 +486,11 @@ public:
 		{
 			game::Pointi m = pixelMode.GetScaledMousePosition();
 			float_t* zb = software3D.depthBuffer;
-			m.x = min(m.x, pixelMode.GetPixelFrameBufferSize().width - 1);
-			m.y = min(m.y, pixelMode.GetPixelFrameBufferSize().height - 1);
+			m.x = min(m.x, resolution.width - 1);
+			m.y = min(m.y, resolution.height - 1);
 			m.x = max(m.x, 0);
 			m.y = max(m.y, 0);
-			float_t depthAtMouse = zb[(m.y * pixelMode.GetPixelFrameBufferSize().x + m.x)];
+			float_t depthAtMouse = zb[(m.y * resolution.width + m.x)];
 			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 40, game::Colors::Yellow, 1);
 
 
@@ -515,7 +515,8 @@ public:
 
 	void ConvertBlenderToThis(game::Mesh& mesh)
 	{
-		for (int tri = 0; tri < mesh.tris.size(); tri++)
+		uint32_t meshSize = (uint32_t)mesh.tris.size();
+		for (int tri = 0; tri < meshSize; tri++)
 		{
 			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
 			std::swap(mesh.tris[tri].vertices[1].y, mesh.tris[tri].vertices[1].z);
