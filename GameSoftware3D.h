@@ -692,14 +692,6 @@ namespace game
 			//Triangle outTri(in[tri]);
 			if (in[tri].backFaceCulled) continue; // was backface culled before
 
-			//// Near Z clip
-			//if ((in[tri].vertices[0].w < 0.1f) ||
-			//	(in[tri].vertices[1].w < 0.1f) ||
-			//	(in[tri].vertices[2].w < 0.1f))
-			//{
-			//	continue;
-			//}
-
 			// Far Z clip
 			if ((in[tri].vertices[0].w > 100.0f) ||
 				(in[tri].vertices[1].w > 100.0f) ||

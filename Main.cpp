@@ -55,7 +55,7 @@ public:
 	}
 
 	uint32_t numclips = 16;
-	void GenerateClips(const uint32_t numberOfClips, game::Recti *clips2, const game::Pointi& size)
+	void GenerateClips(const uint32_t numberOfClips, game::Recti * clips2, const game::Pointi& size)
 	{
 		uint32_t cols = (uint32_t)sqrt(numberOfClips);//(int32_t)std::ceil(sqrt(numberOfClips));
 		uint32_t rows = (uint32_t)(numberOfClips / (float_t)cols);//(int32_t)std::ceil(numberOfClips / (float_t)cols);
@@ -384,7 +384,6 @@ public:
 		software3D.SetDefaultTexture();
 
 		quad.clear();
-
 		if (scene == 0)
 		{		
 			software3D.SetRenderTarget(renderTarget);
@@ -509,9 +508,9 @@ public:
 		if (scene == 2)
 		{
 			//currentMesh = &model;
-			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		// for render send this info
@@ -519,27 +518,28 @@ public:
 
 		// Below is render/vertex processing
 		// will need model view and projection
-		mvpMat *= currentMesh->CreateModelMatrix();
-		int culled = 0;
-		game::Triangle t;
+		mvpMat = mvpMat * currentMesh->CreateModelMatrix();
+		game::Triangle backFaceTestTri;
+
+		game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
+		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
+		game::Triangle newClippedTris[2];
+		uint32_t numtris = 0;
 		for (int i = 0; i < currentMesh->tris.size(); i++)
 		{
 			workingTriangle = currentMesh->tris[i];
 			workingTriangle.vertices[0] = (currentMesh->tris[i].vertices[0] * mvpMat);
 			workingTriangle.vertices[1] = (currentMesh->tris[i].vertices[1] * mvpMat);
 			workingTriangle.vertices[2] = (currentMesh->tris[i].vertices[2] * mvpMat);
+
 			// Back face cull most triangles
-			t = workingTriangle;
-			PerspectiveDivide(t);
-			if (CheckWinding(t.vertices[0],t.vertices[1],t.vertices[2]) < 0)
+			backFaceTestTri.vertices[0] = workingTriangle.vertices[0] / workingTriangle.vertices[0].w;
+			backFaceTestTri.vertices[1] = workingTriangle.vertices[1] / workingTriangle.vertices[1].w;
+			backFaceTestTri.vertices[2] = workingTriangle.vertices[2] / workingTriangle.vertices[2].w;
+			if (CheckWinding(backFaceTestTri.vertices[0],backFaceTestTri.vertices[1],backFaceTestTri.vertices[2]) < 0)
 			{
 				continue;
 			}
-			//if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
-			//{
-			//	culled++;
-			//	continue;
-			//}
 
 			workingTriangle.faceNormal = workingTriangle.faceNormal * currentMesh->rotation;
 			workingTriangle.normals[0] = workingTriangle.normals[0] * currentMesh->rotation;
@@ -551,41 +551,21 @@ public:
 				(workingTriangle.vertices[1].z < 0.0) ||
 				(workingTriangle.vertices[2].z < 0.0))
 			{
-				game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
-				game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
-
-				game::Triangle out1;
-				game::Triangle out2;
-				uint32_t numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, out1, out2);
-				if (numtris == 2)
+				numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, newClippedTris[0], newClippedTris[1]);
+				for (uint32_t tri = 0; tri < numtris; ++tri)
 				{
-					PerspectiveDivide(out2);
-					ScaleToScreen(out2, resolution);
+					PerspectiveDivide(newClippedTris[tri]);
+					ScaleToScreen(newClippedTris[tri], resolution);
 
-					if (CheckWinding(out2.vertices[0], out2.vertices[1], out2.vertices[2]) < 0)
+					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
 					{
-						std::swap(out2.vertices[1], out2.vertices[0]);
-						std::swap(out2.normals[1], out2.normals[0]);
-						std::swap(out2.uvs[1], out2.uvs[0]);
-						std::swap(out2.color[1], out2.color[0]);
+						std::swap(newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[0]);
+						std::swap(newClippedTris[tri].normals[1], newClippedTris[tri].normals[0]);
+						std::swap(newClippedTris[tri].uvs[1], newClippedTris[tri].uvs[0]);
+						std::swap(newClippedTris[tri].color[1], newClippedTris[tri].color[0]);
 					}
-					quad.emplace_back(out2);
+					quad.emplace_back(newClippedTris[tri]);
 				}
-				if (numtris)
-				{
-					PerspectiveDivide(out1);
-					ScaleToScreen(out1, resolution);
-					if (CheckWinding(out1.vertices[0], out1.vertices[1], out1.vertices[2]) < 0)
-					{
-						std::swap(out1.vertices[1], out1.vertices[0]);
-						std::swap(out1.normals[1], out1.normals[0]);
-						std::swap(out1.uvs[1], out1.uvs[0]);
-						std::swap(out1.color[1], out1.color[0]);
-					}
-
-					quad.emplace_back(out1);
-				}
-				//else culled++;
 			}
 			else
 			{
@@ -594,7 +574,7 @@ public:
 				quad.emplace_back(workingTriangle);
 			}
 		}
-		//std::cout << culled << "\n";
+
 
 		uint64_t fenceCount = 0;
 
