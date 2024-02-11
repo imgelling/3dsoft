@@ -267,6 +267,7 @@ namespace game
 		return ret;
 	}
 
+
 	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear
 	inline float_t CheckWinding(Vector3f A, Vector3f B, Vector3f C)
 	{

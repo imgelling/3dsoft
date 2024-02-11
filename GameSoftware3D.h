@@ -45,6 +45,8 @@ namespace game
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
 
+		void VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris);
+
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
 		RenderTarget _currentRenderTarget;
@@ -935,6 +937,68 @@ namespace game
 			return true;
 		}
 		else return false;
+
+	}
+
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris)
+	{
+		mvp = mvp * mesh.CreateModelMatrix();
+		game::Triangle backFaceTestTri;
+		game::Triangle workingTriangle;
+
+		game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
+		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
+		game::Triangle newClippedTris[2];
+		uint32_t numtris = 0;
+		for (int i = 0; i < mesh.tris.size(); i++)
+		{
+			workingTriangle = mesh.tris[i];
+			workingTriangle.vertices[0] = (mesh.tris[i].vertices[0] * mvp);
+			workingTriangle.vertices[1] = (mesh.tris[i].vertices[1] * mvp);
+			workingTriangle.vertices[2] = (mesh.tris[i].vertices[2] * mvp);
+
+			// Back face cull most triangles
+			backFaceTestTri.vertices[0] = workingTriangle.vertices[0] / workingTriangle.vertices[0].w;
+			backFaceTestTri.vertices[1] = workingTriangle.vertices[1] / workingTriangle.vertices[1].w;
+			backFaceTestTri.vertices[2] = workingTriangle.vertices[2] / workingTriangle.vertices[2].w;
+			if (CheckWinding(backFaceTestTri.vertices[0], backFaceTestTri.vertices[1], backFaceTestTri.vertices[2]) < 0)
+			{
+				continue;
+			}
+
+			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
+			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
+			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
+			workingTriangle.normals[2] = workingTriangle.normals[2] * mesh.rotation;
+
+
+			if ((workingTriangle.vertices[0].z < 0.0) ||
+				(workingTriangle.vertices[1].z < 0.0) ||
+				(workingTriangle.vertices[2].z < 0.0))
+			{
+				numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, newClippedTris[0], newClippedTris[1]);
+				for (uint32_t tri = 0; tri < numtris; ++tri)
+				{
+					PerspectiveDivide(newClippedTris[tri]);
+					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.size);
+
+					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
+					{
+						std::swap(newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[0]);
+						std::swap(newClippedTris[tri].normals[1], newClippedTris[tri].normals[0]);
+						std::swap(newClippedTris[tri].uvs[1], newClippedTris[tri].uvs[0]);
+						std::swap(newClippedTris[tri].color[1], newClippedTris[tri].color[0]);
+					}
+					processedTris.emplace_back(newClippedTris[tri]);
+				}
+			}
+			else
+			{
+				PerspectiveDivide(workingTriangle);
+				ScaleToScreen(workingTriangle, _currentRenderTarget.size);
+				processedTris.emplace_back(workingTriangle);
+			}
+		}
 
 	}
 }
