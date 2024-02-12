@@ -45,11 +45,13 @@ namespace game
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
 
-		void VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris);
+		void VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris) const;
 
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
 		RenderTarget _currentRenderTarget;
+		// temp
+		Camera3D camera;
 	private:
 		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
@@ -946,14 +948,13 @@ namespace game
 
 	}
 
-	inline void Software3D::VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris)
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris) const
 	{
 		mvp = mvp * mesh.CreateModelMatrix();
 		game::Triangle backFaceTestTri;
 		game::Triangle workingTriangle;
 
-		game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
-		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
+
 		game::Triangle newClippedTris[2];
 		uint32_t numtris = 0;
 		uint64_t meshSize = mesh.tris.size();
@@ -966,26 +967,32 @@ namespace game
 
 			// Back face cull most triangles
 			//backFaceTestTri = workingTriangle;
-			backFaceTestTri.vertices[0] = workingTriangle.vertices[0] / workingTriangle.vertices[0].w;
-			backFaceTestTri.vertices[1] = workingTriangle.vertices[1] / workingTriangle.vertices[1].w;
-			backFaceTestTri.vertices[2] = workingTriangle.vertices[2] / workingTriangle.vertices[2].w;
-			if (CheckWinding(backFaceTestTri.vertices[0], backFaceTestTri.vertices[1], backFaceTestTri.vertices[2]) < 0)
-			{
-				continue;
-			}
+			//PerspectiveDivide(backFaceTestTri);
+			//backFaceTestTri.vertices[0] = workingTriangle.vertices[0];// / workingTriangle.vertices[0].w;
+			//backFaceTestTri.vertices[1] = workingTriangle.vertices[1];// / workingTriangle.vertices[1].w;
+			//backFaceTestTri.vertices[2] = workingTriangle.vertices[2];// / workingTriangle.vertices[2].w;
+			//if (CheckWinding(backFaceTestTri.vertices[0], backFaceTestTri.vertices[1], backFaceTestTri.vertices[2]) < 0)
+			//{
+			//	continue;
+			//}
+			// old
+			//if (workingTriangle.faceNormal.Dot(camera.forward) > 0.75f)
+			//{
+			//	continue;
+			//}
 
 			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
 			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
 			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
 			workingTriangle.normals[2] = workingTriangle.normals[2] * mesh.rotation;
-			backFaceTestTri = workingTriangle;
+			//backFaceTestTri = workingTriangle;
 
 
 			if ((workingTriangle.vertices[0].z < 0.0) ||
 				(workingTriangle.vertices[1].z < 0.0) ||
 				(workingTriangle.vertices[2].z < 0.0))
 			{
-				numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, newClippedTris[0], newClippedTris[1]);
+				numtris = ClipAgainstNearZ(workingTriangle, newClippedTris[0], newClippedTris[1]);
 				for (uint32_t tri = 0; tri < numtris; ++tri)
 				{
 					//PerspectiveDivide(newClippedTris[tri]);
@@ -993,7 +1000,6 @@ namespace game
 					newClippedTris[tri].vertices[1] /= newClippedTris[tri].vertices[1].w;
 					newClippedTris[tri].vertices[2] /= newClippedTris[tri].vertices[2].w;
 					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.halfSize);
-
 					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
 					{
 						std::swap(newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[0]);

@@ -113,7 +113,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/torus2.obj", model))
+		if (!LoadObj("Content/arena.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -399,6 +399,7 @@ public:
 
 			mvpMat = projMat * tempcam.CreateViewMatrix();
 
+			software3D.camera.forward = tempcam.forward;
 			software3D.VertexProcessor(*currentMesh, mvpMat, quad);
 
 			uint64_t fenceCount = 0;
@@ -433,12 +434,13 @@ public:
 		}
 		if (scene == 2)
 		{
-			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		mvpMat = projMat * camera.CreateViewMatrix();
+		software3D.camera.forward = camera.forward;
 		software3D.VertexProcessor(*currentMesh, mvpMat, quad);
 
 

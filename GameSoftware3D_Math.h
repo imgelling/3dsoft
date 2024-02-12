@@ -288,30 +288,14 @@ namespace game
 		return lineStart + lineToIntersect;
 	}
 
-	inline uint32_t ClipAgainstPlane(Vector3f plane_p, Vector3f plane_n, Triangle& in_tri, Triangle& out_tri1, Triangle& out_tri2)
+	inline uint32_t ClipAgainstNearZ(Triangle& in_tri, Triangle& out_tri1, Triangle& out_tri2) noexcept
 	{
-		//// Make sure plane normal is indeed normal
-		//plane_n.Normalize();// plane_n = Vector_Normalise(plane_n);
-		float_t d = plane_n.Dot(plane_p);
+		game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
+		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
+		float_t d = planeNormal.Dot(planePoint);
 
-		// Return signed shortest distance from point to plane, plane normal must be normalised
-		//auto dist = [&](Vector3f& p)
-		//	{
-		//		//Vector3f n = p;// Vector_Normalise(p);
-		//		//n.Normalize();
-		//		//return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z - d);// Vector_DotProduct(plane_n, plane_p));
-		//		return (p.z - d);
-		//	};
-
-		// Create two temporary storage arrays to classify points either side of plane
-		// If distance sign is positive, point lies on "inside" of plane
 		Vector3f inside_points[3] = {};  uint32_t nInsidePointCount = 0;
 		Vector3f outside_points[3] = {}; uint32_t nOutsidePointCount = 0;
-
-		// Get signed distance of each point in triangle to plane
-		//float_t d0 = in_tri.vertices[0].z - d;// dist(in_tri.vertices[0]);
-		//float_t d1 = in_tri.vertices[1].z - d;// dist(in_tri.vertices[1]);
-		//float_t d2 = in_tri.vertices[2].z - d;// dist(in_tri.vertices[2]);
 
 		Vector3f in_normals[3];
 		Vector3f out_normals[3];
@@ -402,7 +386,7 @@ namespace game
 			float t = 0.0;
 
 			// First intersection
-			out_tri1.vertices[1] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
+			out_tri1.vertices[1] = VectorIntersectPlane(planePoint, planeNormal, inside_points[0], outside_points[0], t);
 
 			// Correct vertex normal due to clipping
 			out_tri1.normals[1].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
@@ -414,7 +398,7 @@ namespace game
 
 
 			// Second intersection
-			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[1], t);
+			out_tri1.vertices[2] = VectorIntersectPlane(planePoint, planeNormal, inside_points[0], outside_points[1], t);
 
 			out_tri1.normals[2].x = t * (out_normals[1].x - in_normals[0].x) + in_normals[0].x;
 			out_tri1.normals[2].y = t * (out_normals[1].y - in_normals[0].y) + in_normals[0].y;
@@ -456,7 +440,7 @@ namespace game
 			float t = 0.0;
 
 			// First intersection
-			out_tri1.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[0], outside_points[0], t);
+			out_tri1.vertices[2] = VectorIntersectPlane(planePoint, planeNormal, inside_points[0], outside_points[0], t);
 
 			// Correct the vertex normal due to clipping
 			out_tri1.normals[2].x = t * (out_normals[0].x - in_normals[0].x) + in_normals[0].x;
@@ -476,7 +460,7 @@ namespace game
 			out_tri2.normals[1] = out_tri1.normals[2];
 			out_tri2.uvs[1] = out_tri1.uvs[2];
 
-			out_tri2.vertices[2] = VectorIntersectPlane(plane_p, plane_n, inside_points[1], outside_points[0], t);
+			out_tri2.vertices[2] = VectorIntersectPlane(planePoint, planeNormal, inside_points[1], outside_points[0], t);
 
 
 			// Correct the vertex normal due to clipping
