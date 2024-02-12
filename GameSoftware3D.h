@@ -394,7 +394,7 @@ namespace game
 		default: break;
 		}
 
-		uint32_t trisSize = (uint32_t)tris.size();
+		uint64_t trisSize = tris.size();
 		for (uint32_t triangleCount = 0; triangleCount < trisSize; ++triangleCount)
 		{
 				renderer(tris[triangleCount]);
@@ -688,7 +688,7 @@ namespace game
 	{
 		out.clear();
 		Triangle outTri;
-		uint32_t inSize = (uint32_t)in.size();
+		uint64_t inSize = in.size();
 		for (uint32_t tri = 0; tri < inSize; tri++)
 		{
 			//Triangle outTri(in[tri]);
@@ -952,7 +952,7 @@ namespace game
 		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
 		game::Triangle newClippedTris[2];
 		uint32_t numtris = 0;
-		uint32_t meshSize = (uint32_t)mesh.tris.size();
+		uint64_t meshSize = mesh.tris.size();
 		for (uint32_t i = 0; i < meshSize; i++)
 		{
 			workingTriangle = mesh.tris[i];
