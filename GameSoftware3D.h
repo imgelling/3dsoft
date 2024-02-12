@@ -226,6 +226,8 @@ namespace game
 		target.size.width = width;
 		target.size.height = height;
 		target.totalBufferSize = width * height;
+		target.halfSize.width = width >> 1;
+		target.halfSize.height = height >> 1;
 		return true;
 	}
 
@@ -344,6 +346,8 @@ namespace game
 		_pixelMode = &pixelMode;
 		_defaultRenderTarget.colorBuffer = _pixelMode->videoBuffer;
 		_defaultRenderTarget.size = _pixelMode->GetPixelFrameBufferSize();
+		_defaultRenderTarget.halfSize.width = _defaultRenderTarget.size.width >> 1;
+		_defaultRenderTarget.halfSize.height = _defaultRenderTarget.size.height >> 1;
 		_totalBufferSize = _defaultRenderTarget.size.width * _defaultRenderTarget.size.height;
 		if (threads < 0)
 		{
@@ -916,10 +920,10 @@ namespace game
 					continue;
 				}
 			}
-
+			uint64_t meshSize = mesh.tris.size();
 			if (!hasNormals)
 			{
-				for (int i = 0; i < mesh.tris.size(); i++)
+				for (int i = 0; i < meshSize; i++)
 				{
 					mesh.tris[i].normals[0] = norms[fcount[i].x] / vcount[fcount[i].x];
 					mesh.tris[i].normals[1] = norms[fcount[i].y] / vcount[fcount[i].y];
@@ -929,7 +933,7 @@ namespace game
 					mesh.tris[i].normals[2].Normalize();
 				}
 			}
-			for (int i = 0; i < mesh.tris.size(); i++)
+			for (int i = 0; i < meshSize; i++)
 			{
 				mesh.tris[i].color[0] = game::Colors::White;
 				mesh.tris[i].color[1] = game::Colors::White;
@@ -988,7 +992,7 @@ namespace game
 					newClippedTris[tri].vertices[0] /= newClippedTris[tri].vertices[0].w;
 					newClippedTris[tri].vertices[1] /= newClippedTris[tri].vertices[1].w;
 					newClippedTris[tri].vertices[2] /= newClippedTris[tri].vertices[2].w;
-					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.size);
+					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.halfSize);
 
 					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
 					{
@@ -1008,7 +1012,7 @@ namespace game
 				workingTriangle.vertices[2] /= workingTriangle.vertices[2].w;
 
 
-				ScaleToScreen(workingTriangle, _currentRenderTarget.size);
+				ScaleToScreen(workingTriangle, _currentRenderTarget.halfSize);
 				processedTris.emplace_back(workingTriangle);
 			}
 		}

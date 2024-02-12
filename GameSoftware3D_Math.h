@@ -509,13 +509,13 @@ namespace game
 		triangle.vertices[1].y += 1.0f;
 		triangle.vertices[2].y += 1.0f;
 
-		triangle.vertices[0].x *= 0.5f * (float_t)bufferSize.x;
-		triangle.vertices[1].x *= 0.5f * (float_t)bufferSize.x;
-		triangle.vertices[2].x *= 0.5f * (float_t)bufferSize.x;
+		triangle.vertices[0].x *= bufferSize.x;
+		triangle.vertices[1].x *= bufferSize.x;
+		triangle.vertices[2].x *= bufferSize.x;
 
-		triangle.vertices[0].y *= 0.5f * (float_t)bufferSize.y;
-		triangle.vertices[1].y *= 0.5f * (float_t)bufferSize.y;
-		triangle.vertices[2].y *= 0.5f * (float_t)bufferSize.y;
+		triangle.vertices[0].y *= bufferSize.y;
+		triangle.vertices[1].y *= bufferSize.y;
+		triangle.vertices[2].y *= bufferSize.y;
 	}
 }
 

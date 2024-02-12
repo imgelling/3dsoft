@@ -396,7 +396,7 @@ public:
 
 			game::Camera3D tempcam;
 			tempcam.position.z = -2.0f;
-			// for render send this info
+
 			mvpMat = projMat * tempcam.CreateViewMatrix();
 
 			software3D.VertexProcessor(*currentMesh, mvpMat, quad);
@@ -433,9 +433,9 @@ public:
 		}
 		if (scene == 2)
 		{
-			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
 		mvpMat = projMat * camera.CreateViewMatrix();
