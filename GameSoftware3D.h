@@ -952,7 +952,7 @@ namespace game
 		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
 		game::Triangle newClippedTris[2];
 		uint32_t numtris = 0;
-		uint32_t meshSize = (uint32_t)mesh.tris.size(); // significant performance increase
+		uint32_t meshSize = (uint32_t)mesh.tris.size();
 		for (uint32_t i = 0; i < meshSize; i++)
 		{
 			workingTriangle = mesh.tris[i];
@@ -961,6 +961,7 @@ namespace game
 			workingTriangle.vertices[2] = (mesh.tris[i].vertices[2] * mvp);
 
 			// Back face cull most triangles
+			//backFaceTestTri = workingTriangle;
 			backFaceTestTri.vertices[0] = workingTriangle.vertices[0] / workingTriangle.vertices[0].w;
 			backFaceTestTri.vertices[1] = workingTriangle.vertices[1] / workingTriangle.vertices[1].w;
 			backFaceTestTri.vertices[2] = workingTriangle.vertices[2] / workingTriangle.vertices[2].w;
@@ -973,6 +974,7 @@ namespace game
 			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
 			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
 			workingTriangle.normals[2] = workingTriangle.normals[2] * mesh.rotation;
+			backFaceTestTri = workingTriangle;
 
 
 			if ((workingTriangle.vertices[0].z < 0.0) ||
@@ -982,25 +984,11 @@ namespace game
 				numtris = ClipAgainstPlane(planePoint, planeNormal, workingTriangle, newClippedTris[0], newClippedTris[1]);
 				for (uint32_t tri = 0; tri < numtris; ++tri)
 				{
-					newClippedTris[tri].vertices[0] = newClippedTris[tri].vertices[0] / newClippedTris[tri].vertices[0].w;
-					newClippedTris[tri].vertices[1] = newClippedTris[tri].vertices[1] / newClippedTris[tri].vertices[1].w;
-					newClippedTris[tri].vertices[2] = newClippedTris[tri].vertices[2] / newClippedTris[tri].vertices[2].w;
-
-					newClippedTris[tri].vertices[0].x += 1.0f;
-					newClippedTris[tri].vertices[1].x += 1.0f;
-					newClippedTris[tri].vertices[2].x += 1.0f;
-
-					newClippedTris[tri].vertices[0].y += 1.0f;
-					newClippedTris[tri].vertices[1].y += 1.0f;
-					newClippedTris[tri].vertices[2].y += 1.0f;
-
-					newClippedTris[tri].vertices[0].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
-					newClippedTris[tri].vertices[1].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
-					newClippedTris[tri].vertices[2].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
-
-					newClippedTris[tri].vertices[0].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
-					newClippedTris[tri].vertices[1].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
-					newClippedTris[tri].vertices[2].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
+					//PerspectiveDivide(newClippedTris[tri]);
+					newClippedTris[tri].vertices[0] /= newClippedTris[tri].vertices[0].w;
+					newClippedTris[tri].vertices[1] /= newClippedTris[tri].vertices[1].w;
+					newClippedTris[tri].vertices[2] /= newClippedTris[tri].vertices[2].w;
+					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.size);
 
 					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
 					{
@@ -1014,23 +1002,13 @@ namespace game
 			}
 			else
 			{
-				//PerspectiveDivide(workingTriangle); // 957
-				workingTriangle.vertices[0] = backFaceTestTri.vertices[0];
-				workingTriangle.vertices[0].x += 1.0f;
-				workingTriangle.vertices[0].y += 1.0f;
-				workingTriangle.vertices[0].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
-				workingTriangle.vertices[0].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
-				workingTriangle.vertices[1] = backFaceTestTri.vertices[1];
-				workingTriangle.vertices[1].x += 1.0f;
-				workingTriangle.vertices[1].y += 1.0f;
-				workingTriangle.vertices[1].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
-				workingTriangle.vertices[1].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
-				workingTriangle.vertices[2] = backFaceTestTri.vertices[2];
-				workingTriangle.vertices[2].x += 1.0f;
-				workingTriangle.vertices[2].y += 1.0f;
-				workingTriangle.vertices[2].x *= 0.5f * (float_t)_currentRenderTarget.size.x;
-				workingTriangle.vertices[2].y *= 0.5f * (float_t)_currentRenderTarget.size.y;
-				//ScaleToScreen(workingTriangle, _currentRenderTarget.size);
+				//PerspectiveDivide(workingTriangle);
+				workingTriangle.vertices[0] /= workingTriangle.vertices[0].w;
+				workingTriangle.vertices[1] /= workingTriangle.vertices[1].w;
+				workingTriangle.vertices[2] /= workingTriangle.vertices[2].w;
+
+
+				ScaleToScreen(workingTriangle, _currentRenderTarget.size);
 				processedTris.emplace_back(workingTriangle);
 			}
 		}

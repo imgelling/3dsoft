@@ -516,7 +516,7 @@ public:
 	void ConvertBlenderToThis(game::Mesh& mesh)
 	{
 		uint32_t meshSize = (uint32_t)mesh.tris.size();
-		for (int tri = 0; tri < meshSize; tri++)
+		for (uint32_t tri = 0; tri < meshSize; tri++)
 		{
 			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
 			std::swap(mesh.tris[tri].vertices[1].y, mesh.tris[tri].vertices[1].z);
