@@ -379,7 +379,6 @@ public:
 
 		pixelMode.Clear(game::Colors::DarkGray);
 		software3D.ClearDepth(100.0f);
-
 		software3D.SetDefaultTexture();
 
 		quad.clear();
@@ -399,8 +398,7 @@ public:
 
 			mvpMat = projMat * tempcam.CreateViewMatrix();
 
-			software3D.camera.forward = tempcam.forward;
-			software3D.VertexProcessor(*currentMesh, mvpMat, quad);
+			software3D.VertexProcessor(*currentMesh, mvpMat, quad, tempcam);
 
 			uint64_t fenceCount = 0;
 			game::Recti cclip;
@@ -440,8 +438,9 @@ public:
 		}
 		
 		mvpMat = projMat * camera.CreateViewMatrix();
-		software3D.camera.forward = camera.forward;
-		software3D.VertexProcessor(*currentMesh, mvpMat, quad);
+
+		software3D.VertexProcessor(*currentMesh, mvpMat, quad, camera);
+
 
 
 		uint64_t fenceCount = 0;
@@ -461,6 +460,47 @@ public:
 			fenceCount++;
 		}
 		software3D.Fence(fenceCount);
+
+		uint64_t num2 = currentMesh->tris.size();
+		for (uint32_t i2 = 0; i2 < num2; i2++)
+		{
+			game::Vector3f norm;
+			//for (int v = 0; v < 1; v++)
+			int v = 0;
+			{
+				game::Vector3f point = currentMesh->tris[i2].vertices[0];
+				point += currentMesh->tris[i2].vertices[1];
+				point += currentMesh->tris[i2].vertices[2];
+				point /= 3.0f;
+
+				norm = point + (currentMesh->tris[i2].faceNormal * 0.5f);
+				norm = norm * mvpMat;
+				if (norm.z < 0) norm.z = 0.0f;
+				if (norm.w < 0) norm.w = 0.0f;
+				norm = norm / norm.w;
+				norm.x += 1.0f;
+				norm.y += 1.0f;
+				norm.x *= resolution.width >> 1;
+				norm.y *= resolution.height >> 1;
+
+				point = point * mvpMat;
+				if (point.z < 0) point.z = 0.0f;
+				if (point.w < 0) point.w = 0.0f;
+				point = point / point.w;
+				point.x += 1.0f;
+				point.y += 1.0f;
+				point.x *= resolution.width >> 1;
+				point.y *= resolution.height >> 1;
+
+
+				pixelMode.LineClip(uint32_t(point.x),
+					uint32_t(point.y),
+					uint32_t(norm.x),
+					uint32_t(norm.y),
+					game::Colors::Yellow
+				);
+			}
+		}
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))
