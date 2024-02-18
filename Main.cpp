@@ -38,7 +38,7 @@ public:
 	uint32_t scene;
 
 	game::FillMode state = game::FillMode::FilledColor;
-	game::Pointi resolution = { 1280 >> 1, 720 >> 1 }; //2560, 1440 };
+	game::Pointi resolution = { 1280, 720 }; //2560, 1440 };
 	bool showText;
 
 	Game() : game::Engine()
@@ -109,7 +109,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/torus2.obj", model))
+		if (!LoadObj("Content/arena.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -426,8 +426,8 @@ public:
 		}
 		if (scene == 2)
 		{
-			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
 			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
