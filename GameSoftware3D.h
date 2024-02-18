@@ -107,6 +107,7 @@ namespace game
 	{
 		if (texture.data == nullptr)
 		{
+			SetDefaultTexture(); 
 			return false;
 		}
 		_currentTexture = texture;
@@ -117,22 +118,25 @@ namespace game
 	{
 		if (target.colorBuffer == nullptr)
 		{
+			SetDefaultTexture();
 			return false;
 		}
 		if (target.depthBuffer == nullptr)
 		{
+			SetDefaultTexture();
 			return false;
 		}
 		if (!target.size.width || !target.size.height)
 		{
+			SetDefaultTexture();
 			return false;
 		}
 		Texture temp;
 		temp.data = target.colorBuffer;
 		temp.size.width = target.size.width;
 		temp.size.height = target.size.height;
-		temp.oneOverSize.width = 1.0f / (float_t)target.size.width;
-		temp.oneOverSize.height = 1.0f / (float_t)target.size.height;
+		//temp.oneOverSize.width = 1.0f / (float_t)target.size.width;
+		//temp.oneOverSize.height = 1.0f / (float_t)target.size.height;
 		_currentTexture = temp;
 		return true;
 	}
@@ -160,8 +164,8 @@ namespace game
 		}
 		texture.size.width = width;
 		texture.size.height = height;
-		texture.oneOverSize.width = 1.0f / width;
-		texture.oneOverSize.height = 1.0f / height;
+		//texture.oneOverSize.width = 1.0f / width;
+		//texture.oneOverSize.height = 1.0f / height;
 		return true;
 	}
 
@@ -179,8 +183,8 @@ namespace game
 		}
 		texture.size.width = 0;
 		texture.size.height = 0;
-		texture.oneOverSize.width = 0;
-		texture.oneOverSize.height = 0;		
+		//texture.oneOverSize.width = 0;
+		//texture.oneOverSize.height = 0;		
 	}
 
 	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h)
@@ -230,6 +234,7 @@ namespace game
 		target.totalBufferSize = width * height;
 		target.halfSize.width = width >> 1;
 		target.halfSize.height = height >> 1;
+		my_PerspectiveFOV2(90.0f, target.size.width / (float_t)target.size.height, 0.1f, 100.0f, target.projection);
 		return true;
 	}
 
@@ -715,7 +720,7 @@ namespace game
 				in[tri].edge1.Set(in[tri].vertices[2], in[tri].vertices[0]);
 				in[tri].edge2.Set(in[tri].vertices[0], in[tri].vertices[1]);
 				in[tri].edgeCalculated = true;
-				in[tri].area = in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c;
+				in[tri].area = 1.0f /  (in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c);
 				if (in[tri].area < 0)
 				{
 					in[tri].backFaceCulled = true;
@@ -951,7 +956,7 @@ namespace game
 	inline void Software3D::VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera)
 	{
 		mvp = mvp * mesh.CreateModelMatrix();
-		game::Triangle backFaceTestTri;
+		//game::Triangle backFaceTestTri;
 		game::Triangle workingTriangle;
 
 
@@ -959,13 +964,15 @@ namespace game
 		uint32_t numtris = 0;
 		uint64_t meshSize = mesh.tris.size();
 		//int culled = 0;
+
+		Vector3f cameraRay;
 		for (uint32_t i = 0; i < meshSize; i++)
 		{
 			workingTriangle = mesh.tris[i];
 
 			// Backface cull before clip some maybe artifacts if scaling, but I think it is just the scaling changing the point.
 			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
-			Vector3f cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
+			cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
 			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
 			{
 				//culled++;

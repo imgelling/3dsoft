@@ -1,7 +1,7 @@
 //#define GAME_SUPPORT_OPENGL
 //#define GAME_SUPPORT_DIRECTX9
 //#define GAME_SUPPORT_DIRECTX10
-#define GAME_SUPPORT_DIRECTX11
+#define GAME_SUPPORT_DIRECTX12
 //#define GAME_SUPPORT_DIRECTX12
 
 #include "game.h"
@@ -91,7 +91,7 @@ public:
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
-		attributes.RenderingAPI = game::RenderAPI::DirectX11;
+		attributes.RenderingAPI = game::RenderAPI::DirectX12;
 		attributes.DebugMode = true;
 		geSetAttributes(attributes);
 
@@ -113,7 +113,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/arena.obj", model))
+		if (!LoadObj("Content/torus2.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -125,16 +125,16 @@ public:
 			std::cout << "Could not create render target\n";
 		}
 
-		//game::ImageLoader imageLoader;
+		//game::ImageLoader imageloader;
 		//uint32_t t = 0;
-		//uint32_t texW = 0;
-		//uint32_t texH = 0;
-		//uint32_t* temp = (uint32_t*)imageLoader.Load("Content/colormap2.png", texW, texH, t);
-		//currentTexture.data = new uint32_t[texW * texH];
-		//memcpy(currentTexture.data, temp, (size_t)texW * texH * 4);
-		//currentTexture.size.width = texW;
-		//currentTexture.size.height = texH;
-		//software3D.SetTexture(currentTexture);
+		//uint32_t texw = 0;
+		//uint32_t texh = 0;
+		//uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
+		//model.texture.data = new uint32_t[texw * texh];
+		//memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
+		//model.texture.size.width = texw;
+		//model.texture.size.height = texh;
+		
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -377,26 +377,25 @@ public:
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		pixelMode.Clear(game::Colors::DarkGray);
+		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
-		software3D.SetDefaultTexture();
 
 		quad.clear();
 		if (scene == 0)
 		{		
 			software3D.SetRenderTarget(renderTarget);
-			software3D.ClearRenderTarget(game::Colors::Black, 100.0f);
+			software3D.ClearRenderTarget(game::Colors::DarkGray, 100.0f);
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, game::FillMode::FilledColor);
 
 			currentMesh = &model;
 			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
 			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 
 			game::Camera3D tempcam;
 			tempcam.position.z = -2.0f;
 
-			mvpMat = projMat * tempcam.CreateViewMatrix();
+			mvpMat = renderTarget.projection * tempcam.CreateViewMatrix();
 
 			software3D.VertexProcessor(*currentMesh, mvpMat, quad, tempcam);
 
@@ -405,7 +404,7 @@ public:
 			cclip.right = renderTarget.size.width - 1;
 			cclip.bottom = renderTarget.size.height - 1;
 
-
+			software3D.SetTexture(currentMesh->texture);
 			for (uint32_t c = 0; c < 1; c++)
 			{
 				clippedTris[c].clear();
@@ -425,15 +424,15 @@ public:
 			// Reset what we changed
 			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 			software3D.SetRenderTargetDefault();
+			plane.SetTexture(renderTarget);
 			currentMesh = &plane;
-			software3D.SetTexture(renderTarget);
-			//clippedTris[0].clear();
+
 			quad.clear();
 		}
 		if (scene == 2)
 		{
-			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
 			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
 		}
 		
@@ -442,7 +441,7 @@ public:
 		software3D.VertexProcessor(*currentMesh, mvpMat, quad, camera);
 
 
-
+		software3D.SetTexture(currentMesh->texture);
 		uint64_t fenceCount = 0;
 		for (uint32_t c = 0; c < numclips; c++)
 		{
@@ -461,46 +460,46 @@ public:
 		}
 		software3D.Fence(fenceCount);
 
-		uint64_t num2 = currentMesh->tris.size();
-		for (uint32_t i2 = 0; i2 < num2; i2++)
-		{
-			game::Vector3f norm;
-			//for (int v = 0; v < 1; v++)
-			int v = 0;
-			{
-				game::Vector3f point = currentMesh->tris[i2].vertices[0];
-				point += currentMesh->tris[i2].vertices[1];
-				point += currentMesh->tris[i2].vertices[2];
-				point /= 3.0f;
+		//uint64_t num2 = currentMesh->tris.size();
+		//for (uint32_t i2 = 0; i2 < num2; i2++)
+		//{
+		//	game::Vector3f norm;
+		//	//for (int v = 0; v < 1; v++)
+		//	int v = 0;
+		//	{
+		//		game::Vector3f point = currentMesh->tris[i2].vertices[0];
+		//		point += currentMesh->tris[i2].vertices[1];
+		//		point += currentMesh->tris[i2].vertices[2];
+		//		point /= 3.0f;
 
-				norm = point + (currentMesh->tris[i2].faceNormal * 0.5f);
-				norm = norm * mvpMat;
-				if (norm.z < 0) norm.z = 0.0f;
-				if (norm.w < 0) norm.w = 0.0f;
-				norm = norm / norm.w;
-				norm.x += 1.0f;
-				norm.y += 1.0f;
-				norm.x *= resolution.width >> 1;
-				norm.y *= resolution.height >> 1;
+		//		norm = point + (currentMesh->tris[i2].faceNormal * 0.5f);
+		//		norm = norm * mvpMat;
+		//		if (norm.z < 0) norm.z = 0.0f;
+		//		if (norm.w < 0) norm.w = 0.0f;
+		//		norm = norm / norm.w;
+		//		norm.x += 1.0f;
+		//		norm.y += 1.0f;
+		//		norm.x *= resolution.width >> 1;
+		//		norm.y *= resolution.height >> 1;
 
-				point = point * mvpMat;
-				if (point.z < 0) point.z = 0.0f;
-				if (point.w < 0) point.w = 0.0f;
-				point = point / point.w;
-				point.x += 1.0f;
-				point.y += 1.0f;
-				point.x *= resolution.width >> 1;
-				point.y *= resolution.height >> 1;
+		//		point = point * mvpMat;
+		//		//if (point.z < 0) point.z = 0.0f;
+		//		if (point.w < 0) point.w = 0.0f;
+		//		point = point / point.w;
+		//		point.x += 1.0f;
+		//		point.y += 1.0f;
+		//		point.x *= resolution.width >> 1;
+		//		point.y *= resolution.height >> 1;
 
 
-				pixelMode.LineClip(uint32_t(point.x),
-					uint32_t(point.y),
-					uint32_t(norm.x),
-					uint32_t(norm.y),
-					game::Colors::Yellow
-				);
-			}
-		}
+		//		pixelMode.LineClip(uint32_t(point.x),
+		//			uint32_t(point.y),
+		//			uint32_t(norm.x),
+		//			uint32_t(norm.y),
+		//			game::Colors::Yellow
+		//		);
+		//	}
+		//}
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))
@@ -524,6 +523,7 @@ public:
 				pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Yellow, 1);
 		}
 
+		maxFPS = max(maxFPS, geGetFramesPerSecond());
 		if (showText)
 		{
 			game::Pointi m = pixelMode.GetScaledMousePosition();
@@ -537,7 +537,7 @@ public:
 
 
 			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
-			maxFPS = max(maxFPS, geGetFramesPerSecond());
+			
 			pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Yellow, 1);
 			std::stringstream ss;
 			ss << "Fill Mode: " << state;

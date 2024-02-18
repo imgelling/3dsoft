@@ -130,7 +130,7 @@ namespace game
 	{
 		uint32_t* data = nullptr;
 		Pointi size;
-		Pointf oneOverSize;
+		//Pointf oneOverSize;
 	};
 
 	struct RenderTarget
@@ -140,15 +140,47 @@ namespace game
 		Pointi size;
 		Pointi halfSize;
 		uint32_t totalBufferSize = 0;
+		Matrix4x4f projection;
 	};
 
 	struct Mesh
 	{
 		std::vector<Triangle> tris;
+		Texture texture;
 		Matrix4x4f model;
 		Matrix4x4f translate;
 		Matrix4x4f rotation;
 		Matrix4x4f scale;
+		bool SetTexture(const Texture& inTexture) noexcept
+		{
+			if (texture.data == nullptr)
+			{
+				return false;
+			}
+			texture = inTexture;
+			return true;
+		}
+		bool SetTexture(const RenderTarget& target) noexcept
+		{
+			if (target.colorBuffer == nullptr)
+			{
+				return false;
+			}
+			if (target.depthBuffer == nullptr)
+			{
+				return false;
+			}
+			if (!target.size.width || !target.size.height)
+			{
+				return false;
+			}
+			texture.data = target.colorBuffer;
+			texture.size.width = target.size.width;
+			texture.size.height = target.size.height;
+			//texture.oneOverSize.width = 1.0f / (float_t)target.size.width;
+			//texture.oneOverSize.height = 1.0f / (float_t)target.size.height;
+			return true;
+		}
 		inline void SetTranslation(const float_t x, const float_t y, const float_t z) noexcept
 		{
 			translate.SetTranslation(x, y, z);
@@ -196,13 +228,12 @@ namespace game
 			const EdgeEquation& e0,
 			const EdgeEquation& e1,
 			const EdgeEquation& e2,
-			float_t area)
+			const float_t area)
 		{
-			float_t factor = 1.0f / area;
 
-			a = factor * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
-			b = factor * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
-			c = factor * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
+			a = area * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
+			b = area * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
+			c = area * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
 		}
 
 		// Evaluate the parameter equation for the given point.

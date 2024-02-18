@@ -476,12 +476,12 @@ namespace game
 		return -1; // I added for all return paths warning
 	}
 
-	inline void PerspectiveDivide(Triangle& triangle)
-	{
-		triangle.vertices[0] /= triangle.vertices[0].w;
-		triangle.vertices[1] /= triangle.vertices[1].w;
-		triangle.vertices[2] /= triangle.vertices[2].w;
-	}
+	//inline void PerspectiveDivide(Triangle& triangle)
+	//{
+	//	triangle.vertices[0] /= triangle.vertices[0].w;
+	//	triangle.vertices[1] /= triangle.vertices[1].w;
+	//	triangle.vertices[2] /= triangle.vertices[2].w;
+	//}
 
 	inline void ScaleToScreen(Triangle& triangle, const Pointi& bufferSize) noexcept
 	{
