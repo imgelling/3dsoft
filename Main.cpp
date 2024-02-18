@@ -1,7 +1,7 @@
 //#define GAME_SUPPORT_OPENGL
 //#define GAME_SUPPORT_DIRECTX9
 //#define GAME_SUPPORT_DIRECTX10
-#define GAME_SUPPORT_DIRECTX12
+#define GAME_SUPPORT_DIRECTX11
 //#define GAME_SUPPORT_DIRECTX12
 
 #include "game.h"
@@ -29,11 +29,7 @@ public:
 	game::Mesh oneKTris;
 	game::Mesh* currentMesh;
 
-	// Triangles to be rendered
-	std::vector<game::Triangle> quad;
-
-	// 
-	game::Texture currentTexture;
+	std::vector<game::Triangle> trianglesToRender;
 	game::RenderTarget renderTarget;
 
 
@@ -42,7 +38,7 @@ public:
 	uint32_t scene;
 
 	game::FillMode state = game::FillMode::FilledColor;
-	game::Pointi resolution = { 1280, 720 }; //2560, 1440 };
+	game::Pointi resolution = { 1280 >> 1, 720 >> 1 }; //2560, 1440 };
 	bool showText;
 
 	Game() : game::Engine()
@@ -91,7 +87,7 @@ public:
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
-		attributes.RenderingAPI = game::RenderAPI::DirectX12;
+		attributes.RenderingAPI = game::RenderAPI::DirectX11;
 		attributes.DebugMode = true;
 		geSetAttributes(attributes);
 
@@ -240,7 +236,7 @@ public:
 		//game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
-		quad.reserve(1000);
+		trianglesToRender.reserve(1000);
 
 		camera.position.z = -2.0f;
 
@@ -249,7 +245,6 @@ public:
 
 	void Shutdown()
 	{
-		software3D.DeleteTexture(currentTexture);
 		software3D.DeleteRenderTarget(renderTarget);
 	}
 
@@ -380,7 +375,7 @@ public:
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
-		quad.clear();
+		trianglesToRender.clear();
 		if (scene == 0)
 		{		
 			software3D.SetRenderTarget(renderTarget);
@@ -397,7 +392,7 @@ public:
 
 			mvpMat = renderTarget.projection * tempcam.CreateViewMatrix();
 
-			software3D.VertexProcessor(*currentMesh, mvpMat, quad, tempcam);
+			software3D.VertexProcessor(*currentMesh, mvpMat, trianglesToRender, tempcam);
 
 			uint64_t fenceCount = 0;
 			game::Recti cclip;
@@ -408,7 +403,7 @@ public:
 			for (uint32_t c = 0; c < 1; c++)
 			{
 				clippedTris[c].clear();
-				software3D.ScreenClip(quad, cclip, clippedTris[c]);
+				software3D.ScreenClip(trianglesToRender, cclip, clippedTris[c]);
 				if (!clippedTris[c].size()) continue;
 				std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
 					{
@@ -427,7 +422,7 @@ public:
 			plane.SetTexture(renderTarget);
 			currentMesh = &plane;
 
-			quad.clear();
+			trianglesToRender.clear();
 		}
 		if (scene == 2)
 		{
@@ -438,7 +433,7 @@ public:
 		
 		mvpMat = projMat * camera.CreateViewMatrix();
 
-		software3D.VertexProcessor(*currentMesh, mvpMat, quad, camera);
+		software3D.VertexProcessor(*currentMesh, mvpMat, trianglesToRender, camera);
 
 
 		software3D.SetTexture(currentMesh->texture);
@@ -446,7 +441,7 @@ public:
 		for (uint32_t c = 0; c < numclips; c++)
 		{
 			clippedTris[c].clear();
-			software3D.ScreenClip(quad, clip[c], clippedTris[c]);
+			software3D.ScreenClip(trianglesToRender, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
 			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
 				{
