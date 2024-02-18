@@ -956,7 +956,6 @@ namespace game
 	inline void Software3D::VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera)
 	{
 		mvp = mvp * mesh.CreateModelMatrix();
-		//game::Triangle backFaceTestTri;
 		game::Triangle workingTriangle;
 
 
@@ -970,7 +969,7 @@ namespace game
 		{
 			workingTriangle = mesh.tris[i];
 
-			// Backface cull before clip some maybe artifacts if scaling, but I think it is just the scaling changing the point.
+			// Backface cull before clip, there ARE artifacts when scaling non uniformly or if scale is negative
 			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
 			cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
 			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)

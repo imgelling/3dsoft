@@ -96,7 +96,7 @@ public:
 
 	void LoadContent()
 	{
-		if (!pixelMode.Initialize(resolution))// 640, 360 }))
+		if (!pixelMode.Initialize(resolution))
 		{
 			geLogLastError();
 		}
