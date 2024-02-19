@@ -311,3 +311,52 @@ if (overlaps) {
 //	}
 //
 //}
+
+// render target
+		//if (scene == 0)
+		//{		
+		//	software3D.SetRenderTarget(renderTarget);
+		//	software3D.ClearRenderTarget(game::Colors::DarkGray, 100.0f);
+		//	software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, game::FillMode::FilledColor);
+
+		//	currentMesh = &model;
+		//	currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
+		//	currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
+		//	//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+
+		//	game::Camera3D tempcam;
+		//	tempcam.position.z = -2.0f;
+
+		//	tempcam.CreateViewMatrix();
+		//	mvpMat = renderTarget.projection * tempcam.view;
+
+		//	software3D.VertexProcessor(*currentMesh, mvpMat, trianglesToRender, tempcam);
+
+		//	uint64_t fenceCount = 0;
+		//	game::Recti cclip;
+		//	cclip.right = renderTarget.size.width - 1;
+		//	cclip.bottom = renderTarget.size.height - 1;
+
+		//	software3D.SetTexture(currentMesh->texture);
+
+		//		clippedTris[0].clear();
+		//		software3D.ScreenClip(trianglesToRender, cclip, clippedTris[0]);
+		//		//if (!clippedTris[c].size()) continue;
+		//		std::sort(clippedTris[0].begin(), clippedTris[0].end(), [](const game::Triangle& a, const game::Triangle& b)
+		//			{
+		//				float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+		//				float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+		//				return az < bz;
+		//			});
+		//		software3D.Render(clippedTris[0], cclip);
+		//	fenceCount++;
+		//	software3D.Fence(fenceCount);
+
+		//	// Reset what we changed
+		//	software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
+		//	software3D.SetRenderTargetDefault();
+		//	plane.SetTexture(renderTarget);
+		//	currentMesh = &plane;
+
+		//	trianglesToRender.clear();
+		//}

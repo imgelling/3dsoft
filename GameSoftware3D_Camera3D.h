@@ -17,9 +17,11 @@ namespace game
 		Vector3f right;
 		Vector3f up;
 		Matrix4x4f view;
+		Matrix4x4f lookAt;
 		Camera3D();
 		Camera3D(const Vector3f& inPosition, const Vector3f& inRotation);
-		Matrix4x4f CreateViewMatrix() noexcept;
+		void GenerateLookAtMatrix(Vector3f& point) noexcept;
+		void GenerateViewMatrix() noexcept;
 		//float yaw, pitch, roll;
 		Matrix4x4f rotateM(const float ang, const Vector3f& axis) noexcept;
 		void SetRotation(const float x, const float y, const float z) noexcept;
@@ -63,23 +65,17 @@ namespace game
 		if (x)
 		{
 			rotation.x += x;
-			//pitch += x;
 			// limits over rotaion
 			rotation.x = min(rotation.x, 3.1415f / 2.0f);
 			rotation.x = max(rotation.x, -3.1415f / 2.0f);
-			//pitch = min(pitch, 3.1415f / 2.0f);
-			//pitch = max(pitch, -3.1415f / 2.0f);
 		}
 		else if (y)
 		{
 			rotation.y += y;
-			//yaw += y;
 		}
 		else if (z)
 		{
-			// nothing yet
 			rotation.z += z;
-			//roll += z;
 		}
 
 		forward.x = -cos(rotation.y) * -cos(rotation.x);
@@ -87,7 +83,6 @@ namespace game
 		forward.z = sin(rotation.y) * -cos(rotation.x);
 		forward.Normalize();
 
-		//Vector3f newUp(0.0f, 1.0f, 0.0f);
 		right = defaultUp.Cross(forward);
 		right.Normalize();
 
@@ -95,7 +90,7 @@ namespace game
 		up.Normalize();
 	}
 
-	inline Matrix4x4f Camera3D::CreateViewMatrix() noexcept
+	inline void Camera3D::GenerateViewMatrix() noexcept
 	{
 		view.SetIdentity();
 		view.m[0] = right.x;
@@ -110,25 +105,53 @@ namespace game
 		view.m[6] = forward.y;
 		view.m[10] = forward.z;
 
-		//Matrix4x4f r;// = rotateM(roll, forward);
-
-		//view = view * r;
-
 		Matrix4x4f ct;
 		ct.SetTranslation(-position.x, -position.y, -position.z);
 		view = view * ct;
-
-		return view;
 	}
+
+	inline void Camera3D::GenerateLookAtMatrix(Vector3f& point) noexcept
+	{
+		lookAt.SetIdentity();
+		Vector3f f = point - position;
+		//forward = point - position;
+		f.Normalize();
+		//forward.Normalize();
+		Vector3f r = defaultUp.Cross(f);
+		//right = defaultUp.Cross(forward);
+		r.Normalize();
+		//right.Normalize();
+		Vector3f u = f.Cross(r);
+		//up = (forward.Cross(right));
+		//up.Normalize();
+		u.Normalize();
+
+		lookAt.m[0] = r.x;
+		lookAt.m[4] = r.y;
+		lookAt.m[8] = r.z;
+
+		lookAt.m[1] = u.x;
+		lookAt.m[5] = u.y;
+		lookAt.m[9] = u.z;
+
+		lookAt.m[2] = f.x;
+		lookAt.m[6] = f.y;
+		lookAt.m[10] = f.z;
+
+		Matrix4x4f ct;
+		ct.SetTranslation(-position.x, -position.y, -position.z);
+		lookAt = lookAt * ct;
+	}
+
+
 
 	inline Camera3D::Camera3D()
 	{
-		rotation.y = -3.14159f / 2.0f; // y is 90 degrees off
 		position = { 0.0f,0.0f,0.0f };
+		rotation = { 0.0f,0.0f,0.0f };
 		forward = defaultForward;
 		up = defaultUp;
 		right = defaultRight;
-		SetRotation(0, 0, 0);
 	}
 
 	inline Camera3D::Camera3D(const Vector3f& inPosition, const Vector3f& inRotation)

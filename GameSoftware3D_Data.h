@@ -151,6 +151,7 @@ namespace game
 		Matrix4x4f translate;
 		Matrix4x4f rotation;
 		Matrix4x4f scale;
+		Vector3f centerPoint;
 		bool SetTexture(const Texture& inTexture) noexcept
 		{
 			if (texture.data == nullptr)
@@ -208,10 +209,10 @@ namespace game
 			}
 			rotation = rotZ * rotY * rotX;
 		}
-		inline Matrix4x4f CreateModelMatrix() noexcept
+		inline void GenerateModelMatrix() noexcept
 		{
 			model.SetIdentity();
-			return model = translate * rotation * scale;
+			model = translate * rotation * scale;
 		}
 	};
 

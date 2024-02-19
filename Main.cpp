@@ -27,7 +27,7 @@ public:
 	game::Mesh plane;
 	game::Mesh model;
 	game::Mesh oneKTris;
-	game::Mesh* currentMesh;
+	//game::Mesh* currentMesh;
 
 	std::vector<game::Triangle> trianglesToRender;
 	game::RenderTarget renderTarget;
@@ -35,18 +35,16 @@ public:
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
-	uint32_t scene;
+
 
 	game::FillMode state = game::FillMode::FilledColor;
-	game::Pointi resolution = { 1280, 720 }; //2560, 1440 };
+	game::Pointi resolution = { 1280, 720 };
 	bool showText;
 
 	Game() : game::Engine()
 	{
 		maxFPS = 0;
-		scene = 2;
 		showText = true;
-		currentMesh = nullptr;
 	}
 
 	uint32_t numclips = 16;
@@ -109,27 +107,25 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/arena.obj", model))
+		if (!LoadObj("Content/character-ghost.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
-
-		ConvertBlenderToThis(model);
 
 		if (!software3D.CreateRenderTarget(1280 >> 3, 720 >> 3, renderTarget))
 		{
 			std::cout << "Could not create render target\n";
 		}
 
-		//game::ImageLoader imageloader;
-		//uint32_t t = 0;
-		//uint32_t texw = 0;
-		//uint32_t texh = 0;
-		//uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
-		//model.texture.data = new uint32_t[texw * texh];
-		//memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
-		//model.texture.size.width = texw;
-		//model.texture.size.height = texh;
+		game::ImageLoader imageloader;
+		uint32_t t = 0;
+		uint32_t texw = 0;
+		uint32_t texh = 0;
+		uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
+		model.texture.data = new uint32_t[texw * texh];
+		memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
+		model.texture.size.width = texw;
+		model.texture.size.height = texh;
 		
 
 		game::Random rnd;
@@ -240,7 +236,7 @@ public:
 
 		camera.position.z = -2.0f;
 
-		currentMesh = &model;
+		//currentMesh = &model;
 	}
 
 	void Shutdown()
@@ -274,24 +270,6 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 0);
-		}
-
-		if (geKeyboard.WasKeyPressed(geK_1))
-		{
-			scene = 0;
-			currentMesh = &plane;
-		}
-
-		if (geKeyboard.WasKeyPressed(geK_2))
-		{
-			scene = 1;
-			currentMesh = &oneKTris;
-		}
-
-		if (geKeyboard.WasKeyPressed(geK_3))
-		{
-			scene = 2;
-			currentMesh = &model;
 		}
 
 		float_t speed = 5.0f * msElapsed / 1000.0f;
@@ -364,79 +342,37 @@ public:
 
 	void Render(const float_t msElapsed)
 	{
-		static float_t rotation = 0.0f;
-		static float_t pos = 0.0f;
+		//static float_t rotation = 0.0f;
+		//static float_t pos = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
-		pos += 1 * (msElapsed / 1000.0f);
+		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		//pos += 1 * (msElapsed / 1000.0f);
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
-		trianglesToRender.clear();
-		if (scene == 0)
-		{		
-			software3D.SetRenderTarget(renderTarget);
-			software3D.ClearRenderTarget(game::Colors::DarkGray, 100.0f);
-			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, game::FillMode::FilledColor);
+		trianglesToRender.clear();		
 
-			currentMesh = &model;
-			currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
+		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
+		plane.SetTranslation(0.0f, 0.0f, 0.0f);
+		plane.SetScale(50.0f, 50.0f, 50.0f);
 
-			game::Camera3D tempcam;
-			tempcam.position.z = -2.0f;
-
-			mvpMat = renderTarget.projection * tempcam.CreateViewMatrix();
-
-			software3D.VertexProcessor(*currentMesh, mvpMat, trianglesToRender, tempcam);
-
-			uint64_t fenceCount = 0;
-			game::Recti cclip;
-			cclip.right = renderTarget.size.width - 1;
-			cclip.bottom = renderTarget.size.height - 1;
-
-			software3D.SetTexture(currentMesh->texture);
-			for (uint32_t c = 0; c < 1; c++)
-			{
-				clippedTris[c].clear();
-				software3D.ScreenClip(trianglesToRender, cclip, clippedTris[c]);
-				if (!clippedTris[c].size()) continue;
-				std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
-					{
-						float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-						float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-						return az < bz;
-					});
-				software3D.Render(clippedTris[c], cclip);
-				fenceCount++;
-			}
-			software3D.Fence(fenceCount);
-
-			// Reset what we changed
-			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
-			software3D.SetRenderTargetDefault();
-			plane.SetTexture(renderTarget);
-			currentMesh = &plane;
-
-			trianglesToRender.clear();
-		}
-		if (scene == 2)
-		{
-			//currentMesh->SetTranslation(cos(pos), sin(pos), cos(pos));
-			//currentMesh->SetRotation(rotation, -rotation, rotation * 0.25f);
-			//currentMesh->SetScale(abs(cos(pos)) + 0.5f, abs(cos(-pos)) + 0.5f, abs(cos(pos * 0.5f)) + 0.5f);
-		}
+		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		model.SetTranslation(0.0f, 0.0f, 0.0f);
+		model.GenerateModelMatrix();
 		
-		mvpMat = projMat * camera.CreateViewMatrix();
+		game::Vector3f center(model.centerPoint);
+		center = center * model.model;
+		camera.GenerateLookAtMatrix(center);
+		mvpMat = projMat * camera.lookAt;
 
-		software3D.VertexProcessor(*currentMesh, mvpMat, trianglesToRender, camera);
+
+		software3D.VertexProcessor(plane, mvpMat, trianglesToRender, camera);
 
 
-		software3D.SetTexture(currentMesh->texture);
+		software3D.SetTexture(plane.texture);
 		uint64_t fenceCount = 0;
 		for (uint32_t c = 0; c < numclips; c++)
 		{
@@ -444,6 +380,28 @@ public:
 			software3D.ScreenClip(trianglesToRender, clip[c], clippedTris[c]);
 			if (!clippedTris[c].size()) continue;
 			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
+				{
+					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+					return az < bz;
+				});
+			//pixelMode.Rect(clip[c], game::Colors::Yellow);
+			software3D.Render(clippedTris[c], clip[c]);
+			fenceCount++;
+		}
+		software3D.Fence(fenceCount);
+		trianglesToRender.clear();
+
+
+		software3D.VertexProcessor(model, mvpMat, trianglesToRender, camera);
+		software3D.SetTexture(model.texture);
+		fenceCount = 0;
+		for (uint32_t c = 0; c < numclips; c++)
+		{
+			clippedTris[c].clear();
+			software3D.ScreenClip(trianglesToRender, clip[c], clippedTris[c]);
+			if (!clippedTris[c].size()) continue;
+			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
 				{
 					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
 					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
@@ -550,26 +508,7 @@ public:
 		}
 	}
 
-	void ConvertBlenderToThis(game::Mesh& mesh)
-	{
-		uint32_t meshSize = (uint32_t)mesh.tris.size();
-		for (uint32_t tri = 0; tri < meshSize; tri++)
-		{
-			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
-			std::swap(mesh.tris[tri].vertices[1].y, mesh.tris[tri].vertices[1].z);
-			std::swap(mesh.tris[tri].vertices[2].y, mesh.tris[tri].vertices[2].z);
 
-			std::swap(mesh.tris[tri].normals[0].y, mesh.tris[tri].normals[0].z);
-			std::swap(mesh.tris[tri].normals[1].y, mesh.tris[tri].normals[1].z);
-			std::swap(mesh.tris[tri].normals[2].y, mesh.tris[tri].normals[2].z);
-
-			std::swap(mesh.tris[tri].faceNormal.y, mesh.tris[tri].faceNormal.z);
-
-			mesh.tris[tri].uvs[0].v = 1.0f - mesh.tris[tri].uvs[0].v;
-			mesh.tris[tri].uvs[1].v = 1.0f - mesh.tris[tri].uvs[1].v;
-			mesh.tris[tri].uvs[2].v = 1.0f - mesh.tris[tri].uvs[2].v;
-		}
-	}
 
 };
 

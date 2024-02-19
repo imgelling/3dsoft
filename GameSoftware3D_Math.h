@@ -244,28 +244,28 @@ namespace game
 		return ret;
 	}
 
-	inline Triangle Project(const Triangle& triangle, const Projection& proj) noexcept
-	{
-		Triangle ret(triangle);
+	//inline Triangle Project(const Triangle& triangle, const Projection& proj) noexcept
+	//{
+	//	Triangle ret(triangle);
 
-		ret.vertices[0].x = triangle.vertices[0].x * proj.a;
-		ret.vertices[1].x = triangle.vertices[1].x * proj.a;
-		ret.vertices[2].x = triangle.vertices[2].x * proj.a;
+	//	ret.vertices[0].x = triangle.vertices[0].x * proj.a;
+	//	ret.vertices[1].x = triangle.vertices[1].x * proj.a;
+	//	ret.vertices[2].x = triangle.vertices[2].x * proj.a;
 
-		ret.vertices[0].y = triangle.vertices[0].y * proj.b;
-		ret.vertices[1].y = triangle.vertices[1].y * proj.b;
-		ret.vertices[2].y = triangle.vertices[2].y * proj.b;
+	//	ret.vertices[0].y = triangle.vertices[0].y * proj.b;
+	//	ret.vertices[1].y = triangle.vertices[1].y * proj.b;
+	//	ret.vertices[2].y = triangle.vertices[2].y * proj.b;
 
-		ret.vertices[0].z = (triangle.vertices[0].z * proj.c) + (triangle.vertices[0].w * proj.e);
-		ret.vertices[1].z = (triangle.vertices[1].z * proj.c) + (triangle.vertices[1].w * proj.e);
-		ret.vertices[2].z = (triangle.vertices[2].z * proj.c) + (triangle.vertices[2].w * proj.e);
+	//	ret.vertices[0].z = (triangle.vertices[0].z * proj.c) + (triangle.vertices[0].w * proj.e);
+	//	ret.vertices[1].z = (triangle.vertices[1].z * proj.c) + (triangle.vertices[1].w * proj.e);
+	//	ret.vertices[2].z = (triangle.vertices[2].z * proj.c) + (triangle.vertices[2].w * proj.e);
 
-		ret.vertices[0].w = triangle.vertices[0].z;
-		ret.vertices[1].w = triangle.vertices[1].z;
-		ret.vertices[2].w = triangle.vertices[2].z;
+	//	ret.vertices[0].w = triangle.vertices[0].z;
+	//	ret.vertices[1].w = triangle.vertices[1].z;
+	//	ret.vertices[2].w = triangle.vertices[2].z;
 
-		return ret;
-	}
+	//	return ret;
+	//}
 
 
 	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear

@@ -45,7 +45,7 @@ namespace game
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
 
-		void VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera);
+		void VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
 
 		float_t* depthBuffer;
 		float_t* clearDepthBuffer[10];
@@ -691,10 +691,9 @@ namespace game
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;
 		}
-		//fence++;
 	}
 
-	// clipping  
+	// Screen clipping and some precalculations 
 	inline void Software3D::ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept
 	{
 		out.clear();
@@ -759,6 +758,26 @@ namespace game
 		}
 	}
 
+	void ConvertBlenderToThis(game::Mesh& mesh)
+	{
+		uint32_t meshSize = (uint32_t)mesh.tris.size();
+		for (uint32_t tri = 0; tri < meshSize; tri++)
+		{
+			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
+			std::swap(mesh.tris[tri].vertices[1].y, mesh.tris[tri].vertices[1].z);
+			std::swap(mesh.tris[tri].vertices[2].y, mesh.tris[tri].vertices[2].z);
+
+			std::swap(mesh.tris[tri].normals[0].y, mesh.tris[tri].normals[0].z);
+			std::swap(mesh.tris[tri].normals[1].y, mesh.tris[tri].normals[1].z);
+			std::swap(mesh.tris[tri].normals[2].y, mesh.tris[tri].normals[2].z);
+
+			std::swap(mesh.tris[tri].faceNormal.y, mesh.tris[tri].faceNormal.z);
+
+			mesh.tris[tri].uvs[0].v = 1.0f - mesh.tris[tri].uvs[0].v;
+			mesh.tris[tri].uvs[1].v = 1.0f - mesh.tris[tri].uvs[1].v;
+			mesh.tris[tri].uvs[2].v = 1.0f - mesh.tris[tri].uvs[2].v;
+		}
+	}
 
 	bool LoadObj(std::string file, game::Mesh& mesh)
 	{
@@ -940,12 +959,17 @@ namespace game
 					mesh.tris[i].normals[2].Normalize();
 				}
 			}
+			ConvertBlenderToThis(mesh);
 			for (int i = 0; i < meshSize; i++)
 			{
 				mesh.tris[i].color[0] = game::Colors::White;
 				mesh.tris[i].color[1] = game::Colors::White;
 				mesh.tris[i].color[2] = game::Colors::White;
+				mesh.centerPoint += mesh.tris[i].vertices[0];
+				mesh.centerPoint += mesh.tris[i].vertices[1];
+				mesh.centerPoint += mesh.tris[i].vertices[2];
 			}
+			mesh.centerPoint = mesh.centerPoint / ((float_t)mesh.tris.size() * 3.0f);	
 
 			return true;
 		}
@@ -953,14 +977,16 @@ namespace game
 
 	}
 
-	inline void Software3D::VertexProcessor(game::Mesh& mesh, game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera)
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
 	{
-		mvp = mvp * mesh.CreateModelMatrix();
+		mesh.GenerateModelMatrix();
+		Matrix4x4f mvpCopy(mvp);
+		mvpCopy = mvpCopy * mesh.model;
 		game::Triangle workingTriangle;
 
 
 		game::Triangle newClippedTris[2];
-		uint32_t numtris = 0;
+		uint32_t numberTrisGenerated = 0;
 		uint64_t meshSize = mesh.tris.size();
 		//int culled = 0;
 
@@ -978,9 +1004,9 @@ namespace game
 				continue;
 			}
 
-			workingTriangle.vertices[0] = (mesh.tris[i].vertices[0] * mvp);
-			workingTriangle.vertices[1] = (mesh.tris[i].vertices[1] * mvp);
-			workingTriangle.vertices[2] = (mesh.tris[i].vertices[2] * mvp);
+			workingTriangle.vertices[0] = (mesh.tris[i].vertices[0] * mvpCopy);
+			workingTriangle.vertices[1] = (mesh.tris[i].vertices[1] * mvpCopy);
+			workingTriangle.vertices[2] = (mesh.tris[i].vertices[2] * mvpCopy);
 
 			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
 			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
@@ -990,8 +1016,8 @@ namespace game
 				(workingTriangle.vertices[1].z < 0.0) ||
 				(workingTriangle.vertices[2].z < 0.0))
 			{
-				numtris = ClipAgainstNearZ(workingTriangle, newClippedTris[0], newClippedTris[1]);
-				for (uint32_t tri = 0; tri < numtris; ++tri)
+				numberTrisGenerated = ClipAgainstNearZ(workingTriangle, newClippedTris[0], newClippedTris[1]);
+				for (uint32_t tri = 0; tri < numberTrisGenerated; ++tri)
 				{
 					//PerspectiveDivide(newClippedTris[tri]);
 					newClippedTris[tri].vertices[0] /= newClippedTris[tri].vertices[0].w;
