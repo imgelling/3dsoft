@@ -107,7 +107,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/character-ghost.obj", model))
+		if (!LoadObj("Content/coney.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -294,7 +294,7 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camera.SetRotation(0.0f, (mouse.x / 5.0f) * (3.14159f / 180.0f), 0.0f);
+				camera.SetRotation(0.0f, mouse.x * (3.14159f / 180.0f), 0.0f);
 			}
 		}
 		// X rotation
@@ -302,7 +302,7 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camera.SetRotation(-(mouse.y/5.0f) * (3.14159f / 180.0f), 0.0f, 0.0f);
+				camera.SetRotation(-mouse.y * (3.14159f / 180.0f), 0.0f, 0.0f);
 			}
 		}
 
@@ -332,8 +332,8 @@ public:
 		plane.SetTranslation(0.0f, 0.0f, 0.0f);
 		plane.SetScale(50.0f, 50.0f, 50.0f);
 
-		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f,0.5f,0.0f);
+		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		model.SetTranslation(0.0f,0.0f,0.0f);
 		model.GenerateModelMatrix();
 		
 		game::Vector3f center(model.centerPoint);

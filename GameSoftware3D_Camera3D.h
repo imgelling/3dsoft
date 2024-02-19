@@ -64,28 +64,30 @@ namespace game
 
 		if (x)
 		{
-			rotation.x = x;
+			rotation.x += x;
 			// limits over rotaion
 			rotation.x = min(rotation.x, 3.1415f / 2.0f);
 			rotation.x = max(rotation.x, -3.1415f / 2.0f);
 		}
 		else if (y)
 		{
-			rotation.y = y;
+			rotation.y += y;
 		}
 		else if (z)
 		{
 			rotation.z += z;
 		}
 
-		Matrix4x4f rotx;
-		Matrix4x4f roty;
-		rotx.SetRotationX(rotation.x);
-		roty.SetRotationY(rotation.y);
-		forward = forward * roty * rotx;
-		//forward.x = -cos(rotation.y) * -cos(rotation.x);
-		//forward.y = -sin(rotation.x);
-		//forward.z = sin(rotation.y) * -cos(rotation.x);
+		//Matrix4x4f rotx;
+		//Matrix4x4f roty;
+		//rotx.SetRotationX(x);
+		//roty.SetRotationY(y);
+		//forward = forward * roty * rotx;
+		forward.x = -cos(rotation.y) * -cos(rotation.x);
+		forward.y = -sin(rotation.x);
+		forward.z = sin(rotation.y) * -cos(rotation.x);
+
+
 		forward.Normalize();
 
 		right = defaultUp.Cross(forward);
@@ -157,7 +159,7 @@ namespace game
 	inline Camera3D::Camera3D()
 	{
 		position = { 0.0f,0.0f,0.0f };
-		rotation = { 0.0f,0.0f,0.0f };
+		rotation = { 0.0f,-3.14159f / 2.0f,0.0f };
 		forward = defaultForward;
 		up = defaultUp;
 		right = defaultRight;
