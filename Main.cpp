@@ -201,33 +201,6 @@ public:
 		plane.tris.emplace_back(bottomRightTri);
 
 
-		// Generate a 1000 tris
-		for (uint32_t i = 0; i < 1000; i++)
-		{
-			game::Triangle temp(topLeftTri);
-			float_t tz = rnd.RndRange(0, 1000) / (float_t)rnd.RndRange(1, 10);
-			for (uint32_t v = 0; v < 3; v++)
-			{
-				temp.vertices[v].x = (float_t)rnd.RndRange(0, resolution.x);
-				temp.vertices[v].x = temp.vertices[v].x * 2.0f / (float_t)resolution.x - 1.0f;
-				temp.vertices[v].y = (float_t)rnd.RndRange(0, resolution.y);
-				temp.vertices[v].y = temp.vertices[v].y * 2.0f / (float_t)resolution.y - 1.0f;
-				temp.vertices[v].z = 1000.0f / i;
-			}
-
-			game::EdgeEquation e0(temp.vertices[1], temp.vertices[2]);
-			game::EdgeEquation e1(temp.vertices[2], temp.vertices[0]);
-			game::EdgeEquation e2(temp.vertices[0], temp.vertices[1]);
-
-			float_t area(e0.c + e1.c + e2.c);
-			// If area is negative, it means wrong winding
-			if (area < 0)
-			{
-				std::swap(temp.vertices[1], temp.vertices[2]);
-			}
-			oneKTris.tris.emplace_back(temp);
-		}
-
 		// Pre calc projection numbers
 		//game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 		// Pre calc projection matrix
@@ -321,7 +294,7 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camera.SetRotation(0.0f, mouse.x * (3.14159f / 180.0f), 0.0f);
+				camera.SetRotation(0.0f, (mouse.x / 5.0f) * (3.14159f / 180.0f), 0.0f);
 			}
 		}
 		// X rotation
@@ -329,7 +302,7 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camera.SetRotation(-mouse.y * (3.14159f / 180.0f), 0.0f, 0.0f);
+				camera.SetRotation(-(mouse.y/5.0f) * (3.14159f / 180.0f), 0.0f, 0.0f);
 			}
 		}
 
@@ -343,10 +316,10 @@ public:
 	void Render(const float_t msElapsed)
 	{
 		//static float_t rotation = 0.0f;
-		//static float_t pos = 0.0f;
+		static float_t pos = 0.0f;
 
 		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
-		//pos += 1 * (msElapsed / 1000.0f);
+		pos += 1 * (msElapsed / 1000.0f);
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
@@ -360,7 +333,7 @@ public:
 		plane.SetScale(50.0f, 50.0f, 50.0f);
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f, 0.0f, 0.0f);
+		model.SetTranslation(0.0f,0.5f,0.0f);
 		model.GenerateModelMatrix();
 		
 		game::Vector3f center(model.centerPoint);

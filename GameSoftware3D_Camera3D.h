@@ -64,23 +64,28 @@ namespace game
 
 		if (x)
 		{
-			rotation.x += x;
+			rotation.x = x;
 			// limits over rotaion
 			rotation.x = min(rotation.x, 3.1415f / 2.0f);
 			rotation.x = max(rotation.x, -3.1415f / 2.0f);
 		}
 		else if (y)
 		{
-			rotation.y += y;
+			rotation.y = y;
 		}
 		else if (z)
 		{
 			rotation.z += z;
 		}
 
-		forward.x = -cos(rotation.y) * -cos(rotation.x);
-		forward.y = -sin(rotation.x);
-		forward.z = sin(rotation.y) * -cos(rotation.x);
+		Matrix4x4f rotx;
+		Matrix4x4f roty;
+		rotx.SetRotationX(rotation.x);
+		roty.SetRotationY(rotation.y);
+		forward = forward * roty * rotx;
+		//forward.x = -cos(rotation.y) * -cos(rotation.x);
+		//forward.y = -sin(rotation.x);
+		//forward.z = sin(rotation.y) * -cos(rotation.x);
 		forward.Normalize();
 
 		right = defaultUp.Cross(forward);
@@ -138,9 +143,13 @@ namespace game
 		lookAt.m[6] = f.y;
 		lookAt.m[10] = f.z;
 
-		Matrix4x4f ct;
-		ct.SetTranslation(-position.x, -position.y, -position.z);
-		lookAt = lookAt * ct;
+		lookAt.m[12] = r.Dot(position * -1.0f);
+		lookAt.m[13] = u.Dot(position * -1.0f);
+		lookAt.m[14] = f.Dot(position * -1.0f);
+
+		//Matrix4x4f ct;
+		//ct.SetTranslation(-position.x, -position.y, -position.z);
+		//lookAt = lookAt * ct;
 	}
 
 
@@ -148,11 +157,11 @@ namespace game
 	inline Camera3D::Camera3D()
 	{
 		position = { 0.0f,0.0f,0.0f };
-		//rotation = { 0.0f,0.0f,0.0f };
+		rotation = { 0.0f,0.0f,0.0f };
 		forward = defaultForward;
 		up = defaultUp;
 		right = defaultRight;
-		SetRotation(0.0f, -3.14159 / 2.0f, 0.0f);
+		SetRotation(0, 0, 0);
 	}
 
 	inline Camera3D::Camera3D(const Vector3f& inPosition, const Vector3f& inRotation)
