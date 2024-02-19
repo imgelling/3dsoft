@@ -333,7 +333,7 @@ public:
 		plane.SetScale(50.0f, 50.0f, 50.0f);
 
 		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f,0.0f,0.0f);
+		model.SetTranslation(0.0f,0.5f,0.0f);
 		model.GenerateModelMatrix();
 		
 		game::Vector3f center(model.centerPoint);

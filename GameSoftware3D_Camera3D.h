@@ -83,9 +83,9 @@ namespace game
 		//rotx.SetRotationX(x);
 		//roty.SetRotationY(y);
 		//forward = forward * roty * rotx;
-		forward.x = -cos(rotation.y) * -cos(rotation.x);
-		forward.y = -sin(rotation.x);
-		forward.z = sin(rotation.y) * -cos(rotation.x);
+		forward.x = cos(-rotation.y) * cos(-rotation.x);
+		forward.y = sin(-rotation.x);
+		forward.z = sin(-rotation.y) * cos(-rotation.x);
 
 
 		forward.Normalize();
