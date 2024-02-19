@@ -366,7 +366,8 @@ public:
 		game::Vector3f center(model.centerPoint);
 		center = center * model.model;
 		camera.GenerateLookAtMatrix(center);
-		mvpMat = projMat * camera.lookAt;
+		camera.GenerateViewMatrix();
+		mvpMat = projMat * camera.view;
 
 
 		software3D.VertexProcessor(plane, mvpMat, trianglesToRender, camera);

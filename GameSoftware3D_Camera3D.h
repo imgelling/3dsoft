@@ -148,10 +148,11 @@ namespace game
 	inline Camera3D::Camera3D()
 	{
 		position = { 0.0f,0.0f,0.0f };
-		rotation = { 0.0f,0.0f,0.0f };
+		//rotation = { 0.0f,0.0f,0.0f };
 		forward = defaultForward;
 		up = defaultUp;
 		right = defaultRight;
+		SetRotation(0.0f, -3.14159 / 2.0f, 0.0f);
 	}
 
 	inline Camera3D::Camera3D(const Vector3f& inPosition, const Vector3f& inRotation)
