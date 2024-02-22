@@ -7,7 +7,122 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
+class ClippingRects
+{
+public:
+	uint32_t numberOfClipRects;
+	game::Recti* clips;
+	std::vector<std::vector<game::Triangle>> clippedTris;
+	ClippingRects() noexcept;
+	ClippingRects(const uint32_t inNumberOfClipRects);
+	~ClippingRects();
 
+	void SetNumberOfClipsRects(const uint32_t inNumberOfClipRects);
+	bool GenerateClips(const game::Pointi& size);
+};
+
+inline ClippingRects::ClippingRects() noexcept
+{
+	clips = nullptr;
+	numberOfClipRects = 0;
+}
+
+inline ClippingRects::ClippingRects(const uint32_t inNumberOfClipRects)
+{
+	numberOfClipRects = inNumberOfClipRects;
+	clips = new game::Recti[numberOfClipRects];
+	for (uint32_t clippedTri = 0; clippedTri < numberOfClipRects; clippedTri++)
+	{
+		std::vector<game::Triangle> newClippedTri;
+		clippedTris.emplace_back(newClippedTri);
+	}
+}
+
+inline ClippingRects::~ClippingRects()
+{
+	if (clips != nullptr)
+	{
+		delete[] clips;
+		clips = nullptr;
+	}
+	numberOfClipRects = 0;
+}
+
+inline void ClippingRects::SetNumberOfClipsRects(const uint32_t inNumberOfClipRects)
+{
+	numberOfClipRects = inNumberOfClipRects;
+	clippedTris.clear();
+	if (clips != nullptr)
+	{
+		delete[] clips;
+	}
+	clips = new game::Recti[numberOfClipRects];
+	for (uint32_t clippedTri = 0; clippedTri < numberOfClipRects; clippedTri++)
+	{
+		std::vector<game::Triangle> newClippedTri;
+		clippedTris.emplace_back(newClippedTri);
+	}
+}
+
+inline bool ClippingRects::GenerateClips(const game::Pointi& size)
+{
+	if ((!size.width) || (!size.height)) return false;
+
+	uint32_t cols = (uint32_t)sqrt(numberOfClipRects);//(int32_t)std::ceil(sqrt(numberOfClips));
+	uint32_t rows = (uint32_t)(numberOfClipRects / (float_t)cols);//(int32_t)std::ceil(numberOfClips / (float_t)cols);
+
+	uint32_t colsize = (uint32_t)std::ceil(size.width / (float_t)cols);
+	uint32_t rowsize = (uint32_t)std::ceil(size.height / (float_t)rows);
+
+	uint32_t rc = 0;
+	uint32_t cc = 0;
+	game::Recti* clips2 = clips;
+	for (uint32_t row = 0; row < rows; row++)
+	{
+		rc = 0;
+		for (uint32_t col = 0; col < cols; col++)
+		{
+			uint32_t access = row * cols + col;
+			clips2[access].left = (rc) * (colsize);
+			clips2[access].right = (clips2[access].left + colsize);
+			if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
+			clips2[access].top = cc * (rowsize);
+			clips2[access].bottom = clips2[access].top + rowsize;
+			if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
+			rc++;
+		}
+		cc++;
+	}
+	return true;
+}
+
+//void GenerateClips(const uint32_t numberOfClips, game::Recti* clips2, const game::Pointi& size)
+//{
+//	uint32_t cols = (uint32_t)sqrt(numberOfClips);//(int32_t)std::ceil(sqrt(numberOfClips));
+//	uint32_t rows = (uint32_t)(numberOfClips / (float_t)cols);//(int32_t)std::ceil(numberOfClips / (float_t)cols);
+//
+//	uint32_t colsize = (uint32_t)std::ceil(size.width / (float_t)cols);
+//	uint32_t rowsize = (uint32_t)std::ceil(size.height / (float_t)rows);
+//
+//	uint32_t rc = 0;
+//	uint32_t cc = 0;
+//	for (uint32_t row = 0; row < rows; row++)
+//	{
+//		rc = 0;
+//		for (uint32_t col = 0; col < cols; col++)
+//		{
+//			uint32_t access = row * cols + col;
+//			clips2[access].left = (rc) * (colsize);
+//			clips2[access].right = (clips2[access].left + colsize);
+//			if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
+//			clips2[access].top = cc * (rowsize);
+//			clips2[access].bottom = clips2[access].top + rowsize;
+//			if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
+//			rc++;
+//		}
+//		cc++;
+//	}
+//}
 class Game : public game::Engine
 {
 
@@ -18,8 +133,8 @@ public:
 
 
 	// 3D rendering stuff
-	game::Recti clip[16];  // in renderer
-	std::vector<game::Triangle> clippedTris[16];
+	ClippingRects clip;
+	//std::vector<game::Triangle> clippedTris[16];
 	game::Matrix4x4f projMat;
 	game::Matrix4x4f mvpMat;
 
@@ -27,7 +142,7 @@ public:
 	game::Mesh plane;
 	game::Mesh model;
 	game::Mesh oneKTris;
-	//game::Mesh* currentMesh;
+
 
 	std::vector<game::Triangle> trianglesToRender;
 	game::RenderTarget renderTarget;
@@ -47,34 +162,8 @@ public:
 		showText = true;
 	}
 
-	uint32_t numclips = 16;
-	void GenerateClips(const uint32_t numberOfClips, game::Recti * clips2, const game::Pointi& size)
-	{
-		uint32_t cols = (uint32_t)sqrt(numberOfClips);//(int32_t)std::ceil(sqrt(numberOfClips));
-		uint32_t rows = (uint32_t)(numberOfClips / (float_t)cols);//(int32_t)std::ceil(numberOfClips / (float_t)cols);
+	//uint32_t numclips = 16;
 
-		uint32_t colsize = (uint32_t)std::ceil(size.width / (float_t)cols);
-		uint32_t rowsize = (uint32_t)std::ceil(size.height / (float_t)rows);
-
-		uint32_t rc = 0;
-		uint32_t cc = 0;
-		for (uint32_t row = 0; row < rows; row++)
-		{
-			rc = 0;
-			for (uint32_t col = 0; col < cols; col++)
-			{
-				uint32_t access = row * cols + col;
-				clips2[access].left = (rc) * (colsize);
-				clips2[access].right = (clips2[access].left + colsize);
-				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
-				clips2[access].top = cc * (rowsize);
-				clips2[access].bottom = clips2[access].top + rowsize;
-				if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
-				rc++;
-			}
-			cc++;
-		}
-	}
 
 	void Initialize()
 	{
@@ -89,7 +178,9 @@ public:
 		attributes.DebugMode = true;
 		geSetAttributes(attributes);
 
-		GenerateClips(numclips, clip, resolution);
+		//GenerateClips(numclips, clip, resolution);
+		clip.SetNumberOfClipsRects(16);
+		clip.GenerateClips(resolution);
 	}
 
 	void LoadContent()
@@ -107,7 +198,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/coney.obj", model))
+		if (!LoadObj("Content/character-ghost.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -329,18 +420,18 @@ public:
 		trianglesToRender.clear();		
 
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
-		plane.SetTranslation(0.0f, 0.0f, 0.0f);
+		plane.SetTranslation(0.0f, 0.1f, 0.0f);
 		plane.SetScale(50.0f, 50.0f, 50.0f);
 
-		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f,0.5f,0.0f);
+		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		model.SetTranslation(0.0f,0.1f,0.0f);
 		model.GenerateModelMatrix();
 		
 		game::Vector3f center(model.centerPoint);
 		center = center * model.model;
 		camera.GenerateLookAtMatrix(center);
 		camera.GenerateViewMatrix();
-		mvpMat = projMat * camera.view;
+		mvpMat = projMat * camera.lookAt;
 
 
 		software3D.VertexProcessor(plane, mvpMat, trianglesToRender, camera);
@@ -348,19 +439,19 @@ public:
 
 		software3D.SetTexture(plane.texture);
 		uint64_t fenceCount = 0;
-		for (uint32_t c = 0; c < numclips; c++)
+		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
 		{
-			clippedTris[c].clear();
-			software3D.ScreenClip(trianglesToRender, clip[c], clippedTris[c]);
-			if (!clippedTris[c].size()) continue;
-			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
+			clip.clippedTris[c].clear();
+			software3D.ScreenClip(trianglesToRender, clip.clips[c], clip.clippedTris[c]);
+			if (!clip.clippedTris[c].size()) continue;
+			std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
 				{
 					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
 					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
 					return az < bz;
 				});
 			//pixelMode.Rect(clip[c], game::Colors::Yellow);
-			software3D.Render(clippedTris[c], clip[c]);
+			software3D.Render(clip.clippedTris[c], clip.clips[c]);
 			fenceCount++;
 		}
 		software3D.Fence(fenceCount);
@@ -370,19 +461,19 @@ public:
 		software3D.VertexProcessor(model, mvpMat, trianglesToRender, camera);
 		software3D.SetTexture(model.texture);
 		fenceCount = 0;
-		for (uint32_t c = 0; c < numclips; c++)
+		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
 		{
-			clippedTris[c].clear();
-			software3D.ScreenClip(trianglesToRender, clip[c], clippedTris[c]);
-			if (!clippedTris[c].size()) continue;
-			std::sort(clippedTris[c].begin(), clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
+			clip.clippedTris[c].clear();
+			software3D.ScreenClip(trianglesToRender, clip.clips[c], clip.clippedTris[c]);
+			if (!clip.clippedTris[c].size()) continue;
+			std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
 				{
 					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
 					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
 					return az < bz;
 				});
 			//pixelMode.Rect(clip[c], game::Colors::Yellow);
-			software3D.Render(clippedTris[c], clip[c]);
+			software3D.Render(clip.clippedTris[c], clip.clips[c]);
 			fenceCount++;
 		}
 		software3D.Fence(fenceCount);
