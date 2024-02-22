@@ -25,7 +25,7 @@ public:
 	// Meshes for scenes
 	game::Mesh plane;
 	game::Mesh model;
-	game::Mesh oneKTris;
+	game::Mesh torus;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -83,6 +83,11 @@ public:
 
 		// cone +z, conex +x, coney +y
 		if (!LoadObj("Content/character-ghost.obj", model))
+		{
+			std::cout << "Could not load model\n";
+		}
+
+		if (!LoadObj("Content/torus2.obj", torus))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -176,24 +181,23 @@ public:
 		plane.tris.emplace_back(bottomRightTri);
 
 
-
+		// Preset some world stuff
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
 		plane.SetScale(50.0f, 50.0f, 50.0f);
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f, 0.1f, 0.0f);
+		model.SetTranslation(0.0f, 0.0f, 0.0f);
 		model.GenerateModelMatrix();
 
-		// Pre calc projection numbers
-		//game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
+		torus.SetTranslation(0.0f, -0.1f, 0.0f);
+
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
 
 		camera.position.z = -2.0f;
 
-		//currentMesh = &model;
 	}
 
 	void Shutdown()
@@ -299,70 +303,31 @@ public:
 
 	void Render(const float_t msElapsed)
 	{
-		//static float_t rotation = 0.0f;
-		static float_t pos = 0.0f;
+		static float_t rotation = 0.0f;
+		//static float_t pos = 0.0f;
 
-		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
-		pos += 1 * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		//pos += 1 * (msElapsed / 1000.0f);
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
+
+		torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
 		
+		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		game::Vector3f center(model.centerPoint);
 		center = center * model.model;
 		camera.GenerateLookAtMatrix(center);
 		camera.GenerateViewMatrix();
-		mvpMat = projMat * camera.view;
+		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 
-
+		software3D.RenderMesh(torus, mvpMat, camera, clip);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
 
-
-
-		//uint64_t num2 = currentMesh->tris.size();
-		//for (uint32_t i2 = 0; i2 < num2; i2++)
-		//{
-		//	game::Vector3f norm;
-		//	//for (int v = 0; v < 1; v++)
-		//	int v = 0;
-		//	{
-		//		game::Vector3f point = currentMesh->tris[i2].vertices[0];
-		//		point += currentMesh->tris[i2].vertices[1];
-		//		point += currentMesh->tris[i2].vertices[2];
-		//		point /= 3.0f;
-
-		//		norm = point + (currentMesh->tris[i2].faceNormal * 0.5f);
-		//		norm = norm * mvpMat;
-		//		if (norm.z < 0) norm.z = 0.0f;
-		//		if (norm.w < 0) norm.w = 0.0f;
-		//		norm = norm / norm.w;
-		//		norm.x += 1.0f;
-		//		norm.y += 1.0f;
-		//		norm.x *= resolution.width >> 1;
-		//		norm.y *= resolution.height >> 1;
-
-		//		point = point * mvpMat;
-		//		//if (point.z < 0) point.z = 0.0f;
-		//		if (point.w < 0) point.w = 0.0f;
-		//		point = point / point.w;
-		//		point.x += 1.0f;
-		//		point.y += 1.0f;
-		//		point.x *= resolution.width >> 1;
-		//		point.y *= resolution.height >> 1;
-
-
-		//		pixelMode.LineClip(uint32_t(point.x),
-		//			uint32_t(point.y),
-		//			uint32_t(norm.x),
-		//			uint32_t(norm.y),
-		//			game::Colors::Yellow
-		//		);
-		//	}
-		//}
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))

@@ -471,7 +471,7 @@ namespace game
 
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
-
+		// 441
 		// Color parameter	
 		//Color colorAtPixel;
 		//ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -480,7 +480,7 @@ namespace game
 
 		// Depth parameter
 		float_t oneOverDepthEval(0.0f);
-		ParameterEquation depthParam(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Face normal light pre calc (directional light) can add ambient here
 		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
