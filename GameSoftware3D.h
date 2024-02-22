@@ -46,13 +46,12 @@ namespace game
 		void SetRenderTargetDefault() noexcept;
 
 		void VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
-
+		void RenderMesh(Mesh& mesh, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip);
+		std::vector<game::Triangle> trianglesToRender;
 		float_t* depthBuffer;
-		float_t* clearDepthBuffer[10];
-		RenderTarget _currentRenderTarget;
-		// temp
-		//Camera3D camera;
 	private:
+		RenderTarget _currentRenderTarget;
+		float_t* _clearDepthBuffer[10];
 		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
 		std::atomic<uint32_t> _fence;
@@ -81,11 +80,12 @@ namespace game
 		depthBuffer = nullptr;
 		_numbuffers = 5;
 		for (uint32_t i = 0; i < 10; i++)
-			clearDepthBuffer[i] = nullptr;
+			_clearDepthBuffer[i] = nullptr;
 		_FillMode = FillMode::WireFrameFilled;
 		CreateTexture(64, 64, _defaultTexture);
 		_GenerateDefaultTexture(_defaultTexture.data, 64, 64);
 		SetTexture(_defaultTexture);
+		trianglesToRender.reserve(1000);
 	}
 
 	Software3D::~Software3D()
@@ -93,15 +93,17 @@ namespace game
 		_threadPool.Stop();
 		for (uint32_t i = 0; i < _numbuffers; i++)
 		{
-			if (clearDepthBuffer[i] != nullptr)
+			if (_clearDepthBuffer[i] != nullptr)
 			{
-				delete[] clearDepthBuffer[i];
-				clearDepthBuffer[i] = nullptr;
+				delete[] _clearDepthBuffer[i];
+				_clearDepthBuffer[i] = nullptr;
 			}
 		}
 		DeleteTexture(_defaultTexture);
 		depthBuffer = nullptr;
 	}
+
+
 
 	inline bool Software3D::SetTexture(const Texture& texture) noexcept
 	{
@@ -254,8 +256,8 @@ namespace game
 		_usingRenderTarget = false;
 		_currentRenderTarget = _defaultRenderTarget;
 		_currentRenderTarget.colorBuffer = _pixelMode->videoBuffer;// = _defaultRenderTarget;
-		_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
-		depthBuffer = clearDepthBuffer[_currentDepth];
+		_currentRenderTarget.depthBuffer = _clearDepthBuffer[_currentDepth];
+		depthBuffer = _clearDepthBuffer[_currentDepth];
 	}
 
 	inline bool Software3D::CreateRenderTarget(const Pointi size, RenderTarget& target) noexcept
@@ -289,16 +291,16 @@ namespace game
 	{
 		if (_multiThreaded)
 		{
-			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
+			_threadPool.Queue(std::bind(std::fill_n<float_t*, uint32_t, float>, _clearDepthBuffer[_currentDepth], _totalBufferSize, depth));
 			_currentDepth++;
 			if (_currentDepth > _numbuffers - 1) _currentDepth = 0;
-			_currentRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
-			depthBuffer = clearDepthBuffer[_currentDepth];
+			_currentRenderTarget.depthBuffer = _clearDepthBuffer[_currentDepth];
+			depthBuffer = _clearDepthBuffer[_currentDepth];
 		}
 		else
 		{
 			std::fill_n(_currentRenderTarget.depthBuffer, _totalBufferSize, depth);
-			depthBuffer = clearDepthBuffer[_currentDepth];
+			depthBuffer = _clearDepthBuffer[_currentDepth];
 		}
 		//}
 		//else
@@ -368,13 +370,36 @@ namespace game
 	
 		for (uint32_t i = 0; i < _numbuffers; i++)
 		{
-			clearDepthBuffer[i] = new float_t[_totalBufferSize];
-			std::fill_n(clearDepthBuffer[i], _totalBufferSize, 100.0f);
+			_clearDepthBuffer[i] = new float_t[_totalBufferSize];
+			std::fill_n(_clearDepthBuffer[i], _totalBufferSize, 100.0f);
 		}
 		_currentDepth = 0;
-		_defaultRenderTarget.depthBuffer = clearDepthBuffer[_currentDepth];
+		_defaultRenderTarget.depthBuffer = _clearDepthBuffer[_currentDepth];
 		_currentRenderTarget = _defaultRenderTarget;
 		return true;
+	}
+
+	inline void Software3D::RenderMesh(Mesh& mesh, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip)
+	{
+		VertexProcessor(mesh, projection, trianglesToRender, camera);
+		SetTexture(mesh.texture);
+		uint64_t fenceCount = 0;
+		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
+		{
+			ScreenClip(trianglesToRender, clip, c);
+			if (!clip.clippedTris[c].size()) continue;
+			std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
+				{
+					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+					return az < bz;
+				});
+			//pixelMode.Rect(clip[c], game::Colors::Yellow);
+			Render(clip.clippedTris[c], clip.clips[c]);
+			fenceCount++;
+		}
+		Fence(fenceCount);
+		trianglesToRender.clear();
 	}
 
 	inline void Software3D::Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept

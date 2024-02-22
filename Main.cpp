@@ -28,7 +28,7 @@ public:
 	game::Mesh oneKTris;
 
 
-	std::vector<game::Triangle> trianglesToRender;
+	//std::vector<game::Triangle> trianglesToRender;
 	game::RenderTarget renderTarget;
 
 
@@ -176,11 +176,20 @@ public:
 		plane.tris.emplace_back(bottomRightTri);
 
 
+
+		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
+		plane.SetTranslation(0.0f, 0.1f, 0.0f);
+		plane.SetScale(50.0f, 50.0f, 50.0f);
+
+		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		model.SetTranslation(0.0f, 0.1f, 0.0f);
+		model.GenerateModelMatrix();
+
 		// Pre calc projection numbers
 		//game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projection);
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
-		trianglesToRender.reserve(1000);
+
 
 		camera.position.z = -2.0f;
 
@@ -300,67 +309,19 @@ public:
 
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
-
-		trianglesToRender.clear();		
-
-		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
-		plane.SetTranslation(0.0f, 0.1f, 0.0f);
-		plane.SetScale(50.0f, 50.0f, 50.0f);
-
-		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f,0.1f,0.0f);
-		model.GenerateModelMatrix();
 		
 		game::Vector3f center(model.centerPoint);
 		center = center * model.model;
 		camera.GenerateLookAtMatrix(center);
 		camera.GenerateViewMatrix();
-		mvpMat = projMat * camera.lookAt;
+		mvpMat = projMat * camera.view;
 
 
-		software3D.VertexProcessor(plane, mvpMat, trianglesToRender, camera);
+
+		software3D.RenderMesh(plane, mvpMat, camera, clip);
+		software3D.RenderMesh(model, mvpMat, camera, clip);
 
 
-		software3D.SetTexture(plane.texture);
-		uint64_t fenceCount = 0;
-		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
-		{
-			clip.clippedTris[c].clear();
-			software3D.ScreenClip(trianglesToRender, clip, c);// .clips[c], clip.clippedTris[c]);
-			if (!clip.clippedTris[c].size()) continue;
-			std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b) 
-				{
-					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-					return az < bz;
-				});
-			//pixelMode.Rect(clip[c], game::Colors::Yellow);
-			software3D.Render(clip.clippedTris[c], clip.clips[c]);
-			fenceCount++;
-		}
-		software3D.Fence(fenceCount);
-		trianglesToRender.clear();
-
-
-		software3D.VertexProcessor(model, mvpMat, trianglesToRender, camera);
-		software3D.SetTexture(model.texture);
-		fenceCount = 0;
-		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
-		{
-			clip.clippedTris[c].clear();
-			software3D.ScreenClip(trianglesToRender, clip, c);// .clips[c], clip.clippedTris[c]);
-			if (!clip.clippedTris[c].size()) continue;
-			std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
-				{
-					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-					return az < bz;
-				});
-			//pixelMode.Rect(clip[c], game::Colors::Yellow);
-			software3D.Render(clip.clippedTris[c], clip.clips[c]);
-			fenceCount++;
-		}
-		software3D.Fence(fenceCount);
 
 		//uint64_t num2 = currentMesh->tris.size();
 		//for (uint32_t i2 = 0; i2 < num2; i2++)
