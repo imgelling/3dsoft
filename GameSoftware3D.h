@@ -35,7 +35,7 @@ namespace game
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth(const float_t depth);
 		void ClearRenderTarget(const Color& color, const float_t depth);
-		void ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept;
+		void ScreenClip(std::vector<Triangle>& in, ClippingRects& clip, const uint32_t index) const noexcept;
 		bool CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept;
 		bool CreateTexture(const Pointi size, Texture& texture) noexcept;
 		void DeleteTexture(Texture& texture) noexcept;
@@ -694,9 +694,9 @@ namespace game
 	}
 
 	// Screen clipping and some precalculations 
-	inline void Software3D::ScreenClip(std::vector<Triangle>& in, const Recti clip, std::vector<Triangle>& out) const noexcept
+	inline void Software3D::ScreenClip(std::vector<Triangle>& in, ClippingRects& clip, const uint32_t index) const noexcept
 	{
-		out.clear();
+		clip.clippedTris[index].clear();
 		Triangle outTri;
 		uint64_t inSize = in.size();
 		for (uint32_t tri = 0; tri < inSize; tri++)
@@ -733,8 +733,8 @@ namespace game
 			}
 			// Screen clipping
 			// Offscreen completely
-			if ((in[tri].boundingBox.right < clip.left) || (in[tri].boundingBox.left > clip.right) ||
-				(in[tri].boundingBox.bottom < clip.top) || (in[tri].boundingBox.top > clip.bottom))
+			if ((in[tri].boundingBox.right < clip.clips[index].left) || (in[tri].boundingBox.left > clip.clips[index].right) ||
+				(in[tri].boundingBox.bottom < clip.clips[index].top) || (in[tri].boundingBox.top > clip.clips[index].bottom))
 			{
 				continue;
 			}
@@ -745,16 +745,16 @@ namespace game
 			outTri = in[tri];
 
 			// Partial offscreen
-			if (outTri.boundingBox.left < clip.left)
-				outTri.boundingBox.left = clip.left;
-			if (outTri.boundingBox.right > clip.right)
-				outTri.boundingBox.right = clip.right;
-			if (outTri.boundingBox.top < clip.top)
-				outTri.boundingBox.top = clip.top;
-			if (outTri.boundingBox.bottom > clip.bottom)
-				outTri.boundingBox.bottom = clip.bottom;
+			if (outTri.boundingBox.left < clip.clips[index].left)
+				outTri.boundingBox.left = clip.clips[index].left;
+			if (outTri.boundingBox.right > clip.clips[index].right)
+				outTri.boundingBox.right = clip.clips[index].right;
+			if (outTri.boundingBox.top < clip.clips[index].top)
+				outTri.boundingBox.top = clip.clips[index].top;
+			if (outTri.boundingBox.bottom > clip.clips[index].bottom)
+				outTri.boundingBox.bottom = clip.clips[index].bottom;
 
-			out.emplace_back(outTri);
+			clip.clippedTris[index].emplace_back(outTri);
 		}
 	}
 
