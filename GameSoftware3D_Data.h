@@ -9,7 +9,7 @@ namespace game
 	enum FillMode
 	{
 		WireFrame,
-		FilledColor,
+		Filled,
 		WireFrameFilled,
 		//AffineTextureMapped,
 		//WireFrameAffTexture,
@@ -17,6 +17,13 @@ namespace game
 		//WireFrameProjTexture,
 		None
 	};
+
+	enum LightingType
+	{
+		Face,
+		Vertex
+	};
+
 	static FillMode& operator++ (FillMode& rmode, int32_t)
 	{
 		rmode = static_cast<FillMode>((int)rmode + 1);
@@ -28,15 +35,25 @@ namespace game
 		switch (mode)
 		{
 		case FillMode::WireFrame: return stream << "WireFrame";
-		case FillMode::FilledColor: return stream << "Filled Color";
+		case FillMode::Filled: return stream << "Filled";
 		case FillMode::WireFrameFilled: return stream << "WireFrame Filled";
 			//case FillMode::AffineTextureMapped: return stream << "Affine Texture Mapped";
 			//case FillMode::WireFrameAffTexture: return stream << "WireFrame Affine Texture Mapped";
 			//case FillMode::ProjectionTextureMapped: return stream << "Projection Correct Texture Mapped";
 			//case FillMode::WireFrameProjTexture: return stream << "WireFrame Projection Correct Texture Mapped";
-		default: return stream << "Unknown Enumerator";
+		default: return stream << "Unknown fill type";
 		}
 	}
+	static std::ostream& operator<< (std::ostream& stream, LightingType type)
+	{
+		switch (type)
+		{
+		case LightingType::Face: return stream << "Face Lighting";
+		case LightingType::Vertex: return stream << "Vertex Lighting";
+		default: return stream << "Unknown lighting type";
+		}
+	}
+
 
 	class EdgeEquation 
 	{

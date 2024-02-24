@@ -13,6 +13,8 @@
 #define GAME_SOFTWARE3D_STATE_FILL_MODE 0
 #define GAME_SOFTWARE3D_STATE_THREADED 1
 #define GAME_SOFTWARE3D_WIREFRAME_THICKNESS 2
+#define GAME_SOFTWARE3D_TEXTURE 3
+#define GAME_SOFTWARE3D_LIGHTING 4
 
 namespace game
 {
@@ -30,7 +32,7 @@ namespace game
 		void Fence(const uint64_t fenceValue) noexcept;
 		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
-		template<bool wireFrame, bool filled>
+		template<bool wireFrame, bool filled, bool lighting, bool textured>
 		void DrawColored(const Triangle& tri, const Recti& clip) noexcept;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth(const float_t depth);
@@ -63,7 +65,9 @@ namespace game
 		uint32_t _currentDepth;
 		Texture _currentTexture;
 		ThreadPool _threadPool;
-		FillMode _FillMode;
+		FillMode _fillMode;
+		bool _enableTexturing;
+		bool _enableLighting;
 		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
 	};
@@ -78,10 +82,12 @@ namespace game
 		_totalBufferSize = 0;
 		_multiThreaded = false;
 		depthBuffer = nullptr;
+		_enableTexturing = false;
+		_enableLighting = false;
 		_numbuffers = 5;
 		for (uint32_t i = 0; i < 10; i++)
 			_clearDepthBuffer[i] = nullptr;
-		_FillMode = FillMode::WireFrameFilled;
+		_fillMode = FillMode::WireFrameFilled;
 		CreateTexture(64, 64, _defaultTexture);
 		_GenerateDefaultTexture(_defaultTexture.data, 64, 64);
 		SetTexture(_defaultTexture);
@@ -191,8 +197,8 @@ namespace game
 
 	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h)
 	{
-		game::Color col1 = game::Colors::Red;
-		game::Color col2 = game::Colors::Blue;
+		game::Color col1 = game::Colors::Yellow;
+		game::Color col2 = game::Colors::Magenta;
 		for (uint32_t y = 0; y < h; y++)
 		{
 			if (y % 2 == 0)
@@ -327,7 +333,7 @@ namespace game
 			{
 				return false;
 			}
-			_FillMode = (FillMode)value;
+			_fillMode = (FillMode)value;
 			return true;
 		}
 
@@ -418,22 +424,22 @@ namespace game
 		}
 	}
 
-	inline void Software3D::_Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept
+	inline void Software3D::_Render(const std::vector<Triangle>& __restrict tris, const Recti& __restrict clip) noexcept //445
 	{
 		std::function<void(Triangle)> renderer;
 
-		switch (_FillMode)
+		switch (_fillMode)
 		{
-		case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true>, this, std::placeholders::_1, clip); break;
-		case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false>, this, std::placeholders::_1, clip); break;
-		case game::FillMode::FilledColor: renderer = std::bind(&Software3D::DrawColored<false, true>, this, std::placeholders::_1, clip); break;
+		case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+		case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+		case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
 		default: break;
 		}
 
 		uint64_t trisSize = tris.size();
 		for (uint32_t triangleCount = 0; triangleCount < trisSize; ++triangleCount)
 		{
-				renderer(tris[triangleCount]);
+				renderer(std::cref(tris[triangleCount]));
 		}
 		_fence++;
 	}
@@ -442,36 +448,35 @@ namespace game
 	{
 		Recti boundingBox;
 
-		int32_t sx1 = (int32_t)(tri.vertices[0].x);
-		int32_t sx2 = (int32_t)(tri.vertices[1].x);
-		int32_t sx3 = (int32_t)(tri.vertices[2].x);
-		int32_t sy1 = (int32_t)(tri.vertices[0].y);
-		int32_t sy2 = (int32_t)(tri.vertices[1].y);
-		int32_t sy3 = (int32_t)(tri.vertices[2].y);
+		float_t sx1 = (tri.vertices[0].x);
+		float_t sx2 = (tri.vertices[1].x);
+		float_t sx3 = (tri.vertices[2].x);
+		float_t sy1 = (tri.vertices[0].y);
+		float_t sy2 = (tri.vertices[1].y);
+		float_t sy3 = (tri.vertices[2].y);
 
-		boundingBox.right = sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3);
-		boundingBox.bottom = sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3);
-		boundingBox.left = sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3);
-		boundingBox.top = sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3);
+		boundingBox.right = (int32_t)(sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3));
+		boundingBox.bottom = (int32_t)(sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3));
+		boundingBox.left = (int32_t)(sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3));
+		boundingBox.top = (int32_t)(sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3));
 
 		return boundingBox;
 	}
 
-	template<bool renderWireFrame, bool renderColor>
+	template<bool renderWireFrame, bool renderColor, bool lighting, bool textured>
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip) noexcept
 	{
-		game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
-		game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
-		game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
+		//game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
+		//game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
+		//game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
 
-		bool foundTriangle(false);
+		uint32_t foundTriangle(0);
 		uint32_t videoBufferStride(_currentRenderTarget.size.width);
 
 		game::Vector2f pixelOffset;
 
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
-		// 441
 		// Color parameter	
 		//Color colorAtPixel;
 		//ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -485,18 +490,18 @@ namespace game
 		// Face normal light pre calc (directional light) can add ambient here
 		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
 		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
-		lightNormal.Normalize();
+		//lightNormal.Normalize();
 		//rot += (2 * 3.14f / 10.0f) * (time / 1000.0f);
 		//lightNormal = RotateXYZ(lightNormal, 0, time , 0);
 		//Color lightColor = Colors::Yellow;
-		float_t luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
-		luminance = max(0.0f, luminance);
+		float_t luminance = 1.0f;// -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
+		luminance = max(0.25f, luminance); //ambient here for face
 
 		// Vertex normal parameters (directional light)
 		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation vny(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation vnz(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-
+		
 
 		// Texture parameters
 		ParameterEquation uParam(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -539,7 +544,6 @@ namespace game
 		uint32_t* colorBuffer = _currentRenderTarget.colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		float_t* depthBufferPtr = _currentRenderTarget.depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		uint32_t xLoopCount = 0;
-
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
@@ -549,7 +553,7 @@ namespace game
 			//	depthBufferPtr += videoBufferStride - xLoopCount;
 			//	continue;
 			//}
-			foundTriangle = false;
+			foundTriangle = 0;// foundTriangle^ foundTriangle;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -600,7 +604,7 @@ namespace game
 						continue;
 					}
 				}
-				foundTriangle = true;
+				foundTriangle = 1;
 
 				// depth buffer test
 				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
@@ -668,8 +672,8 @@ namespace game
 					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-					float_t luminanceAmbient(luminance + 0.25f);
-					luminanceAmbient = min(luminanceAmbient, 1.0f);
+					//float_t luminanceAmbient(luminance + 0.25f);
+					//luminanceAmbient = min(luminanceAmbient, 1.0f);
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
@@ -703,9 +707,9 @@ namespace game
 					uint32_t rc = (color >> 0) & 0xFF;  
 					uint32_t gc = (color >> 8) & 0xFF;
 					uint32_t bc = (color >> 16) & 0xFF;
-					rc = (uint32_t)(rc * luminanceAmbient);
-					gc = (uint32_t)(gc * luminanceAmbient);
-					bc = (uint32_t)(bc * luminanceAmbient); 
+					rc = (uint32_t)(rc * luminance);//Ambient);
+					gc = (uint32_t)(gc * luminance);//Ambient);
+					bc = (uint32_t)(bc * luminance);//Ambient); 
 					//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
 					*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; 

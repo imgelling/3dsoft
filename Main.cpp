@@ -26,6 +26,7 @@ public:
 	game::Mesh plane;
 	game::Mesh model;
 	game::Mesh torus;
+	game::Mesh sky;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -36,7 +37,7 @@ public:
 	uint32_t maxFPS;
 
 
-	game::FillMode state = game::FillMode::FilledColor;
+	game::FillMode state = game::FillMode::Filled;
 	game::Pointi resolution = { 1280, 720 };
 	bool showText;
 
@@ -92,10 +93,17 @@ public:
 			std::cout << "Could not load model\n";
 		}
 
+		if (!LoadObj("Content/sky.obj", sky))
+		{
+			std::cout << "Could not load model\n";
+		}
+
 		if (!software3D.CreateRenderTarget(1280 >> 3, 720 >> 3, renderTarget))
 		{
 			std::cout << "Could not create render target\n";
 		}
+
+
 
 		game::ImageLoader imageloader;
 		uint32_t t = 0;
@@ -106,6 +114,15 @@ public:
 		memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
 		model.texture.size.width = texw;
 		model.texture.size.height = texh;
+		imageloader.UnLoad();
+		t = 0;
+		texw = 0;
+		texh = 0;
+		 temp = (uint32_t*)imageloader.Load("content/sky.png", texw, texh, t);
+		sky.texture.data = new uint32_t[texw * texh];
+		memcpy(sky.texture.data, temp, (size_t)texw * texh * 4);
+		sky.texture.size.width = texw;
+		sky.texture.size.height = texh;
 		
 
 		game::Random rnd;
@@ -182,6 +199,8 @@ public:
 
 
 		// Preset some world stuff
+		camera.position.z = -2.0f;
+
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
 		plane.SetScale(50.0f, 50.0f, 50.0f);
@@ -190,19 +209,25 @@ public:
 		model.SetTranslation(0.0f, 0.0f, 0.0f);
 		model.GenerateModelMatrix();
 
+		sky.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		sky.SetScale(50.0f, 50.0f, 50.0f);
+		sky.SetTranslation(camera.position.x, camera.position.y, camera.position.z);
+
 		torus.SetTranslation(0.0f, -0.1f, 0.0f);
 
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
 
-		camera.position.z = -2.0f;
+
 
 	}
 
 	void Shutdown()
 	{
 		software3D.DeleteRenderTarget(renderTarget);
+		software3D.DeleteTexture(sky.texture);
+		software3D.DeleteTexture(model.texture);
 	}
 
 	void Update(const float_t msElapsed)
@@ -317,6 +342,7 @@ public:
 		torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
+		sky.SetTranslation(camera.position.x, 0.0f, camera.position.z);
 		game::Vector3f center(model.centerPoint);
 		center = center * model.model;
 		camera.GenerateLookAtMatrix(center);
@@ -324,9 +350,11 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 
-		software3D.RenderMesh(torus, mvpMat, camera, clip);
+		//software3D.RenderMesh(torus, mvpMat, camera, clip);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
+		software3D.RenderMesh(sky, mvpMat, camera, clip);
+
 
 
 		// show depth buffer
