@@ -353,6 +353,17 @@ namespace game
 			return true;
 		}
 
+		if (state == GAME_SOFTWARE3D_LIGHTING)
+		{
+			_enableLighting = value;
+			return true;
+		}
+
+		if (state == GAME_SOFTWARE3D_TEXTURE)
+		{
+			_enableTexturing = value;
+		}
+
 		return false;
 	}
 
@@ -428,13 +439,47 @@ namespace game
 	{
 		std::function<void(Triangle)> renderer;
 
-		switch (_fillMode)
+		if (_enableLighting && _enableTexturing)
 		{
-		case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-		case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-		case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-		default: break;
+			switch (_fillMode)
+			{
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			default: break;
+			}
 		}
+		else if (!_enableLighting && !_enableTexturing)
+		{
+			switch (_fillMode)
+			{
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			default: break;
+			}
+		}
+		else if (!_enableLighting && _enableTexturing)
+		{
+			switch (_fillMode)
+			{
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			default: break;
+			}
+		}
+		else if (_enableLighting && !_enableTexturing)
+		{
+			switch (_fillMode)
+			{
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			default: break;
+			}
+		}
+
 
 		uint64_t trisSize = tris.size();
 		for (uint32_t triangleCount = 0; triangleCount < trisSize; ++triangleCount)
@@ -478,30 +523,43 @@ namespace game
 		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
 		// Color parameter	
-		//Color colorAtPixel;
-		//ParameterEquation rColorParam(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		//ParameterEquation gColorParam(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		//ParameterEquation bColorParam(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-
+		Color colorAtPixel;
+		ParameterEquation rColorParam;//triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation gColorParam;//triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation bColorParam;//triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		if (!textured)
+		{
+			rColorParam.Set(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			gColorParam.Set(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			bColorParam.Set(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		}
 		// Depth parameter
 		float_t oneOverDepthEval(0.0f);
 		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Face normal light pre calc (directional light) can add ambient here
-		Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
+		float_t luminance = 1.0f;
 		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
-		//lightNormal.Normalize();
-		//rot += (2 * 3.14f / 10.0f) * (time / 1000.0f);
-		//lightNormal = RotateXYZ(lightNormal, 0, time , 0);
-		//Color lightColor = Colors::Yellow;
-		float_t luminance = 1.0f;// -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
-		luminance = max(0.25f, luminance); //ambient here for face
+		if (lighting)
+		{
+			Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
+			//lightNormal.Normalize();
+			faceNormal.Normalize();
+			luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
+			luminance = max(0.25f, luminance); //ambient here for face
+
+		}
 
 		// Vertex normal parameters (directional light)
-		ParameterEquation vnx(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation vny(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation vnz(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		
+		ParameterEquation vnx;// triangle.normals[0].x* oneOverW.x, triangle.normals[1].x* oneOverW.y, triangle.normals[2].x* oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vny;// triangle.normals[0].y* oneOverW.x, triangle.normals[1].y* oneOverW.y, triangle.normals[2].y* oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vnz;// triangle.normals[0].z* oneOverW.x, triangle.normals[1].z* oneOverW.y, triangle.normals[2].z* oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		if (lighting)
+		{
+			vnx.Set(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			vny.Set(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			vnz.Set(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		}
 
 		// Texture parameters
 		ParameterEquation uParam(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -657,23 +715,23 @@ namespace game
 					// No lighting
 					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y) * dd, g.evaluate(pixelOffset.x, pixelOffset.y) * dd, b.evaluate(pixelOffset.x, pixelOffset.y) * dd, 1.0f);
 					
-					// original 1/(1/w)
-					float_t pre = oneOverDepthEval;
-					
 					// Depth based lighting color
 					//luminance = oneOverDepthEval + 1.0f;
 					//luminance = 1.0f / luminance;
 					//luminance += 0.3f; // simulate ambient 
 					//luminance = min(luminance, 1.0f);
 
-					// Vertex normal lighting
-					//Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y)*pre, vny.evaluate(pixelOffset.x, pixelOffset.y)*pre, vnz.evaluate(pixelOffset.x, pixelOffset.y)*pre);
-					//luminance = -vertexNormalEval.Dot(lightNormal);
-					//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
+					if (lighting)
+					{
+						// Vertex normal lighting
+						Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vny.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vnz.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval);
+						luminance = -vertexNormalEval.Dot(lightNormal);
+						luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
-					// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-					//float_t luminanceAmbient(luminance + 0.25f);
-					//luminanceAmbient = min(luminanceAmbient, 1.0f);
+						// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
+						////float_t luminanceAmbient(luminance + 0.25f);
+						luminance = min(luminance + 0.25f, 1.0f);
+					}
 
 					//// Colored light
 					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
@@ -686,33 +744,38 @@ namespace game
 					//colorAtPixel.Set(rp, gp, bp, 1.0f);
 
 					// Common to all lighting except colored and texture
-					//float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
-					//float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
-					//float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre, 1.0f) * luminanceAmbient;
-					//colorAtPixel.Set(rd, gd, bd, 1.0f);
-					//*colorBuffer = colorAtPixel.packedABGR;
-					
-					// texture stuff
-					float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-					float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-					// calculate texture lookup
-					up = min(up, 1.0f);
-					vp = min(vp, 1.0f);
-					// changed to unsigned 02/05
-					uint32_t tx = max((int32_t)(up * (_currentTexture.size.width-1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-					uint32_t ty = max((int32_t)(vp * (_currentTexture.size.height-1) + 0.5f), 0);
+					if (!textured)
+					{
+						float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
+						float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
+						float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
+						colorAtPixel.Set(rd, gd, bd, 1.0f);
+						*colorBuffer = colorAtPixel.packedABGR;
+					}
+					else
+					{
+						// texture stuff
+						float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval;
+						float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval;
+						// calculate texture lookup
+						up = min(up, 1.0f);
+						vp = min(vp, 1.0f);
+						// changed to unsigned 02/05
+						uint32_t tx = max((int32_t)(up * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+						uint32_t ty = max((int32_t)(vp * (_currentTexture.size.height - 1) + 0.5f), 0);
 
-					// texture lighting
-					uint32_t color = _currentTexture.data[ty * _currentTexture.size.width + tx];
-					uint32_t rc = (color >> 0) & 0xFF;  
-					uint32_t gc = (color >> 8) & 0xFF;
-					uint32_t bc = (color >> 16) & 0xFF;
-					rc = (uint32_t)(rc * luminance);//Ambient);
-					gc = (uint32_t)(gc * luminance);//Ambient);
-					bc = (uint32_t)(bc * luminance);//Ambient); 
-					//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
+						// texture lighting
+						uint32_t color = _currentTexture.data[ty * _currentTexture.size.width + tx];
+						uint32_t rc = (color >> 0) & 0xFF;
+						uint32_t gc = (color >> 8) & 0xFF;
+						uint32_t bc = (color >> 16) & 0xFF;
+						rc = (uint32_t)(rc * luminance);//Ambient);
+						gc = (uint32_t)(gc * luminance);//Ambient);
+						bc = (uint32_t)(bc * luminance);//Ambient); 
+						//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
-					*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; 
+						*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; 
+					}
 				}
 				++colorBuffer;
 				++depthBufferPtr;

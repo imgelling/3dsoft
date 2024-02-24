@@ -254,6 +254,23 @@ namespace game
 			c = area * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
 		}
 
+		ParameterEquation()
+		{
+		}
+
+		void Set(const float_t p0,
+			const float_t p1,
+			const float_t p2,
+			const EdgeEquation& e0,
+			const EdgeEquation& e1,
+			const EdgeEquation& e2,
+			const float_t area)
+		{
+			a = area * (p0 * e0.a + p1 * e1.a + p2 * e2.a);
+			b = area * (p0 * e0.b + p1 * e1.b + p2 * e2.b);
+			c = area * (p0 * e0.c + p1 * e1.c + p2 * e2.c);
+		}
+
 		// Evaluate the parameter equation for the given point.
 		inline float_t evaluate(const float_t x, const float_t y) const noexcept
 		{

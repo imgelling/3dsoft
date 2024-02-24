@@ -350,10 +350,13 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 
-		//software3D.RenderMesh(torus, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
-		software3D.RenderMesh(model, mvpMat, camera, clip);
 		software3D.RenderMesh(sky, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.RenderMesh(model, mvpMat, camera, clip);
+		software3D.RenderMesh(torus, mvpMat, camera, clip);
 
 
 
@@ -376,7 +379,7 @@ public:
 				vbuffer++;
 			}
 			if (showText)
-				pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Yellow, 1);
+				pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Red, 1);
 		}
 
 		maxFPS = max(maxFPS, geGetFramesPerSecond());
@@ -389,16 +392,16 @@ public:
 			m.x = max(m.x, 0);
 			m.y = max(m.y, 0);
 			float_t depthAtMouse = zb[(m.y * resolution.width + m.x)];
-			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 40, game::Colors::Yellow, 1);
+			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 40, game::Colors::Red, 1);
 
 
-			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Yellow, 1);
+			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Red, 1);
 			
-			pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Yellow, 1);
+			pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Red, 1);
 			std::stringstream ss;
 			ss << "Fill Mode: " << state;
-			pixelMode.Text(ss.str(), 0, 20, game::Colors::Yellow, 1);
-			pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Yellow, 1);
+			pixelMode.Text(ss.str(), 0, 20, game::Colors::Red, 1);
+			pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Red, 1);
 		}
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))
