@@ -21,7 +21,7 @@ namespace game
 	enum LightingType
 	{
 		Face,
-		Vertex
+		Vertex,
 	};
 
 	static FillMode& operator++ (FillMode& rmode, int32_t)

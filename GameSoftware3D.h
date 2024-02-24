@@ -68,6 +68,7 @@ namespace game
 		FillMode _fillMode;
 		bool _enableTexturing;
 		bool _enableLighting;
+		LightingType _lightingType;
 		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
 	};
@@ -84,6 +85,7 @@ namespace game
 		depthBuffer = nullptr;
 		_enableTexturing = false;
 		_enableLighting = false;
+		_lightingType = LightingType::Face;
 		_numbuffers = 5;
 		for (uint32_t i = 0; i < 10; i++)
 			_clearDepthBuffer[i] = nullptr;
@@ -724,26 +726,15 @@ namespace game
 					if (lighting)
 					{
 						// Vertex normal lighting
-						Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vny.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vnz.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval);
-						luminance = -vertexNormalEval.Dot(lightNormal);
-						luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
+						//Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vny.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vnz.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval);
+						//luminance = -vertexNormalEval.Dot(lightNormal);
+						//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
 
 						// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-						////float_t luminanceAmbient(luminance + 0.25f);
-						luminance = min(luminance + 0.25f, 1.0f);
+						//luminance = min(luminance + 0.25f, 1.0f);
 					}
 
-					//// Colored light
-					//float rp = rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-					//float gp = gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-					//float bp = bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * pre;
-
-					//rp = min(((luminance * lightColor.rf) + (rp)) / 2.0f, 1.0f);
-					//gp = min(((luminance * lightColor.gf) + (gp)) / 2.0f, 1.0f);
-					//bp = min(((luminance * lightColor.bf) + (bp)) / 2.0f, 1.0f);
-					//colorAtPixel.Set(rp, gp, bp, 1.0f);
-
-					// Common to all lighting except colored and texture
+					// Just colored
 					if (!textured)
 					{
 						float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
@@ -752,7 +743,7 @@ namespace game
 						colorAtPixel.Set(rd, gd, bd, 1.0f);
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
-					else
+					else // Textured
 					{
 						// texture stuff
 						float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval;
@@ -769,12 +760,12 @@ namespace game
 						uint32_t rc = (color >> 0) & 0xFF;
 						uint32_t gc = (color >> 8) & 0xFF;
 						uint32_t bc = (color >> 16) & 0xFF;
-						rc = (uint32_t)(rc * luminance);//Ambient);
-						gc = (uint32_t)(gc * luminance);//Ambient);
-						bc = (uint32_t)(bc * luminance);//Ambient); 
+						rc = (uint32_t)(rc * luminance);
+						gc = (uint32_t)(gc * luminance);
+						bc = (uint32_t)(bc * luminance);
 						//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
-						*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));// colorAtPixel.packedABGR; 
+						*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
 					}
 				}
 				++colorBuffer;

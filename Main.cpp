@@ -393,8 +393,6 @@ public:
 			m.y = max(m.y, 0);
 			float_t depthAtMouse = zb[(m.y * resolution.width + m.x)];
 			pixelMode.Text("Depth at mouse: " + std::to_string(depthAtMouse), 0, 40, game::Colors::Red, 1);
-
-
 			pixelMode.Text("FPS: " + std::to_string(geGetFramesPerSecond()), 0, 0, game::Colors::Red, 1);
 			
 			pixelMode.Text("Max FPS: " + std::to_string(maxFPS), 0, 10, game::Colors::Red, 1);
