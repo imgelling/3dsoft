@@ -714,9 +714,6 @@ namespace game
 				
 				if (renderColor)
 				{
-					// No lighting
-					//colorAtPixel.Set(r.evaluate(pixelOffset.x, pixelOffset.y) * dd, g.evaluate(pixelOffset.x, pixelOffset.y) * dd, b.evaluate(pixelOffset.x, pixelOffset.y) * dd, 1.0f);
-					
 					// Depth based lighting color
 					//luminance = oneOverDepthEval + 1.0f;
 					//luminance = 1.0f / luminance;
