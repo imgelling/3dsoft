@@ -326,16 +326,17 @@ namespace game
 		}
 
 
-
+		// All outside, no triangle to return
 		if (insidePointCount == 0)
 		{
-			return 0; // No returned triangles are valid
+			return 0; 
 		}
 
+		// All inside, no clipping to be done
 		if (insidePointCount == 3)
 		{
 			out_tri1 = in_tri;
-			return 1; // Same triangle returned as didn't get clipped
+			return 1; 
 		}
 
 		if (insidePointCount == 1 && outsidePointCount == 2)
@@ -344,9 +345,9 @@ namespace game
 			// the plane, the triangle simply becomes a smaller triangle
 
 			// Copy appearance info to new triangle
-			out_tri1.color[0] = in_tri.color[0];   // not correct, need to interpolate color
-			out_tri1.color[1] = in_tri.color[1];
-			out_tri1.color[2] = in_tri.color[2];
+			//out_tri1.color[0] = in_tri.color[0];   // not correct, need to interpolate color
+			//out_tri1.color[1] = in_tri.color[1];
+			//out_tri1.color[2] = in_tri.color[2];
 			out_tri1.faceNormal = in_tri.faceNormal;
 
 
@@ -354,11 +355,13 @@ namespace game
 			out_tri1.vertices[0] = in_tri.vertices[insidePoints[0]];
 			out_tri1.normals[0] = in_tri.normals[insidePoints[0]];// in_normals[0];
 			out_tri1.uvs[0] = in_tri.uvs[insidePoints[0]];// in_uv[0];
+			out_tri1.color[0] = in_tri.color[insidePoints[0]];
 
 
 			// but the two new points are at the locations where the 
 			// original sides of the triangle (lines) intersect with the plane
 			float_t t = 0.0f;
+			float r = 0.0f, g=0.0f, b = 0.0f;
 
 			// First intersection
 			out_tri1.vertices[1] = VectorIntersectPlane(planeNormalDotPoint, planeNormal, in_tri.vertices[insidePoints[0]], in_tri.vertices[outsidePoints[0]], t);
@@ -366,6 +369,10 @@ namespace game
 			out_tri1.normals[1].x = t * (in_tri.normals[outsidePoints[0]].x - in_tri.normals[insidePoints[0]].x) + in_tri.normals[insidePoints[0]].x;
 			out_tri1.normals[1].y = t * (in_tri.normals[outsidePoints[0]].y - in_tri.normals[insidePoints[0]].y) + in_tri.normals[insidePoints[0]].y;
 			out_tri1.normals[1].z = t * (in_tri.normals[outsidePoints[0]].z - in_tri.normals[insidePoints[0]].z) + in_tri.normals[insidePoints[0]].z;
+			out_tri1.color[1].rf = (t * (in_tri.color[outsidePoints[0]].rf - in_tri.color[insidePoints[0]].rf) + in_tri.color[insidePoints[0]].rf);
+			out_tri1.color[1].gf = (t * (in_tri.color[outsidePoints[0]].gf - in_tri.color[insidePoints[0]].gf) + in_tri.color[insidePoints[0]].gf);
+			out_tri1.color[1].bf = (t * (in_tri.color[outsidePoints[0]].bf - in_tri.color[insidePoints[0]].bf) + in_tri.color[insidePoints[0]].bf);
+			out_tri1.color[1].Set(out_tri1.color[1].rf, out_tri1.color[1].gf, out_tri1.color[1].bf, 1.0f);
 			out_tri1.vertices[1].w = t * (in_tri.vertices[outsidePoints[0]].w - in_tri.vertices[insidePoints[0]].w) + in_tri.vertices[insidePoints[0]].w;
 			out_tri1.uvs[1].x = t * (in_tri.uvs[outsidePoints[0]].x - in_tri.uvs[insidePoints[0]].x) + in_tri.uvs[insidePoints[0]].x;
 			out_tri1.uvs[1].y = t * (in_tri.uvs[outsidePoints[0]].y - in_tri.uvs[insidePoints[0]].y) + in_tri.uvs[insidePoints[0]].y;
@@ -377,6 +384,10 @@ namespace game
 			out_tri1.normals[2].x = t * (in_tri.normals[outsidePoints[1]].x - in_tri.normals[insidePoints[0]].x) + in_tri.normals[insidePoints[0]].x;
 			out_tri1.normals[2].y = t * (in_tri.normals[outsidePoints[1]].y - in_tri.normals[insidePoints[0]].y) + in_tri.normals[insidePoints[0]].y;
 			out_tri1.normals[2].z = t * (in_tri.normals[outsidePoints[1]].z - in_tri.normals[insidePoints[0]].z) + in_tri.normals[insidePoints[0]].z;
+			out_tri1.color[2].rf = (t * (in_tri.color[outsidePoints[1]].rf - in_tri.color[insidePoints[0]].rf) + in_tri.color[insidePoints[0]].rf);
+			out_tri1.color[2].gf = (t * (in_tri.color[outsidePoints[1]].gf - in_tri.color[insidePoints[0]].gf) + in_tri.color[insidePoints[0]].gf);
+			out_tri1.color[2].bf = (t * (in_tri.color[outsidePoints[1]].bf - in_tri.color[insidePoints[0]].bf) + in_tri.color[insidePoints[0]].bf);
+			out_tri1.color[2].Set(out_tri1.color[2].rf, out_tri1.color[2].gf, out_tri1.color[2].bf, 1.0f);
 			out_tri1.vertices[2].w = t * (in_tri.vertices[outsidePoints[1]].w - in_tri.vertices[insidePoints[0]].w) + in_tri.vertices[insidePoints[0]].w;
 			out_tri1.uvs[2].x = t * (in_tri.uvs[outsidePoints[1]].x - in_tri.uvs[insidePoints[0]].x) + in_tri.uvs[insidePoints[0]].x;
 			out_tri1.uvs[2].y = t * (in_tri.uvs[outsidePoints[1]].y - in_tri.uvs[insidePoints[0]].y) + in_tri.uvs[insidePoints[0]].y;
@@ -391,13 +402,13 @@ namespace game
 			// represent a quad with two new triangles
 
 			// Copy appearance info to new triangles
-			out_tri1.color[0] = in_tri.color[0]; // not correct, need to interpolate color
-			out_tri1.color[1] = in_tri.color[1];
-			out_tri1.color[2] = in_tri.color[2];
+			//out_tri1.color[0] = in_tri.color[0]; // not correct, need to interpolate color
+			//out_tri1.color[1] = in_tri.color[1];
+			//out_tri1.color[2] = in_tri.color[2];
 			out_tri1.faceNormal = in_tri.faceNormal;
-			out_tri2.color[0] = in_tri.color[0];
-			out_tri2.color[1] = in_tri.color[1];
-			out_tri2.color[2] = in_tri.color[2];
+			//out_tri2.color[0] = in_tri.color[0];
+			//out_tri2.color[1] = in_tri.color[1];
+			//out_tri2.color[2] = in_tri.color[2];
 			out_tri2.faceNormal = in_tri.faceNormal;
 
 			// The first triangle consists of the two inside points and a new
@@ -406,12 +417,16 @@ namespace game
 			out_tri1.vertices[0] = in_tri.vertices[insidePoints[0]];
 			out_tri1.normals[0] = in_tri.normals[insidePoints[0]];
 			out_tri1.uvs[0] = in_tri.uvs[insidePoints[0]];
+			out_tri1.color[0] = in_tri.color[insidePoints[0]];
+
 
 			out_tri1.vertices[1] = in_tri.vertices[insidePoints[1]];
 			out_tri1.normals[1] = in_tri.normals[insidePoints[1]];
 			out_tri1.uvs[1] = in_tri.uvs[insidePoints[1]];
+			out_tri1.color[1] = in_tri.color[insidePoints[1]];
 
 			float_t t = 0.0f;
+			float r = 0.0f, g = 0.0f, b = 0.0f;
 
 			// First intersection
 			out_tri1.vertices[2] = VectorIntersectPlane(planeNormalDotPoint, planeNormal, in_tri.vertices[insidePoints[0]], in_tri.vertices[outsidePoints[0]], t);
@@ -419,6 +434,10 @@ namespace game
 			out_tri1.normals[2].x = t * (in_tri.normals[outsidePoints[0]].x - in_tri.normals[insidePoints[0]].x) + in_tri.normals[insidePoints[0]].x;
 			out_tri1.normals[2].y = t * (in_tri.normals[outsidePoints[0]].y - in_tri.normals[insidePoints[0]].y) + in_tri.normals[insidePoints[0]].y;
 			out_tri1.normals[2].z = t * (in_tri.normals[outsidePoints[0]].z - in_tri.normals[insidePoints[0]].z) + in_tri.normals[insidePoints[0]].z;
+			out_tri1.color[2].rf = (t * (in_tri.color[outsidePoints[0]].rf - in_tri.color[insidePoints[0]].rf) + in_tri.color[insidePoints[0]].rf);
+			out_tri1.color[2].gf = (t * (in_tri.color[outsidePoints[0]].gf - in_tri.color[insidePoints[0]].gf) + in_tri.color[insidePoints[0]].gf);
+			out_tri1.color[2].bf = (t * (in_tri.color[outsidePoints[0]].bf - in_tri.color[insidePoints[0]].bf) + in_tri.color[insidePoints[0]].bf);
+			out_tri1.color[2].Set(out_tri1.color[2].rf, out_tri1.color[2].gf, out_tri1.color[2].bf, 1.0f);
 			out_tri1.vertices[2].w = t * (in_tri.vertices[outsidePoints[0]].w - in_tri.vertices[insidePoints[0]].w) + in_tri.vertices[insidePoints[0]].w;
 			out_tri1.uvs[2].x = t * (in_tri.uvs[outsidePoints[0]].x - in_tri.uvs[insidePoints[0]].x) + in_tri.uvs[insidePoints[0]].x;
 			out_tri1.uvs[2].y = t * (in_tri.uvs[outsidePoints[0]].y - in_tri.uvs[insidePoints[0]].y) + in_tri.uvs[insidePoints[0]].y;
@@ -428,16 +447,22 @@ namespace game
 			out_tri2.vertices[0] = in_tri.vertices[insidePoints[1]];
 			out_tri2.normals[0] = in_tri.normals[insidePoints[1]];
 			out_tri2.uvs[0] = in_tri.uvs[insidePoints[1]];
+			out_tri2.color[0] = in_tri.color[insidePoints[1]];
 
 			out_tri2.vertices[1] = out_tri1.vertices[2];
 			out_tri2.normals[1] = out_tri1.normals[2];
 			out_tri2.uvs[1] = out_tri1.uvs[2];
+			out_tri2.color[1] = out_tri1.color[2];
 
 			out_tri2.vertices[2] = VectorIntersectPlane(planeNormalDotPoint, planeNormal, in_tri.vertices[insidePoints[1]], in_tri.vertices[outsidePoints[0]], t);
 
 			out_tri2.normals[2].x = t * (in_tri.normals[outsidePoints[0]].x - in_tri.normals[insidePoints[1]].x) + in_tri.normals[insidePoints[1]].x;
 			out_tri2.normals[2].y = t * (in_tri.normals[outsidePoints[0]].y - in_tri.normals[insidePoints[1]].y) + in_tri.normals[insidePoints[1]].y;
 			out_tri2.normals[2].z = t * (in_tri.normals[outsidePoints[0]].z - in_tri.normals[insidePoints[1]].z) + in_tri.normals[insidePoints[1]].z;
+			out_tri2.color[2].rf = (t * (in_tri.color[outsidePoints[0]].rf - in_tri.color[insidePoints[1]].rf) + in_tri.color[insidePoints[1]].rf);
+			out_tri2.color[2].gf = (t * (in_tri.color[outsidePoints[0]].gf - in_tri.color[insidePoints[1]].gf) + in_tri.color[insidePoints[1]].gf);
+			out_tri2.color[2].bf = (t * (in_tri.color[outsidePoints[0]].bf - in_tri.color[insidePoints[1]].bf) + in_tri.color[insidePoints[1]].bf);
+			out_tri2.color[2].Set(out_tri2.color[2].rf, out_tri2.color[2].gf, out_tri2.color[2].bf, 1.0f);
 			out_tri2.vertices[2].w = t * (in_tri.vertices[outsidePoints[0]].w - in_tri.vertices[insidePoints[1]].w) + in_tri.vertices[insidePoints[1]].w;
 			out_tri2.uvs[2].x = t * (in_tri.uvs[outsidePoints[0]].x - in_tri.uvs[insidePoints[1]].x) + in_tri.uvs[insidePoints[1]].x;
 			out_tri2.uvs[2].y = t * (in_tri.uvs[outsidePoints[0]].y - in_tri.uvs[insidePoints[1]].y) + in_tri.uvs[insidePoints[1]].y;

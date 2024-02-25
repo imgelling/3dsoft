@@ -349,10 +349,11 @@ public:
 		camera.GenerateViewMatrix();
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
+
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.RenderMesh(sky, mvpMat, camera, clip);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
