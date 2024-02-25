@@ -203,10 +203,10 @@ public:
 
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
-		plane.SetScale(50.0f, 50.0f, 50.0f);
+		plane.SetScale(60.0f, 60.0f, 60.0f);
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetTranslation(0.0f, 0.0f, 0.0f);
+		model.SetTranslation(1.0f, 0.0f, 0.0f);
 		model.GenerateModelMatrix();
 
 		sky.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);

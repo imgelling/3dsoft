@@ -604,6 +604,9 @@ namespace game
 		uint32_t* colorBuffer = _currentRenderTarget.colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		float_t* depthBufferPtr = _currentRenderTarget.depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		uint32_t xLoopCount = 0;
+
+		// test
+		float_t dp = 0.0f;
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
@@ -614,6 +617,7 @@ namespace game
 			//	continue;
 			//}
 			foundTriangle = 0;// foundTriangle^ foundTriangle;
+			dp = 0.0f;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -664,10 +668,19 @@ namespace game
 						continue;
 					}
 				}
+
+				if (!foundTriangle)
+				{
+					dp = depthParam.evaluate(pixelOffset.x, pixelOffset.y);
+				}
+				else
+				{
+					dp = depthParam.stepX(dp);
+				}
 				foundTriangle = 1;
 
 				// depth buffer test
-				oneOverDepthEval = 1.0f / (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
+				oneOverDepthEval = 1.0f / dp;// (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
 				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				{
 

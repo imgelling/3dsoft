@@ -75,7 +75,7 @@ namespace game
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
-			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
+			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
@@ -239,6 +239,9 @@ namespace game
 		float_t b = 0.0f;
 		float_t c = 0.0f;
 
+		//float_t axstep = 0.0f;
+		//float_t bystep = 0.0f;
+
 		ParameterEquation(
 			const float_t p0,
 			const float_t p1,
@@ -274,7 +277,14 @@ namespace game
 		// Evaluate the parameter equation for the given point.
 		inline float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
+			//axstep = 1.0f / a;// *(x + 1.0f));// *1.5f;
+			//bystep = b * (y);
 			return a * x + b * y + c;
+		}
+
+		inline float_t stepX(const float_t v) const noexcept
+		{
+			return v + a;
 		}
 	};
 
