@@ -251,11 +251,15 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, -1);
+			clip.SetNumberOfClipsRects(1);
+			clip.GenerateClips(resolution);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 0);
+			clip.SetNumberOfClipsRects(16);
+			clip.GenerateClips(resolution);
 		}
 
 		float_t speed = 5.0f * msElapsed / 1000.0f;
@@ -355,7 +359,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.RenderMesh(sky, mvpMat, camera, clip);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
 		software3D.RenderMesh(torus, mvpMat, camera, clip);
 

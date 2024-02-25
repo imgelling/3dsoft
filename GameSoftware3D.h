@@ -513,10 +513,6 @@ namespace game
 	template<bool renderWireFrame, bool renderColor, bool lighting, bool textured>
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip) noexcept
 	{
-		//game::Vector3f vertex0(triangle.vertices[0].x, triangle.vertices[0].y, 0);
-		//game::Vector3f vertex1(triangle.vertices[1].x, triangle.vertices[1].y, 0);
-		//game::Vector3f vertex2(triangle.vertices[2].x, triangle.vertices[2].y, 0);
-
 		uint32_t foundTriangle(0);
 		uint32_t videoBufferStride(_currentRenderTarget.size.width);
 
@@ -535,6 +531,7 @@ namespace game
 			gColorParam.Set(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			bColorParam.Set(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		}
+
 		// Depth parameter
 		float_t oneOverDepthEval(0.0f);
 		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -564,8 +561,13 @@ namespace game
 		}
 
 		// Texture parameters
-		ParameterEquation uParam(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation vParam(triangle.uvs[0].v * oneOverW.x, triangle.uvs[1].v * oneOverW.y, triangle.uvs[2].v * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation uParam;//(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vParam;//(triangle.uvs[0].v * oneOverW.x, triangle.uvs[1].v * oneOverW.y, triangle.uvs[2].v * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		if (textured)
+		{
+			uParam.Set(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			vParam.Set(triangle.uvs[0].v * oneOverW.x, triangle.uvs[1].v * oneOverW.y, triangle.uvs[2].v * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		}
 
 		// Wireframe precalcs
 		float_t d[3] = {};
@@ -607,6 +609,20 @@ namespace game
 
 		// test
 		float_t dp = 0.0f;
+		float_t up = 0.0f;
+		float_t vp = 0.0f;
+		float_t upDiv = 0.0f;
+		float_t vpDiv = 0.0f;
+		float_t rEval = 0.0f;
+		float_t gEval = 0.0f;
+		float_t bEval = 0.0f;
+
+		float_t rd = 0.0f;
+		float_t gd = 0.0f;
+		float_t bd = 0.0f;
+
+		uint32_t tx = 0;
+		uint32_t ty = 0;
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
@@ -617,7 +633,6 @@ namespace game
 			//	continue;
 			//}
 			foundTriangle = 0;// foundTriangle^ foundTriangle;
-			dp = 0.0f;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -677,13 +692,13 @@ namespace game
 				{
 					dp = depthParam.stepX(dp);
 				}
-				foundTriangle = 1;
+				
 
 				// depth buffer test
 				oneOverDepthEval = 1.0f / dp;// (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
-				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
+				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
+				if (oneOverDepthEval < *depthBufferPtr)
 				{
-
 					*depthBufferPtr = oneOverDepthEval;
 				}
 				else
@@ -725,7 +740,7 @@ namespace game
 
 				// Color filled
 				
-				if (renderColor)
+				if (renderColor)  // rename filled
 				{
 					// Depth based lighting color
 					//luminance = oneOverDepthEval + 1.0f;
@@ -747,39 +762,68 @@ namespace game
 					// Just colored
 					if (!textured)
 					{
-						float_t rd = min(rColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
-						float_t gd = min(gColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
-						float_t bd = min(bColorParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, 1.0f) * luminance;
+						if (!foundTriangle)
+						{
+							rEval = rColorParam.evaluate(pixelOffset.x, pixelOffset.y);
+							gEval = gColorParam.evaluate(pixelOffset.x, pixelOffset.y);
+							bEval = bColorParam.evaluate(pixelOffset.x, pixelOffset.y);
+						}
+						else
+						{
+							rEval = rColorParam.stepX(rEval);
+							gEval = gColorParam.stepX(gEval);
+							bEval = bColorParam.stepX(bEval);
+						}
+						rd = min(rEval * oneOverDepthEval, 1.0f) * luminance;
+						gd = min(gEval * oneOverDepthEval, 1.0f) * luminance;
+						bd = min(bEval * oneOverDepthEval, 1.0f) * luminance;
 						colorAtPixel.Set(rd, gd, bd, 1.0f);
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
 					else // Textured
 					{
-						// texture stuff
-						float_t up = uParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval;
-						float_t vp = vParam.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval;
+						if (!foundTriangle)
+						{
+							up = uParam.evaluate(pixelOffset.x, pixelOffset.y);// * oneOverDepthEval;
+							vp = vParam.evaluate(pixelOffset.x, pixelOffset.y);// * oneOverDepthEval;
+						}
+						else
+						{
+							up = uParam.stepX(up);// *oneOverDepthEval;
+							vp = vParam.stepX(vp);// * 
+						}
+						upDiv = up * oneOverDepthEval;
+						vpDiv = vp * oneOverDepthEval;
 						// calculate texture lookup
-						up = min(up, 1.0f);
-						vp = min(vp, 1.0f);
+						upDiv = min(upDiv, 1.0f);
+						vpDiv = min(vpDiv, 1.0f);
 						// changed to unsigned 02/05
-						uint32_t tx = max((int32_t)(up * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-						uint32_t ty = max((int32_t)(vp * (_currentTexture.size.height - 1) + 0.5f), 0);
+						tx = max((int32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+						ty = max((int32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
 
 						// texture lighting
-						uint32_t color = _currentTexture.data[ty * _currentTexture.size.width + tx];
-						uint32_t rc = (color >> 0) & 0xFF;
-						uint32_t gc = (color >> 8) & 0xFF;
-						uint32_t bc = (color >> 16) & 0xFF;
-						rc = (uint32_t)(rc * luminance);
-						gc = (uint32_t)(gc * luminance);
-						bc = (uint32_t)(bc * luminance);
-						//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
+						if (lighting)
+						{
+							uint32_t color = _currentTexture.data[ty * _currentTexture.size.width + tx];
+							uint32_t rc = (color >> 0) & 0xFF;
+							uint32_t gc = (color >> 8) & 0xFF;
+							uint32_t bc = (color >> 16) & 0xFF;
+							rc = (uint32_t)(rc * luminance);
+							gc = (uint32_t)(gc * luminance);
+							bc = (uint32_t)(bc * luminance);
+							//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
-						*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
+							*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
+						}
+						else
+						{
+							*colorBuffer = _currentTexture.data[ty * _currentTexture.size.width + tx];
+						}
 					}
 				}
 				++colorBuffer;
 				++depthBufferPtr;
+				foundTriangle = 1;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;
