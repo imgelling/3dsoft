@@ -16,7 +16,9 @@
 #define GAME_SOFTWARE3D_TEXTURE 3
 #define GAME_SOFTWARE3D_LIGHTING 4
 #define GAME_SOFTWARE3D_LIGHTING_TYPE 5
-
+#define GAME_SOFTWARE3D_ALPHA_TEST 6
+#define GAME_SOFTWARE3D_ALPHA_TEST_VALUE 7
+ 
 namespace game
 {
 
@@ -70,6 +72,8 @@ namespace game
 		bool _enableTexturing;
 		bool _enableLighting;
 		LightingType _lightingType;
+		std::atomic_bool _enableAlphaTest;
+		uint32_t _alphaTestValue;
 		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
 	};
@@ -87,6 +91,8 @@ namespace game
 		_enableTexturing = false;
 		_enableLighting = false;
 		_lightingType = LightingType::Face;
+		_enableAlphaTest = false;
+		_alphaTestValue = 128;
 		_numbuffers = 5;
 		for (uint32_t i = 0; i < 10; i++)
 			_clearDepthBuffer[i] = nullptr;
@@ -373,6 +379,20 @@ namespace game
 		if (state == GAME_SOFTWARE3D_TEXTURE)
 		{
 			_enableTexturing = value;
+			return true;
+		}
+
+		if (state == GAME_SOFTWARE3D_ALPHA_TEST)
+		{
+			_enableAlphaTest = value;
+			return true;
+		}
+
+		if (state == GAME_SOFTWARE3D_ALPHA_TEST_VALUE)
+		{
+			if (value < 0) return false;
+			if (value > 255) return false;
+			_alphaTestValue = value;
 			return true;
 		}
 		return false;
@@ -720,12 +740,39 @@ namespace game
 				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				if (oneOverDepthEval < *depthBufferPtr)
 				{
-					*depthBufferPtr = oneOverDepthEval;
+					if (textured)
+					{
+						if (!_enableAlphaTest)
+						{
+							*depthBufferPtr = oneOverDepthEval;
+						}
+					}
+					if (!textured)
+					{
+						*depthBufferPtr = oneOverDepthEval;
+					}
 				}
 				else
 				{
 					if (filled)
 					{
+						if (textured)
+						{
+							uParam.stepX(uEval);
+							vParam.stepX(vEval);
+						}
+						if (lighting)
+						{
+							vnx.stepX(nXEval);
+							vny.stepX(nYEval);
+						}
+						if (!textured)
+						{
+
+							rColorParam.stepX(rEval);
+							gColorParam.stepX(gEval);
+							bColorParam.stepX(bEval);
+						}
 						++colorBuffer;
 						++depthBufferPtr;
 						continue;
@@ -742,6 +789,13 @@ namespace game
 							numerator = numerator * numerator;
 							return (numerator * denominator);
 						};
+					//if (textured)
+					//{
+					//	if (_enableAlphaTest)
+					//	{
+					//		*depthBufferPtr = oneOverDepthEval;
+					//	}
+					//}
 					for (uint32_t dist = 0; dist < 3; dist++)
 					{
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
@@ -750,6 +804,7 @@ namespace game
 					if (minDistSq < 1.0f)
 					{
 						*colorBuffer = 0xFFFFFFFF;// game::Colors::White.packedARGB;
+
 						++colorBuffer;
 						++depthBufferPtr;
 						continue;
@@ -823,6 +878,8 @@ namespace game
 						colorAtPixel.Set(rd, gd, bd, 1.0f);
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
+
+					
 					if (textured)
 					{
 						if (uParam.first)
@@ -842,11 +899,34 @@ namespace game
 						vpDiv = min(vpDiv, 1.0f); //clamp
 						tx = max((uint32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
 						ty = max((uint32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
+						color = _currentTexture.data[ty * _currentTexture.size.width + tx];
+						if (_enableAlphaTest)
+						{							
+							if (((color >> 24) & 0xFF) < _alphaTestValue)
+							{
+								//uParam.first = 1;
+								//vParam.first = 1;
+								//depthParam.first = 1;
+								//if (lighting)
+								//{
+								//	vnx.first = 1;
+								//	vny.first = 1;
+								//	vnz.first = 1;
+								//}
 
+								++colorBuffer;
+								++depthBufferPtr;
+								continue;
+							}
+							else
+							{
+								*depthBufferPtr = oneOverDepthEval;
+							}
+						}
+						
 						// texture lighting
 						if (lighting)
 						{
-							color = _currentTexture.data[ty * _currentTexture.size.width + tx];
 							rc   = (color >> 0) & 0xFF;
 							gc   = (color >> 8) & 0xFF;
 							bc   = (color >> 16) & 0xFF;
@@ -858,7 +938,7 @@ namespace game
 						}
 						if (!lighting)
 						{
-							*colorBuffer = _currentTexture.data[ty * _currentTexture.size.width + tx];
+							*colorBuffer = color;// _currentTexture.data[ty * _currentTexture.size.width + tx];
 						}
 					}
 				}

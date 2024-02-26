@@ -24,6 +24,7 @@ public:
 
 	// Meshes for scenes
 	game::Mesh plane;
+	game::Mesh alphaWall;
 	game::Mesh model;
 	game::Mesh torus;
 	game::Mesh sky;
@@ -123,6 +124,16 @@ public:
 		memcpy(sky.texture.data, temp, (size_t)texw * texh * 4);
 		sky.texture.size.width = texw;
 		sky.texture.size.height = texh;
+
+		imageloader.UnLoad();
+		t = 0;
+		texw = 0;
+		texh = 0;
+		temp = (uint32_t*)imageloader.Load("content/grate0_alpha.png", texw, texh, t);
+		alphaWall.texture.data = new uint32_t[texw * texh];
+		memcpy(alphaWall.texture.data, temp, (size_t)texw * texh * 4);
+		alphaWall.texture.size.width = texw;
+		alphaWall.texture.size.height = texh;
 		
 
 		game::Random rnd;
@@ -197,6 +208,7 @@ public:
 		plane.tris.emplace_back(topLeftTri);
 		plane.tris.emplace_back(bottomRightTri);
 
+		alphaWall.tris = plane.tris;
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
@@ -205,11 +217,13 @@ public:
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
 		plane.SetScale(60.0f, 60.0f, 60.0f);
 
+		alphaWall.SetTranslation(0.0f, -1.0f, -1.5f);
+
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
 		model.SetTranslation(1.0f, 0.0f, 0.0f);
 		model.GenerateModelMatrix();
 
-		sky.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		sky.SetRotation(3.14159f / 2.0f, 0.0f, 0.0f);
 		sky.SetScale(50.0f, 50.0f, 50.0f);
 		sky.SetTranslation(camera.position.x, camera.position.y, camera.position.z);
 
@@ -228,6 +242,7 @@ public:
 		software3D.DeleteRenderTarget(renderTarget);
 		software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(model.texture);
+		software3D.DeleteTexture(alphaWall.texture);
 	}
 
 	void Update(const float_t msElapsed)
@@ -353,6 +368,14 @@ public:
 		camera.GenerateViewMatrix();
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
+		software3D.RenderMesh(alphaWall, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
@@ -363,7 +386,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
-
+		
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
 		software3D.RenderMesh(torus, mvpMat, camera, clip);
 
