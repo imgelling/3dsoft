@@ -789,13 +789,13 @@ namespace game
 							numerator = numerator * numerator;
 							return (numerator * denominator);
 						};
-					//if (textured)
-					//{
-					//	if (_enableAlphaTest)
-					//	{
-					//		*depthBufferPtr = oneOverDepthEval;
-					//	}
-					//}
+					if (textured && !filled)
+					{
+						if (_enableAlphaTest)
+						{
+							*depthBufferPtr = oneOverDepthEval;
+						}
+					}
 					for (uint32_t dist = 0; dist < 3; dist++)
 					{
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
@@ -803,6 +803,13 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1.0f)
 					{
+						if (textured)
+						{
+							if (_enableAlphaTest)
+							{
+								*depthBufferPtr = oneOverDepthEval;
+							}
+						}
 						*colorBuffer = 0xFFFFFFFF;// game::Colors::White.packedARGB;
 
 						++colorBuffer;
@@ -904,16 +911,6 @@ namespace game
 						{							
 							if (((color >> 24) & 0xFF) < _alphaTestValue)
 							{
-								//uParam.first = 1;
-								//vParam.first = 1;
-								//depthParam.first = 1;
-								//if (lighting)
-								//{
-								//	vnx.first = 1;
-								//	vny.first = 1;
-								//	vnz.first = 1;
-								//}
-
 								++colorBuffer;
 								++depthBufferPtr;
 								continue;
