@@ -22,6 +22,7 @@ namespace game
 	{
 		Face,
 		Vertex,
+		Depth
 	};
 
 	static FillMode& operator++ (FillMode& rmode, int32_t)
@@ -50,6 +51,7 @@ namespace game
 		{
 		case LightingType::Face: return stream << "Face Lighting";
 		case LightingType::Vertex: return stream << "Vertex Lighting";
+		case LightingType::Depth: return stream << "Depth Lighting";
 		default: return stream << "Unknown lighting type";
 		}
 	}

@@ -371,7 +371,8 @@ namespace game
 		if (state == GAME_SOFTWARE3D_LIGHTING_TYPE)
 		{
 			if (value < LightingType::Face) return false;
-			if (value > LightingType::Vertex) return false;
+			if (value > LightingType::Depth) return false;
+			
 			_lightingType = (LightingType)value;
 			return true;
 		}
@@ -763,12 +764,14 @@ namespace game
 						}
 						if (lighting)
 						{
-							vnx.stepX(nXEval);
-							vny.stepX(nYEval);
+							if (_lightingType == LightingType::Vertex)
+							{
+								vnx.stepX(nXEval);
+								vny.stepX(nYEval);
+							}
 						}
 						if (!textured)
 						{
-
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
@@ -817,16 +820,9 @@ namespace game
 						continue;
 					}
 				}
-
-				// Filled				
-				if (filled)  // rename filled
+				
+				if (filled) 
 				{
-					// Depth based lighting color
-					//luminance = oneOverDepthEval + 1.0f;
-					//luminance = 1.0f / luminance;
-					//luminance += 0.3f; // simulate ambient 
-					//luminance = min(luminance, 1.0f);
-
 					if (lighting)
 					{
 						if (_lightingType == LightingType::Vertex)
@@ -851,6 +847,14 @@ namespace game
 							luminance = -vertexNormalEval.Dot(lightNormal);
 							luminance = max(0.0f, luminance + 0.25f);// < 0.0f ? 0.0f : lum;
 
+							luminance = min(luminance, 1.0f);
+						}
+						else if (_lightingType == LightingType::Depth)
+						{
+							//Depth based lighting color
+							luminance = oneOverDepthEval + 1.0f;
+							luminance = 1.0f / luminance;
+							luminance += 0.25f; // simulate ambient 
 							luminance = min(luminance, 1.0f);
 						}
 					}
