@@ -632,7 +632,7 @@ namespace game
 			//	depthBufferPtr += videoBufferStride - xLoopCount;
 			//	continue;
 			//}
-			foundTriangle = 0;// foundTriangle^ foundTriangle;
+			foundTriangle = 0;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -683,14 +683,15 @@ namespace game
 						continue;
 					}
 				}
-
-				if (!foundTriangle)
+				// If we got here, we found the triangle for this scanline
+				foundTriangle = 1;
+				if (!depthParam.first)
 				{
 					dp = depthParam.evaluate(pixelOffset.x, pixelOffset.y);
 				}
 				else
 				{
-					dp = depthParam.stepX(dp);
+					depthParam.stepX(dp);
 				}
 				
 
@@ -727,6 +728,7 @@ namespace game
 						*colorBuffer = game::Colors::White.packedARGB;
 						++colorBuffer;
 						++depthBufferPtr;
+						//foundTriangle = 1;
 						continue;
 					}
 					//else
@@ -740,7 +742,7 @@ namespace game
 
 				// Color filled
 				
-				if (renderColor)  // rename filled
+				if (renderColor || textured)  // rename filled
 				{
 					// Depth based lighting color
 					//luminance = oneOverDepthEval + 1.0f;
@@ -762,7 +764,7 @@ namespace game
 					// Just colored
 					if (!textured)
 					{
-						if (!foundTriangle)
+						if (!rColorParam.first)
 						{
 							rEval = rColorParam.evaluate(pixelOffset.x, pixelOffset.y);
 							gEval = gColorParam.evaluate(pixelOffset.x, pixelOffset.y);
@@ -770,9 +772,9 @@ namespace game
 						}
 						else
 						{
-							rEval = rColorParam.stepX(rEval);
-							gEval = gColorParam.stepX(gEval);
-							bEval = bColorParam.stepX(bEval);
+							rColorParam.stepX(rEval);
+							gColorParam.stepX(gEval);
+							bColorParam.stepX(bEval);
 						}
 						rd = min(rEval * oneOverDepthEval, 1.0f) * luminance;
 						gd = min(gEval * oneOverDepthEval, 1.0f) * luminance;
@@ -780,23 +782,23 @@ namespace game
 						colorAtPixel.Set(rd, gd, bd, 1.0f);
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
-					else // Textured
+					if (textured)
 					{
-						if (!foundTriangle)
+						if (!uParam.first)
 						{
-							up = uParam.evaluate(pixelOffset.x, pixelOffset.y);// * oneOverDepthEval;
-							vp = vParam.evaluate(pixelOffset.x, pixelOffset.y);// * oneOverDepthEval;
+							up = uParam.evaluate(pixelOffset.x, pixelOffset.y);
+							vp = vParam.evaluate(pixelOffset.x, pixelOffset.y);
 						}
 						else
 						{
-							up = uParam.stepX(up);// *oneOverDepthEval;
-							vp = vParam.stepX(vp);// * 
+							uParam.stepX(up);
+							vParam.stepX(vp);
 						}
 						upDiv = up * oneOverDepthEval;
 						vpDiv = vp * oneOverDepthEval;
 						// calculate texture lookup
-						upDiv = min(upDiv, 1.0f);
-						vpDiv = min(vpDiv, 1.0f);
+						upDiv = min(upDiv, 1.0f); //clamp
+						vpDiv = min(vpDiv, 1.0f); //clamp
 						// changed to unsigned 02/05
 						tx = max((int32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
 						ty = max((int32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
@@ -823,7 +825,18 @@ namespace game
 				}
 				++colorBuffer;
 				++depthBufferPtr;
-				foundTriangle = 1;
+			}
+			depthParam.first = 0;
+			if (!textured)
+			{
+				rColorParam.first = 0;
+				gColorParam.first = 0;
+				bColorParam.first = 0;
+			}
+			else
+			{
+				uParam.first = 0;
+				vParam.first = 0;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;

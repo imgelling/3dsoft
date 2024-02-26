@@ -359,7 +359,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.RenderMesh(sky, mvpMat, camera, clip);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
 		software3D.RenderMesh(torus, mvpMat, camera, clip);
 
