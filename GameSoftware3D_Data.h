@@ -238,7 +238,7 @@ namespace game
 		float_t a = 0.0f;
 		float_t b = 0.0f;
 		float_t c = 0.0f;
-		uint32_t first = 0;
+		uint32_t first = 1;
 
 		//float_t axstep = 0.0f;
 		//float_t bystep = 0.0f;
@@ -280,7 +280,7 @@ namespace game
 		{
 			//axstep = 1.0f / a;// *(x + 1.0f));// *1.5f;
 			//bystep = b * (y);
-			first = 1;
+			first = 0;
 			return a * x + b * y + c;
 		}
 

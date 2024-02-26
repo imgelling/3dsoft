@@ -346,7 +346,7 @@ public:
 		torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
-		sky.SetTranslation(camera.position.x, 0.0f, camera.position.z);
+		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
 		game::Vector3f center(model.centerPoint);
 		center = center * model.model;
 		camera.GenerateLookAtMatrix(center);

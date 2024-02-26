@@ -510,7 +510,7 @@ namespace game
 		return boundingBox;
 	}
 
-	template<bool renderWireFrame, bool renderColor, bool lighting, bool textured>
+	template<bool renderWireFrame, bool filled, bool lighting, bool textured>
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip) noexcept
 	{
 		uint32_t foundTriangle(0);
@@ -537,14 +537,14 @@ namespace game
 		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Face normal light pre calc (directional light) can add ambient here
-		float_t luminance = 1.0f;
+		float_t luminance = 0.0f;
 		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
 		if (lighting)
 		{
-			Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
+			//Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
 			//lightNormal.Normalize();
-			faceNormal.Normalize();
-			luminance = -faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
+			//faceNormal.Normalize();
+			luminance = -lightNormal.Dot(triangle.faceNormal);// faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
 			luminance = max(0.25f, luminance); //ambient here for face
 
 		}
@@ -616,6 +616,9 @@ namespace game
 		float_t rEval = 0.0f;
 		float_t gEval = 0.0f;
 		float_t bEval = 0.0f;
+		float_t nXEval = 0.0f;
+		float_t nYEval = 0.0f;
+		float_t nZEval = 0.0f;
 
 		float_t rd = 0.0f;
 		float_t gd = 0.0f;
@@ -623,6 +626,13 @@ namespace game
 
 		uint32_t tx = 0;
 		uint32_t ty = 0;
+
+		uint32_t color = 0;
+		uint32_t rc = 0;
+		uint32_t gc = 0;
+		uint32_t bc = 0;
+
+		Vector3f vertexNormalEval;
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
@@ -685,7 +695,7 @@ namespace game
 				}
 				// If we got here, we found the triangle for this scanline
 				foundTriangle = 1;
-				if (!depthParam.first)
+				if (depthParam.first)
 				{
 					dp = depthParam.evaluate(pixelOffset.x, pixelOffset.y);
 				}
@@ -696,7 +706,7 @@ namespace game
 				
 
 				// depth buffer test
-				oneOverDepthEval = 1.0f / dp;// (depthParam.evaluate(pixelOffset.x, pixelOffset.y));
+				oneOverDepthEval = 1.0f / dp;
 				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				if (oneOverDepthEval < *depthBufferPtr)
 				{
@@ -704,10 +714,14 @@ namespace game
 				}
 				else
 				{
-					++colorBuffer;
-					++depthBufferPtr;
-					continue;
+					if (filled)
+					{
+						++colorBuffer;
+						++depthBufferPtr;
+						continue;
+					}
 				}
+
 				
 				// Wireframe
 				if (renderWireFrame)
@@ -725,24 +739,15 @@ namespace game
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
 					if (minDistSq < 1.0f)
 					{
-						*colorBuffer = game::Colors::White.packedARGB;
+						*colorBuffer = 0xFFFFFFFF;// game::Colors::White.packedARGB;
 						++colorBuffer;
 						++depthBufferPtr;
-						//foundTriangle = 1;
 						continue;
 					}
-					//else
-					//{
-					//	if (!renderColor)
-					//	{
-					//		*colorBuffer = game::Colors::Black.packedARGB;
-					//	}
-					//}
 				}
 
-				// Color filled
-				
-				if (renderColor || textured)  // rename filled
+				// Filled				
+				if (filled)  // rename filled
 				{
 					// Depth based lighting color
 					//luminance = oneOverDepthEval + 1.0f;
@@ -753,18 +758,32 @@ namespace game
 					if (lighting)
 					{
 						// Vertex normal lighting
-						//Vector3f vertexNormalEval(vnx.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vny.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval, vnz.evaluate(pixelOffset.x, pixelOffset.y) * oneOverDepthEval);
-						//luminance = -vertexNormalEval.Dot(lightNormal);
-						//luminance = max(0.0f, luminance);// < 0.0f ? 0.0f : lum;
+						if (vnx.first)
+						{
+							nXEval = vnx.evaluate(pixelOffset.x, pixelOffset.y);
+							nYEval = vny.evaluate(pixelOffset.x, pixelOffset.y);
+							nZEval = vnz.evaluate(pixelOffset.x, pixelOffset.y);
+						}
+						else
+						{
+							vnx.stepX(nXEval);
+							vny.stepX(nYEval);
+							vnz.stepX(nZEval);
+						}
+						vertexNormalEval.x = nXEval * oneOverDepthEval;
+						vertexNormalEval.y = nYEval * oneOverDepthEval;
+						vertexNormalEval.z = nZEval * oneOverDepthEval;
 
-						// Face and vertex normal lighting amibient, needs calc once for face, every pixel for vertex
-						//luminance = min(luminance + 0.25f, 1.0f);
+						luminance = -vertexNormalEval.Dot(lightNormal);
+						luminance = max(0.0f, luminance + 0.25f);// < 0.0f ? 0.0f : lum;
+												
+						luminance = min(luminance, 1.0f);
 					}
 
 					// Just colored
 					if (!textured)
 					{
-						if (!rColorParam.first)
+						if (rColorParam.first)
 						{
 							rEval = rColorParam.evaluate(pixelOffset.x, pixelOffset.y);
 							gEval = gColorParam.evaluate(pixelOffset.x, pixelOffset.y);
@@ -776,15 +795,24 @@ namespace game
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
 						}
-						rd = min(rEval * oneOverDepthEval, 1.0f) * luminance;
-						gd = min(gEval * oneOverDepthEval, 1.0f) * luminance;
-						bd = min(bEval * oneOverDepthEval, 1.0f) * luminance;
+						if (lighting)
+						{
+							rd = min(rEval * oneOverDepthEval, 1.0f) * luminance;
+							gd = min(gEval * oneOverDepthEval, 1.0f) * luminance;
+							bd = min(bEval * oneOverDepthEval, 1.0f) * luminance;
+						}
+						if (!lighting)
+						{
+							rd = min(rEval * oneOverDepthEval, 1.0f);
+							gd = min(gEval * oneOverDepthEval, 1.0f);
+							bd = min(bEval * oneOverDepthEval, 1.0f);
+						}
 						colorAtPixel.Set(rd, gd, bd, 1.0f);
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
 					if (textured)
 					{
-						if (!uParam.first)
+						if (uParam.first)
 						{
 							up = uParam.evaluate(pixelOffset.x, pixelOffset.y);
 							vp = vParam.evaluate(pixelOffset.x, pixelOffset.y);
@@ -799,25 +827,23 @@ namespace game
 						// calculate texture lookup
 						upDiv = min(upDiv, 1.0f); //clamp
 						vpDiv = min(vpDiv, 1.0f); //clamp
-						// changed to unsigned 02/05
-						tx = max((int32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-						ty = max((int32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
+						tx = max((uint32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+						ty = max((uint32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
 
 						// texture lighting
 						if (lighting)
 						{
-							uint32_t color = _currentTexture.data[ty * _currentTexture.size.width + tx];
-							uint32_t rc = (color >> 0) & 0xFF;
-							uint32_t gc = (color >> 8) & 0xFF;
-							uint32_t bc = (color >> 16) & 0xFF;
+							color = _currentTexture.data[ty * _currentTexture.size.width + tx];
+							rc   = (color >> 0) & 0xFF;
+							gc   = (color >> 8) & 0xFF;
+							bc   = (color >> 16) & 0xFF;
 							rc = (uint32_t)(rc * luminance);
 							gc = (uint32_t)(gc * luminance);
 							bc = (uint32_t)(bc * luminance);
-							//color = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc)); //7.25
 
 							*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
 						}
-						else
+						if (!lighting)
 						{
 							*colorBuffer = _currentTexture.data[ty * _currentTexture.size.width + tx];
 						}
@@ -826,17 +852,23 @@ namespace game
 				++colorBuffer;
 				++depthBufferPtr;
 			}
-			depthParam.first = 0;
+			depthParam.first = 1;
 			if (!textured)
 			{
-				rColorParam.first = 0;
-				gColorParam.first = 0;
-				bColorParam.first = 0;
+				rColorParam.first = 1;
+				gColorParam.first = 1;
+				bColorParam.first = 1;
 			}
-			else
+			if (textured)
 			{
-				uParam.first = 0;
-				vParam.first = 0;
+				uParam.first = 1;
+				vParam.first = 1;
+			}
+			if (lighting)
+			{
+				vnx.first = 1;
+				vny.first = 1;
+				vnz.first = 1;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;
