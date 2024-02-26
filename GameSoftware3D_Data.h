@@ -238,6 +238,7 @@ namespace game
 		float_t a = 0.0f;
 		float_t b = 0.0f;
 		float_t c = 0.0f;
+		uint32_t first = 1;
 
 		//float_t axstep = 0.0f;
 		//float_t bystep = 0.0f;
@@ -275,16 +276,17 @@ namespace game
 		}
 
 		// Evaluate the parameter equation for the given point.
-		inline float_t evaluate(const float_t x, const float_t y) const noexcept
+		inline float_t evaluate(const float_t x, const float_t y) noexcept
 		{
 			//axstep = 1.0f / a;// *(x + 1.0f));// *1.5f;
 			//bystep = b * (y);
+			first = 0;
 			return a * x + b * y + c;
 		}
 
-		inline float_t stepX(const float_t v) const noexcept
+		inline void stepX(float_t& v) const noexcept
 		{
-			return v + a;
+			v = v + a;
 		}
 	};
 
