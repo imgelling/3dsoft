@@ -15,6 +15,7 @@
 #define GAME_SOFTWARE3D_WIREFRAME_THICKNESS 2
 #define GAME_SOFTWARE3D_TEXTURE 3
 #define GAME_SOFTWARE3D_LIGHTING 4
+#define GAME_SOFTWARE3D_LIGHTING_TYPE 5
 
 namespace game
 {
@@ -360,12 +361,20 @@ namespace game
 			_enableLighting = value;
 			return true;
 		}
+		
+		if (state == GAME_SOFTWARE3D_LIGHTING_TYPE)
+		{
+			if (value < LightingType::Face) return false;
+			if (value > LightingType::Vertex) return false;
+			_lightingType = (LightingType)value;
+			return true;
+		}
 
 		if (state == GAME_SOFTWARE3D_TEXTURE)
 		{
 			_enableTexturing = value;
+			return true;
 		}
-
 		return false;
 	}
 
@@ -544,9 +553,11 @@ namespace game
 			//Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
 			//lightNormal.Normalize();
 			//faceNormal.Normalize();
-			luminance = -lightNormal.Dot(triangle.faceNormal);// faceNormal.Dot(lightNormal);// Should have the negative as it is left handed
-			luminance = max(0.25f, luminance); //ambient here for face
-
+			if (_lightingType == LightingType::Face)
+			{
+				luminance = -lightNormal.Dot(triangle.faceNormal); // Should have the negative as it is left handed
+				luminance = max(0.25f, luminance); //ambient here for face
+			}
 		}
 
 		// Vertex normal parameters (directional light)
@@ -608,11 +619,9 @@ namespace game
 		uint32_t xLoopCount = 0;
 
 		// test
-		float_t dp = 0.0f;
-		float_t up = 0.0f;
-		float_t vp = 0.0f;
-		float_t upDiv = 0.0f;
-		float_t vpDiv = 0.0f;
+		float_t dEval = 0.0f;
+		float_t uEval = 0.0f;
+		float_t vEval = 0.0f;
 		float_t rEval = 0.0f;
 		float_t gEval = 0.0f;
 		float_t bEval = 0.0f;
@@ -626,6 +635,8 @@ namespace game
 
 		uint32_t tx = 0;
 		uint32_t ty = 0;
+		float_t upDiv = 0.0f;
+		float_t vpDiv = 0.0f;
 
 		uint32_t color = 0;
 		uint32_t rc = 0;
@@ -695,18 +706,17 @@ namespace game
 				}
 				// If we got here, we found the triangle for this scanline
 				foundTriangle = 1;
+
+				// depth buffer test
 				if (depthParam.first)
 				{
-					dp = depthParam.evaluate(pixelOffset.x, pixelOffset.y);
+					depthParam.evaluate(pixelOffset.x, pixelOffset.y, dEval);
 				}
 				else
 				{
-					depthParam.stepX(dp);
-				}
-				
-
-				// depth buffer test
-				oneOverDepthEval = 1.0f / dp;
+					depthParam.stepX(dEval);
+				}			
+				oneOverDepthEval = 1.0f / dEval;
 				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
 				if (oneOverDepthEval < *depthBufferPtr)
 				{
@@ -757,27 +767,30 @@ namespace game
 
 					if (lighting)
 					{
-						// Vertex normal lighting
-						if (vnx.first)
+						if (_lightingType == LightingType::Vertex)
 						{
-							nXEval = vnx.evaluate(pixelOffset.x, pixelOffset.y);
-							nYEval = vny.evaluate(pixelOffset.x, pixelOffset.y);
-							nZEval = vnz.evaluate(pixelOffset.x, pixelOffset.y);
-						}
-						else
-						{
-							vnx.stepX(nXEval);
-							vny.stepX(nYEval);
-							vnz.stepX(nZEval);
-						}
-						vertexNormalEval.x = nXEval * oneOverDepthEval;
-						vertexNormalEval.y = nYEval * oneOverDepthEval;
-						vertexNormalEval.z = nZEval * oneOverDepthEval;
+							// Vertex normal lighting
+							if (vnx.first)
+							{
+								vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
+								vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
+								vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
+							}
+							else
+							{
+								vnx.stepX(nXEval);
+								vny.stepX(nYEval);
+								vnz.stepX(nZEval);
+							}
+							vertexNormalEval.x = nXEval * oneOverDepthEval;
+							vertexNormalEval.y = nYEval * oneOverDepthEval;
+							vertexNormalEval.z = nZEval * oneOverDepthEval;
 
-						luminance = -vertexNormalEval.Dot(lightNormal);
-						luminance = max(0.0f, luminance + 0.25f);// < 0.0f ? 0.0f : lum;
-												
-						luminance = min(luminance, 1.0f);
+							luminance = -vertexNormalEval.Dot(lightNormal);
+							luminance = max(0.0f, luminance + 0.25f);// < 0.0f ? 0.0f : lum;
+
+							luminance = min(luminance, 1.0f);
+						}
 					}
 
 					// Just colored
@@ -785,9 +798,9 @@ namespace game
 					{
 						if (rColorParam.first)
 						{
-							rEval = rColorParam.evaluate(pixelOffset.x, pixelOffset.y);
-							gEval = gColorParam.evaluate(pixelOffset.x, pixelOffset.y);
-							bEval = bColorParam.evaluate(pixelOffset.x, pixelOffset.y);
+							rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
+							gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
+							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
 						}
 						else
 						{
@@ -814,16 +827,16 @@ namespace game
 					{
 						if (uParam.first)
 						{
-							up = uParam.evaluate(pixelOffset.x, pixelOffset.y);
-							vp = vParam.evaluate(pixelOffset.x, pixelOffset.y);
+							uParam.evaluate(pixelOffset.x, pixelOffset.y, uEval);
+							vParam.evaluate(pixelOffset.x, pixelOffset.y, vEval);
 						}
 						else
 						{
-							uParam.stepX(up);
-							vParam.stepX(vp);
+							uParam.stepX(uEval);
+							vParam.stepX(vEval);
 						}
-						upDiv = up * oneOverDepthEval;
-						vpDiv = vp * oneOverDepthEval;
+						upDiv = uEval * oneOverDepthEval;
+						vpDiv = vEval * oneOverDepthEval;
 						// calculate texture lookup
 						upDiv = min(upDiv, 1.0f); //clamp
 						vpDiv = min(vpDiv, 1.0f); //clamp

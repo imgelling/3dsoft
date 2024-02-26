@@ -276,12 +276,10 @@ namespace game
 		}
 
 		// Evaluate the parameter equation for the given point.
-		inline float_t evaluate(const float_t x, const float_t y) noexcept
+		inline void evaluate(const float_t x, const float_t y, float &eval) noexcept
 		{
-			//axstep = 1.0f / a;// *(x + 1.0f));// *1.5f;
-			//bystep = b * (y);
 			first = 0;
-			return a * x + b * y + c;
+			eval = a * x + b * y + c;
 		}
 
 		inline void stepX(float_t& v) const noexcept
