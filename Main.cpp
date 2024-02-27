@@ -39,7 +39,7 @@ public:
 
 
 	game::FillMode state = game::FillMode::Filled;
-	game::Pointi resolution = { 1280, 720 };
+	game::Pointi resolution = { 1280 , 720 };
 	bool showText;
 
 	Game() : game::Engine()
@@ -60,8 +60,9 @@ public:
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
+		attributes.FrameLock = 0;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
-		attributes.DebugMode = true;
+		attributes.DebugMode = false;
 		geSetAttributes(attributes);
 
 		//GenerateClips(numclips, clip, resolution);
@@ -387,7 +388,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
 		
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
 		software3D.RenderMesh(torus, mvpMat, camera, clip);
 
 
