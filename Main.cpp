@@ -100,6 +100,11 @@ public:
 			std::cout << "Could not load model\n";
 		}
 
+		if (!LoadObj("Content/cubetest.obj", alphaWall))
+		{
+			std::cout << "Could not load model\n";
+		}
+
 		if (!software3D.CreateRenderTarget(1280 >> 3, 720 >> 3, renderTarget))
 		{
 			std::cout << "Could not create render target\n";
@@ -107,7 +112,7 @@ public:
 
 
 
-		game::ImageLoader imageloader;
+		game::ImageLoader imageloader;   // Load texture in software3D
 		uint32_t t = 0;
 		uint32_t texw = 0;
 		uint32_t texh = 0;
@@ -209,7 +214,7 @@ public:
 		plane.tris.emplace_back(topLeftTri);
 		plane.tris.emplace_back(bottomRightTri);
 
-		alphaWall.tris = plane.tris;
+		//alphaWall.tris = plane.tris;
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
@@ -218,7 +223,8 @@ public:
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
 		plane.SetScale(60.0f, 60.0f, 60.0f);
 
-		alphaWall.SetTranslation(0.0f, -1.0f, -1.5f);
+		alphaWall.SetTranslation(-2.0f, -0.41f, 0.0f);
+		alphaWall.SetScale(0.5f, 0.5f, 0.5f);
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
 		model.SetTranslation(1.0f, 0.0f, 0.0f);
@@ -374,7 +380,9 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		software3D.RenderMesh(alphaWall, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
@@ -388,7 +396,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.RenderMesh(model, mvpMat, camera, clip);
 		
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
 		software3D.RenderMesh(torus, mvpMat, camera, clip);
 
 

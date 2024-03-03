@@ -18,6 +18,7 @@
 #define GAME_SOFTWARE3D_LIGHTING_TYPE 5
 #define GAME_SOFTWARE3D_ALPHA_TEST 6
 #define GAME_SOFTWARE3D_ALPHA_TEST_VALUE 7
+#define GAME_SOFTWARE3D_BACKFACECULL 8
  
 namespace game
 {
@@ -71,6 +72,7 @@ namespace game
 		FillMode _fillMode;
 		bool _enableTexturing;
 		bool _enableLighting;
+		bool _enableBackFaceCulling;
 		LightingType _lightingType;
 		std::atomic_bool _enableAlphaTest;
 		uint32_t _alphaTestValue;
@@ -90,6 +92,7 @@ namespace game
 		depthBuffer = nullptr;
 		_enableTexturing = false;
 		_enableLighting = false;
+		_enableBackFaceCulling = true;
 		_lightingType = LightingType::Face;
 		_enableAlphaTest = false;
 		_alphaTestValue = 128;
@@ -395,6 +398,11 @@ namespace game
 			if (value > 255) return false;
 			_alphaTestValue = value;
 			return true;
+		}
+
+		if (state == GAME_SOFTWARE3D_BACKFACECULL)
+		{
+			_enableBackFaceCulling = value;
 		}
 		return false;
 	}
@@ -998,8 +1006,23 @@ namespace game
 				in[tri].area = 1.0f /  (in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c);
 				if (in[tri].area < 0)
 				{
-					in[tri].backFaceCulled = true;
-					continue;
+					if (_enableBackFaceCulling)
+					{
+						in[tri].backFaceCulled = true;
+						continue;
+					}
+					else
+					{
+						// Back face culling off, need to change winding
+						std::swap(in[tri].vertices[1], in[tri].vertices[0]);
+						std::swap(in[tri].normals[1], in[tri].normals[0]);
+						std::swap(in[tri].uvs[1], in[tri].uvs[0]);
+						std::swap(in[tri].color[1], in[tri].color[0]);
+						in[tri].edge0.Set(in[tri].vertices[1], in[tri].vertices[2]);
+						in[tri].edge1.Set(in[tri].vertices[2], in[tri].vertices[0]);
+						in[tri].edge2.Set(in[tri].vertices[0], in[tri].vertices[1]);
+						in[tri].area = 1.0f / (in[tri].edge0.c + in[tri].edge1.c + in[tri].edge2.c);
+					}
 				}
 			}
 			if (!in[tri].boundingCalculated)
@@ -1272,12 +1295,26 @@ namespace game
 			workingTriangle = mesh.tris[i];
 
 			// Backface cull before clip, there ARE artifacts when scaling non uniformly or if scale is negative
-			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
-			cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
-			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
+			if (_enableBackFaceCulling)
 			{
-				//culled++;
-				continue;
+				workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
+				cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
+
+				if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
+				{
+					//culled++;
+					if (_enableBackFaceCulling)
+					{
+						continue;
+					}
+					else
+					{
+						std::swap(workingTriangle.vertices[1], workingTriangle.vertices[0]);
+						std::swap(workingTriangle.normals[1], workingTriangle.normals[0]);
+						std::swap(workingTriangle.uvs[1], workingTriangle.uvs[0]);
+						std::swap(workingTriangle.color[1], workingTriangle.color[0]);
+					}
+				}
 			}
 
 			workingTriangle.vertices[0] = (mesh.tris[i].vertices[0] * mvpCopy);
