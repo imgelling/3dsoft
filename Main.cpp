@@ -219,7 +219,7 @@ public:
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
 		plane.SetScale(60.0f, 60.0f, 60.0f);
 
-		alphaWall.SetTranslation(-2.0f, -0.41f, 0.0f);
+		alphaWall.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaWall.SetScale(0.5f, 0.5f, 0.5f);
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
@@ -365,15 +365,15 @@ public:
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
-		game::Vector3f center(model.centerPoint);
-		center = center * model.model;
-		camera.GenerateLookAtMatrix(center);
+		//game::Vector3f center;// (model.centerPoint);
+		//game::Vector3MultMatrix4x4(model.centerPoint, model.model, center);
+		//camera.GenerateLookAtMatrix(center);
 		camera.GenerateViewMatrix();
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);

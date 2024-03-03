@@ -683,6 +683,7 @@ namespace game
 			//	continue;
 			//}
 			foundTriangle = 0;
+			pixelOffset.y = j + 0.5f;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -692,7 +693,7 @@ namespace game
 				//	depthBufferPtr++;// += videoBufferStride - xLoopCount;
 				//	continue;
 				//}
-				pixelOffset = { i + 0.5f , j + 0.5f };
+				pixelOffset.x = i + 0.5f;
 
 				if (triangle.edge0.test(pixelOffset.x, pixelOffset.y))
 				{
@@ -1276,14 +1277,14 @@ namespace game
 	}
 
 
-	void Vector3MultMatrix4x4(Vector3f& vector, const Matrix4x4f& mat)
+	inline void Vector3MultMatrix4x4(const Vector3f& vector, const Matrix4x4f& mat, Vector3f& out) noexcept
 	{
-		Vector3f ret;
-		ret.x = vector.x * mat.m[0] + vector.y * mat.m[4] + vector.z * mat.m[8] + vector.w * mat.m[12];
-		ret.y = vector.x * mat.m[1] + vector.y * mat.m[5] + vector.z * mat.m[9] + vector.w * mat.m[13];
-		ret.z = vector.x * mat.m[2] + vector.y * mat.m[6] + vector.z * mat.m[10] + vector.w * mat.m[14];
-		ret.w = vector.x * mat.m[3] + vector.y * mat.m[7] + vector.z * mat.m[11] + vector.w * mat.m[15];
-		vector = ret;
+		//Vector3f ret;
+		out.x = vector.x * mat.m[0] + vector.y * mat.m[4] + vector.z * mat.m[8] + vector.w * mat.m[12];
+		out.y = vector.x * mat.m[1] + vector.y * mat.m[5] + vector.z * mat.m[9] + vector.w * mat.m[13];
+		out.z = vector.x * mat.m[2] + vector.y * mat.m[6] + vector.z * mat.m[10] + vector.w * mat.m[14];
+		out.w = vector.x * mat.m[3] + vector.y * mat.m[7] + vector.z * mat.m[11] + vector.w * mat.m[15];
+		//vector = ret;
 	}
 
 	inline void Software3D::VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
@@ -1298,15 +1299,20 @@ namespace game
 		uint32_t numberTrisGenerated = 0;
 		uint64_t meshSize = mesh.tris.size();
 		//int culled = 0;
+		uint32_t changeWinding = 0;
 
-		Vector3f cameraRay; // pre change 298
+		Vector3f cameraRay; // pre change 332
 		for (uint32_t i = 0; i < meshSize; i++)
 		{
+			changeWinding = 0;
 			workingTriangle = mesh.tris[i];
 
 			// Backface cull before clip, there ARE artifacts when scaling non uniformly or if scale is negative
-			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
-			cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
+			//workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
+			Vector3MultMatrix4x4(mesh.tris[i].faceNormal, mesh.rotation, workingTriangle.faceNormal);
+			//cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
+			Vector3MultMatrix4x4(mesh.tris[i].vertices[0], mesh.model, cameraRay);
+			cameraRay -= camera.position;  //343
 
 			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
 			{
@@ -1317,10 +1323,7 @@ namespace game
 				}
 				else
 				{
-					std::swap(workingTriangle.vertices[1], workingTriangle.vertices[0]);
-					std::swap(workingTriangle.normals[1], workingTriangle.normals[0]);
-					std::swap(workingTriangle.uvs[1], workingTriangle.uvs[0]);
-					std::swap(workingTriangle.color[1], workingTriangle.color[0]);
+					changeWinding = 1;
 				}
 			}
 
@@ -1328,10 +1331,16 @@ namespace game
 			workingTriangle.vertices[0] = (workingTriangle.vertices[0] * mvpCopy);
 			workingTriangle.vertices[1] = (workingTriangle.vertices[1] * mvpCopy);
 			workingTriangle.vertices[2] = (workingTriangle.vertices[2] * mvpCopy);
+			//Vector3MultMatrix4x4(mesh.tris[i].vertices[0], mvpCopy, workingTriangle.vertices[0]);
+			//Vector3MultMatrix4x4(mesh.tris[i].vertices[1], mvpCopy, workingTriangle.vertices[1]);
+			//Vector3MultMatrix4x4(mesh.tris[i].vertices[2], mvpCopy, workingTriangle.vertices[2]);
 
 			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
 			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
 			workingTriangle.normals[2] = workingTriangle.normals[2] * mesh.rotation;
+			//Vector3MultMatrix4x4(mesh.tris[i].normals[0], mesh.rotation, workingTriangle.normals[0]);
+			//Vector3MultMatrix4x4(mesh.tris[i].normals[1], mesh.rotation, workingTriangle.normals[1]);
+			//Vector3MultMatrix4x4(mesh.tris[i].normals[2], mesh.rotation, workingTriangle.normals[2]);
 
 			if ((workingTriangle.vertices[0].z < 0.0) ||
 				(workingTriangle.vertices[1].z < 0.0) ||
@@ -1358,6 +1367,14 @@ namespace game
 			else
 			{
 				//PerspectiveDivide(workingTriangle);
+
+				if (changeWinding)
+				{
+					std::swap(workingTriangle.vertices[1], workingTriangle.vertices[0]);
+					std::swap(workingTriangle.normals[1], workingTriangle.normals[0]);
+					std::swap(workingTriangle.uvs[1], workingTriangle.uvs[0]);
+					std::swap(workingTriangle.color[1], workingTriangle.color[0]);
+				}
 				workingTriangle.vertices[0] /= workingTriangle.vertices[0].w;
 				workingTriangle.vertices[1] /= workingTriangle.vertices[1].w;
 				workingTriangle.vertices[2] /= workingTriangle.vertices[2].w;
