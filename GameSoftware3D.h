@@ -746,8 +746,8 @@ namespace game
 					depthParam.stepX(dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
-				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
-				if (oneOverDepthEval < *depthBufferPtr)
+				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
+				//if (oneOverDepthEval < *depthBufferPtr)
 				{
 					if (textured)
 					{
@@ -1038,7 +1038,6 @@ namespace game
 				continue;
 			}
 
-
 			// This needs copied as the bounding box modification 
 			// will only apply to this clip
 			outTri = in[tri];
@@ -1276,6 +1275,17 @@ namespace game
 
 	}
 
+
+	void Vector3MultMatrix4x4(Vector3f& vector, const Matrix4x4f& mat)
+	{
+		Vector3f ret;
+		ret.x = vector.x * mat.m[0] + vector.y * mat.m[4] + vector.z * mat.m[8] + vector.w * mat.m[12];
+		ret.y = vector.x * mat.m[1] + vector.y * mat.m[5] + vector.z * mat.m[9] + vector.w * mat.m[13];
+		ret.z = vector.x * mat.m[2] + vector.y * mat.m[6] + vector.z * mat.m[10] + vector.w * mat.m[14];
+		ret.w = vector.x * mat.m[3] + vector.y * mat.m[7] + vector.z * mat.m[11] + vector.w * mat.m[15];
+		vector = ret;
+	}
+
 	inline void Software3D::VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
 	{
 		mesh.GenerateModelMatrix();
@@ -1289,37 +1299,35 @@ namespace game
 		uint64_t meshSize = mesh.tris.size();
 		//int culled = 0;
 
-		Vector3f cameraRay;
+		Vector3f cameraRay; // pre change 298
 		for (uint32_t i = 0; i < meshSize; i++)
 		{
 			workingTriangle = mesh.tris[i];
 
 			// Backface cull before clip, there ARE artifacts when scaling non uniformly or if scale is negative
-			if (_enableBackFaceCulling)
-			{
-				workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
-				cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
+			workingTriangle.faceNormal = workingTriangle.faceNormal * mesh.rotation;
+			cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
 
-				if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
+			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
+			{
+				//culled++;
+				if (_enableBackFaceCulling)
 				{
-					//culled++;
-					if (_enableBackFaceCulling)
-					{
-						continue;
-					}
-					else
-					{
-						std::swap(workingTriangle.vertices[1], workingTriangle.vertices[0]);
-						std::swap(workingTriangle.normals[1], workingTriangle.normals[0]);
-						std::swap(workingTriangle.uvs[1], workingTriangle.uvs[0]);
-						std::swap(workingTriangle.color[1], workingTriangle.color[0]);
-					}
+					continue;
+				}
+				else
+				{
+					std::swap(workingTriangle.vertices[1], workingTriangle.vertices[0]);
+					std::swap(workingTriangle.normals[1], workingTriangle.normals[0]);
+					std::swap(workingTriangle.uvs[1], workingTriangle.uvs[0]);
+					std::swap(workingTriangle.color[1], workingTriangle.color[0]);
 				}
 			}
 
-			workingTriangle.vertices[0] = (mesh.tris[i].vertices[0] * mvpCopy);
-			workingTriangle.vertices[1] = (mesh.tris[i].vertices[1] * mvpCopy);
-			workingTriangle.vertices[2] = (mesh.tris[i].vertices[2] * mvpCopy);
+
+			workingTriangle.vertices[0] = (workingTriangle.vertices[0] * mvpCopy);
+			workingTriangle.vertices[1] = (workingTriangle.vertices[1] * mvpCopy);
+			workingTriangle.vertices[2] = (workingTriangle.vertices[2] * mvpCopy);
 
 			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
 			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;

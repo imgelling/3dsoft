@@ -48,15 +48,12 @@ public:
 		showText = true;
 	}
 
-	//uint32_t numclips = 16;
-
-
 	void Initialize()
 	{
-//#if defined(DEBUG) | defined(_DEBUG)
-//		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-//		//_CrtSetBreakAlloc(613);
-//#endif
+#if defined(DEBUG) | defined(_DEBUG)
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		//_CrtSetBreakAlloc(613);
+#endif
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
@@ -214,7 +211,6 @@ public:
 		plane.tris.emplace_back(topLeftTri);
 		plane.tris.emplace_back(bottomRightTri);
 
-		//alphaWall.tris = plane.tris;
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
