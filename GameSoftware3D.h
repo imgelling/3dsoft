@@ -971,9 +971,9 @@ namespace game
 							//rd = rd * ad / newa + dr * da * (1.0f - ad) / newa;
 							//gd = gd * ad / newa + dg * da * (1.0f - ad) / newa;
 							//bd = bd * ad / newa + db * da * (1.0f - ad) / newa;
-							rSource = rSource * adnewa + rDest * aDest * da1minadnewa;
-							gSource = gSource * adnewa + gDest * aDest * da1minadnewa;
-							bSource = bSource * adnewa + bDest * aDest * da1minadnewa;
+							rSource = rSource * adnewa + rDest * da1minadnewa;
+							gSource = gSource * adnewa + gDest * da1minadnewa;
+							bSource = bSource * adnewa + bDest * da1minadnewa;
 							colorAtPixel.Set(rSource, gSource, bSource, aFinal);
 						}
 						else
