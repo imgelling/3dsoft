@@ -470,6 +470,7 @@ namespace game
 
 	inline void Software3D::RenderMesh(Mesh& mesh, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip)
 	{
+		
 		VertexProcessor(mesh, projection, trianglesToRender, camera);
 		SetTexture(mesh.texture);
 		uint64_t fenceCount = 0;
@@ -478,6 +479,9 @@ namespace game
 			{
 				float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
 				float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+				//float_t ad = max(max(a.vertices[0].z, a.vertices[1].z), a.vertices[2].z);
+				//float_t bd = max(max(b.vertices[0].z, b.vertices[1].z), b.vertices[2].z);
+				//std::cout << az << "," << bz << "\n";
 				return az > bz;
 			};
 		auto frontToBack = [](const game::Triangle& a, const game::Triangle& b)
@@ -499,7 +503,7 @@ namespace game
 			default: break;
 			}
 			
-			//pixelMode.Rect(clip[c], game::Colors::Yellow);
+			//_pixelMode->Rect(clip.clips[c], game::Colors::Yellow);
 			Render(clip.clippedTris[c], clip.clips[c]);
 			fenceCount++;
 		}
@@ -719,7 +723,7 @@ namespace game
 		float_t upDiv = 0.0f;
 		float_t vpDiv = 0.0f;
 
-		uint32_t color = 0;
+		//uint32_t color = 0;
 		uint32_t rc = 0;
 		uint32_t gc = 0;
 		uint32_t bc = 0;
@@ -955,17 +959,16 @@ namespace game
 						}
 
 						// alpha blending
-						if (_enableAlphaBlend) //307
+						if (_enableAlphaBlend) 
 						{
 							uint32_t dest = *colorBuffer;
-							// extract dest
-						
+							// extract dest						
 							float_t rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
 							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
 							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
 							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
 							float_t aFinal = 1.0f - (1.0f - aSource) * (1 - aDest);
-							if (aFinal < 1.0e-6) continue; // completly transparent, skip
+							
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
 							float_t adnewa = aSource / aFinal;
 							float_t da1minadnewa = aDest * (1.0f - aSource) / aFinal;
@@ -1005,10 +1008,10 @@ namespace game
 						vpDiv = min(vpDiv, 1.0f); //clamp
 						tx = max((uint32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
 						ty = max((uint32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
-						color = _currentTexture.data[ty * _currentTexture.size.width + tx];
+						colorAtPixel.packedABGR = _currentTexture.data[ty * _currentTexture.size.width + tx];
 						if (_enableAlphaTest)
 						{							
-							if (((color >> 24) & 0xFF) < _alphaTestValue)
+							if (((colorAtPixel.packedABGR >> 24) & 0xFF) < _alphaTestValue)
 							{
 								++colorBuffer;
 								++depthBufferPtr;
@@ -1023,23 +1026,52 @@ namespace game
 
 							}
 						}
-						
+
 						// texture lighting
 						if (lighting)
 						{
-							rc   = (color >> 0) & 0xFF;
-							gc   = (color >> 8) & 0xFF;
-							bc   = (color >> 16) & 0xFF;
+							rc = (colorAtPixel.packedABGR >> 0) & 0xFF;
+							gc = (colorAtPixel.packedABGR >> 8) & 0xFF;
+							bc = (colorAtPixel.packedABGR >> 16) & 0xFF;
+							ac = (colorAtPixel.packedABGR >> 24) & 0xFF;
 							rc = (uint32_t)(rc * luminance);
 							gc = (uint32_t)(gc * luminance);
 							bc = (uint32_t)(bc * luminance);
 
-							*colorBuffer = ((0xFF << 24) | (bc << 16) | (gc << 8) | (rc));
+							colorAtPixel.packedABGR = ((ac << 24) | (bc << 16) | (gc << 8) | (rc));
 						}
-						if (!lighting)
+
+						if (_enableAlphaBlend) 
 						{
-							*colorBuffer = color;// _currentTexture.data[ty * _currentTexture.size.width + tx];
+							uint32_t dest = *colorBuffer;
+							// extract dest
+
+							float_t rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
+							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
+							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
+							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * colorAtPixel.oneOver255;
+							gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * colorAtPixel.oneOver255;
+							bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * colorAtPixel.oneOver255;
+							aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							float_t aFinal = 1.0f - (1.0f - aSource) * (1 - aDest);
+							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
+							float_t adnewa = aSource / aFinal;
+							float_t da1minadnewa = aDest * (1.0f - aSource) / aFinal;
+							//rd = rd * ad / newa + dr * da * (1.0f - ad) / newa;
+							//gd = gd * ad / newa + dg * da * (1.0f - ad) / newa;
+							//bd = bd * ad / newa + db * da * (1.0f - ad) / newa;
+							rSource = rSource * adnewa + rDest * da1minadnewa;
+							gSource = gSource * adnewa + gDest * da1minadnewa;
+							bSource = bSource * adnewa + bDest * da1minadnewa;
+							colorAtPixel.Set(rSource, gSource, bSource, aFinal);
 						}
+						
+
+						//if (!lighting)
+						//{
+						*colorBuffer = colorAtPixel.packedABGR;// color;// _currentTexture.data[ty * _currentTexture.size.width + tx];
+						//}
 					}
 				}
 				++colorBuffer;
