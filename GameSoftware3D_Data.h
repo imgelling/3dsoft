@@ -394,10 +394,10 @@ namespace game
 			{
 				uint32_t access = row * cols + col;
 				clips2[access].left = (rc) * (colsize);
-				clips2[access].right = (clips2[access].left + colsize);
+				clips2[access].right = (clips2[access].left + colsize) - 1;
 				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
 				clips2[access].top = cc * (rowsize);
-				clips2[access].bottom = clips2[access].top + rowsize;
+				clips2[access].bottom = clips2[access].top + rowsize - 1;
 				if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
 				rc++;
 			}

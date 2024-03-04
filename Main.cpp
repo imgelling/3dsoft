@@ -390,6 +390,7 @@ public:
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
+		alphaWall.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
 		//game::Vector3MultMatrix4x4(model.centerPoint, model.model, center);
 		//camera.GenerateLookAtMatrix(center);
