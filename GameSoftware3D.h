@@ -21,6 +21,7 @@
 #define GAME_SOFTWARE3D_BACKFACECULL 8
 #define GAME_SOFTWARE3D_DEPTH_WRITE 9
 #define GAME_SOFTWARE3D_SORT 10
+#define GAME_SOFTWARE3D_ALPHA_BLEND 11
 
  
 namespace game
@@ -81,6 +82,7 @@ namespace game
 		LightingType _lightingType;
 		bool _enableAlphaTest;
 		uint32_t _alphaTestValue;
+		bool _enableAlphaBlend;
 		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
 	};
@@ -103,6 +105,7 @@ namespace game
 		_sortType = SortingType::FrontToBack;
 		_enableAlphaTest = false;
 		_alphaTestValue = 128;
+		_enableAlphaBlend = false;
 		_numbuffers = 5;
 		for (uint32_t i = 0; i < 10; i++)
 			_clearDepthBuffer[i] = nullptr;
@@ -427,6 +430,12 @@ namespace game
 			_sortType = (SortingType)value;
 			return true;
 		}
+
+		if (state == GAME_SOFTWARE3D_ALPHA_BLEND)
+		{
+			_enableAlphaBlend = value;
+			return true;
+		}
 		return false;
 	}
 
@@ -700,10 +709,10 @@ namespace game
 		float_t nYEval = 0.0f;
 		float_t nZEval = 0.0f;
 
-		float_t rd = 0.0f;
-		float_t gd = 0.0f;
-		float_t bd = 0.0f;
-		float_t ad = 0.0f;
+		float_t rSource = 0.0f;
+		float_t gSource = 0.0f;
+		float_t bSource = 0.0f;
+		float_t aSource = 0.0f;
 
 		uint32_t tx = 0;
 		uint32_t ty = 0;
@@ -932,33 +941,46 @@ namespace game
 						}
 						if (lighting)
 						{
-							rd = min(rEval * oneOverDepthEval, 1.0f) * luminance;
-							gd = min(gEval * oneOverDepthEval, 1.0f) * luminance;
-							bd = min(bEval * oneOverDepthEval, 1.0f) * luminance;
-							ad = min(aEval * oneOverDepthEval, 1.0f) * luminance;
+							rSource = min(rEval * oneOverDepthEval, 1.0f) * luminance;
+							gSource = min(gEval * oneOverDepthEval, 1.0f) * luminance;
+							bSource = min(bEval * oneOverDepthEval, 1.0f) * luminance;
+							aSource = min(aEval * oneOverDepthEval, 1.0f) * luminance;
 						}
 						if (!lighting)
 						{
-							rd = min(rEval * oneOverDepthEval, 1.0f);
-							gd = min(gEval * oneOverDepthEval, 1.0f);
-							bd = min(bEval * oneOverDepthEval, 1.0f);
-							ad = min(aEval * oneOverDepthEval, 1.0f);
+							rSource = min(rEval * oneOverDepthEval, 1.0f);
+							gSource = min(gEval * oneOverDepthEval, 1.0f);
+							bSource = min(bEval * oneOverDepthEval, 1.0f);
+							aSource = min(aEval * oneOverDepthEval, 1.0f);
 						}
 
 						// alpha blending
-						uint32_t dest = *colorBuffer;
-						// extract dest
-						float_t dr = ((dest >> 0) & 0xFF) / 255.0f;
-						float_t dg = ((dest >> 8) & 0xFF) / 255.0f;
-						float_t db = ((dest >> 16) & 0xFF) / 255.0f;
-						float_t da = ((dest >> 24) & 0xFF) / 255.0f;
-						float_t newa = 1.0f - (1.0f - ad) * (1 - da);
-						if (newa < 1.0e-6) continue; // completly transparent, skip
-						// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
-						rd = rd * ad / newa + dr * da * (1.0f - ad) / newa;
-						gd = gd * ad / newa + dg * da * (1.0f - ad) / newa;
-						bd = bd * ad / newa + db * da * (1.0f - ad) / newa;
-						colorAtPixel.Set(rd, gd, bd, newa);
+						if (_enableAlphaBlend) //307
+						{
+							uint32_t dest = *colorBuffer;
+							// extract dest
+							float_t rDest = ((dest >> 0) & 0xFF) / 255.0f;
+							float_t gDest = ((dest >> 8) & 0xFF) / 255.0f;
+							float_t bDest = ((dest >> 16) & 0xFF) / 255.0f;
+							float_t aDest = ((dest >> 24) & 0xFF) / 255.0f;
+							float_t aFinal = 1.0f - (1.0f - aSource) * (1 - aDest);
+							if (aFinal < 1.0e-6) continue; // completly transparent, skip
+							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
+							float_t adnewa = aSource / aFinal;
+							float_t da1minadnewa = aDest * (1.0f - aSource) / aFinal;
+							//rd = rd * ad / newa + dr * da * (1.0f - ad) / newa;
+							//gd = gd * ad / newa + dg * da * (1.0f - ad) / newa;
+							//bd = bd * ad / newa + db * da * (1.0f - ad) / newa;
+							rSource = rSource * adnewa + rDest * aDest * da1minadnewa;
+							gSource = gSource * adnewa + gDest * aDest * da1minadnewa;
+							bSource = bSource * adnewa + bDest * aDest * da1minadnewa;
+							colorAtPixel.Set(rSource, gSource, bSource, aFinal);
+						}
+						else
+						{
+							colorAtPixel.Set(rSource, gSource, bSource, aSource);
+						}
+						
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
 
