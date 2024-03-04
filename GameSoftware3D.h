@@ -959,10 +959,11 @@ namespace game
 						{
 							uint32_t dest = *colorBuffer;
 							// extract dest
-							float_t rDest = ((dest >> 0) & 0xFF) / 255.0f;
-							float_t gDest = ((dest >> 8) & 0xFF) / 255.0f;
-							float_t bDest = ((dest >> 16) & 0xFF) / 255.0f;
-							float_t aDest = ((dest >> 24) & 0xFF) / 255.0f;
+						
+							float_t rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
+							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
+							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
+							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
 							float_t aFinal = 1.0f - (1.0f - aSource) * (1 - aDest);
 							if (aFinal < 1.0e-6) continue; // completly transparent, skip
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
