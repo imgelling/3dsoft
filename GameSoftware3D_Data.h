@@ -25,6 +25,15 @@ namespace game
 		Depth
 	};
 
+	enum SortingType
+	{
+		FrontToBack,
+		BackToFront,
+		NoSort
+	};
+
+
+
 	static FillMode& operator++ (FillMode& rmode, int32_t)
 	{
 		rmode = static_cast<FillMode>((int)rmode + 1);
@@ -52,6 +61,16 @@ namespace game
 		case LightingType::Face: return stream << "Face Lighting";
 		case LightingType::Vertex: return stream << "Vertex Lighting";
 		case LightingType::Depth: return stream << "Depth Lighting";
+		default: return stream << "Unknown lighting type";
+		}
+	}
+	static std::ostream& operator<< (std::ostream& stream, SortingType type)
+	{
+		switch (type)
+		{
+		case SortingType::BackToFront: return stream << "Back to Front";
+		case SortingType::FrontToBack: return stream << "Front to Back";
+		case SortingType::NoSort: return stream << "None";
 		default: return stream << "Unknown lighting type";
 		}
 	}

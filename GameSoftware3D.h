@@ -19,6 +19,9 @@
 #define GAME_SOFTWARE3D_ALPHA_TEST 6
 #define GAME_SOFTWARE3D_ALPHA_TEST_VALUE 7
 #define GAME_SOFTWARE3D_BACKFACECULL 8
+#define GAME_SOFTWARE3D_DEPTH_WRITE 9
+#define GAME_SOFTWARE3D_SORT 10
+
  
 namespace game
 {
@@ -69,12 +72,14 @@ namespace game
 		uint32_t _currentDepth;
 		Texture _currentTexture;
 		ThreadPool _threadPool;
+		SortingType _sortType;
 		FillMode _fillMode;
 		bool _enableTexturing;
 		bool _enableLighting;
 		bool _enableBackFaceCulling;
+		bool _enableDepthWrite;
 		LightingType _lightingType;
-		std::atomic_bool _enableAlphaTest;
+		bool _enableAlphaTest;
 		uint32_t _alphaTestValue;
 		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
@@ -90,10 +95,12 @@ namespace game
 		_totalBufferSize = 0;
 		_multiThreaded = false;
 		depthBuffer = nullptr;
+		_enableDepthWrite = true;
 		_enableTexturing = false;
 		_enableLighting = false;
 		_enableBackFaceCulling = true;
 		_lightingType = LightingType::Face;
+		_sortType = SortingType::FrontToBack;
 		_enableAlphaTest = false;
 		_alphaTestValue = 128;
 		_numbuffers = 5;
@@ -403,6 +410,22 @@ namespace game
 		if (state == GAME_SOFTWARE3D_BACKFACECULL)
 		{
 			_enableBackFaceCulling = value;
+			return true;
+		}
+
+		if (state == GAME_SOFTWARE3D_DEPTH_WRITE)
+		{
+			_enableDepthWrite = value;
+			return true;
+		}
+
+		if (state == GAME_SOFTWARE3D_SORT)
+		{
+			if ((value < SortingType::BackToFront) && (value > SortingType::NoSort))
+				return false;
+
+			_sortType = (SortingType)value;
+			return true;
 		}
 		return false;
 	}
@@ -441,16 +464,32 @@ namespace game
 		VertexProcessor(mesh, projection, trianglesToRender, camera);
 		SetTexture(mesh.texture);
 		uint64_t fenceCount = 0;
+
+		auto backToFront = [](const game::Triangle& a, const game::Triangle& b)
+			{
+				float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+				float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+				return az > bz;
+			};
+		auto frontToBack = [](const game::Triangle& a, const game::Triangle& b)
+			{
+				float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
+				float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
+				return az < bz;
+			};
+
 		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
 		{
 			ScreenClip(trianglesToRender, clip, c);
 			if (!clip.clippedTris[c].size()) continue;
-			std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), [](const game::Triangle& a, const game::Triangle& b)
-				{
-					float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
-					float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-					return az < bz;
-				});
+			switch (_sortType)
+			{
+			case SortingType::BackToFront: std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), backToFront); break;
+			case SortingType::FrontToBack: std::sort(clip.clippedTris[c].begin(), clip.clippedTris[c].end(), frontToBack); break;
+			case SortingType::NoSort:
+			default: break;
+			}
+			
 			//pixelMode.Rect(clip[c], game::Colors::Yellow);
 			Render(clip.clippedTris[c], clip.clips[c]);
 			fenceCount++;
@@ -563,11 +602,13 @@ namespace game
 		ParameterEquation rColorParam;//triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation gColorParam;//triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation bColorParam;//triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation aColorParam;
 		if (!textured)
 		{
 			rColorParam.Set(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			gColorParam.Set(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			bColorParam.Set(triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			aColorParam.Set(triangle.color[0].af * oneOverW.x, triangle.color[1].af * oneOverW.y, triangle.color[2].af * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		}
 
 		// Depth parameter
@@ -654,6 +695,7 @@ namespace game
 		float_t rEval = 0.0f;
 		float_t gEval = 0.0f;
 		float_t bEval = 0.0f;
+		float_t aEval = 0.0f;
 		float_t nXEval = 0.0f;
 		float_t nYEval = 0.0f;
 		float_t nZEval = 0.0f;
@@ -661,6 +703,7 @@ namespace game
 		float_t rd = 0.0f;
 		float_t gd = 0.0f;
 		float_t bd = 0.0f;
+		float_t ad = 0.0f;
 
 		uint32_t tx = 0;
 		uint32_t ty = 0;
@@ -671,6 +714,7 @@ namespace game
 		uint32_t rc = 0;
 		uint32_t gc = 0;
 		uint32_t bc = 0;
+		uint32_t ac = 0;
 
 		Vector3f vertexNormalEval;
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
@@ -752,12 +796,12 @@ namespace game
 				{
 					if (textured)
 					{
-						if (!_enableAlphaTest)
+						if (!_enableAlphaTest && _enableDepthWrite)
 						{
 							*depthBufferPtr = oneOverDepthEval;
 						}
 					}
-					if (!textured)
+					if (!textured && _enableDepthWrite)
 					{
 						*depthBufferPtr = oneOverDepthEval;
 					}
@@ -784,6 +828,7 @@ namespace game
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
+							aColorParam.stepX(aEval);
 						}
 						++colorBuffer;
 						++depthBufferPtr;
@@ -803,7 +848,7 @@ namespace game
 						};
 					if (textured && !filled)
 					{
-						if (_enableAlphaTest)
+						if (_enableAlphaTest && _enableDepthWrite)
 						{
 							*depthBufferPtr = oneOverDepthEval;
 						}
@@ -817,7 +862,7 @@ namespace game
 					{
 						if (textured)
 						{
-							if (_enableAlphaTest)
+							if (_enableAlphaTest && _enableDepthWrite)
 							{
 								*depthBufferPtr = oneOverDepthEval;
 							}
@@ -876,26 +921,44 @@ namespace game
 							rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
 							gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
 							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
+							aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
 						}
 						else
 						{
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
+							aColorParam.stepX(aEval);
 						}
 						if (lighting)
 						{
 							rd = min(rEval * oneOverDepthEval, 1.0f) * luminance;
 							gd = min(gEval * oneOverDepthEval, 1.0f) * luminance;
 							bd = min(bEval * oneOverDepthEval, 1.0f) * luminance;
+							ad = min(aEval * oneOverDepthEval, 1.0f) * luminance;
 						}
 						if (!lighting)
 						{
 							rd = min(rEval * oneOverDepthEval, 1.0f);
 							gd = min(gEval * oneOverDepthEval, 1.0f);
 							bd = min(bEval * oneOverDepthEval, 1.0f);
+							ad = min(aEval * oneOverDepthEval, 1.0f);
 						}
-						colorAtPixel.Set(rd, gd, bd, 1.0f);
+
+						// alpha blending
+						uint32_t dest = *colorBuffer;
+						// extract dest
+						float_t dr = ((dest >> 0) & 0xFF) / 255.0f;
+						float_t dg = ((dest >> 8) & 0xFF) / 255.0f;
+						float_t db = ((dest >> 16) & 0xFF) / 255.0f;
+						float_t da = ((dest >> 24) & 0xFF) / 255.0f;
+						float_t newa = 1.0f - (1.0f - ad) * (1 - da);
+						if (newa < 1.0e-6) continue; // completly transparent, skip
+						// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
+						rd = rd * ad / newa + dr * da * (1.0f - ad) / newa;
+						gd = gd * ad / newa + dg * da * (1.0f - ad) / newa;
+						bd = bd * ad / newa + db * da * (1.0f - ad) / newa;
+						colorAtPixel.Set(rd, gd, bd, newa);
 						*colorBuffer = colorAtPixel.packedABGR;
 					}
 
@@ -930,7 +993,11 @@ namespace game
 							}
 							else
 							{
-								*depthBufferPtr = oneOverDepthEval;
+								if (_enableDepthWrite)
+								{
+									*depthBufferPtr = oneOverDepthEval;
+								}
+
 							}
 						}
 						
@@ -961,6 +1028,7 @@ namespace game
 				rColorParam.first = 1;
 				gColorParam.first = 1;
 				bColorParam.first = 1;
+				aColorParam.first = 1;
 			}
 			if (textured)
 			{

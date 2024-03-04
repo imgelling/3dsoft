@@ -372,7 +372,8 @@ namespace game
 			out_tri1.color[1].rf = t * (in_tri.color[outsidePoints[0]].rf - in_tri.color[insidePoints[0]].rf) + in_tri.color[insidePoints[0]].rf;
 			out_tri1.color[1].gf = t * (in_tri.color[outsidePoints[0]].gf - in_tri.color[insidePoints[0]].gf) + in_tri.color[insidePoints[0]].gf;
 			out_tri1.color[1].bf = t * (in_tri.color[outsidePoints[0]].bf - in_tri.color[insidePoints[0]].bf) + in_tri.color[insidePoints[0]].bf;
-			out_tri1.color[1].Set(out_tri1.color[1].rf, out_tri1.color[1].gf, out_tri1.color[1].bf, 1.0f);
+			out_tri1.color[1].af = t * (in_tri.color[outsidePoints[0]].af - in_tri.color[insidePoints[0]].af) + in_tri.color[insidePoints[0]].af;
+			out_tri1.color[1].Set(out_tri1.color[1].rf, out_tri1.color[1].gf, out_tri1.color[1].bf, out_tri1.color[1].af);
 			out_tri1.vertices[1].w = t * (in_tri.vertices[outsidePoints[0]].w - in_tri.vertices[insidePoints[0]].w) + in_tri.vertices[insidePoints[0]].w;
 			out_tri1.uvs[1].x = t * (in_tri.uvs[outsidePoints[0]].x - in_tri.uvs[insidePoints[0]].x) + in_tri.uvs[insidePoints[0]].x;
 			out_tri1.uvs[1].y = t * (in_tri.uvs[outsidePoints[0]].y - in_tri.uvs[insidePoints[0]].y) + in_tri.uvs[insidePoints[0]].y;
@@ -387,7 +388,8 @@ namespace game
 			out_tri1.color[2].rf = t * (in_tri.color[outsidePoints[1]].rf - in_tri.color[insidePoints[0]].rf) + in_tri.color[insidePoints[0]].rf;
 			out_tri1.color[2].gf = t * (in_tri.color[outsidePoints[1]].gf - in_tri.color[insidePoints[0]].gf) + in_tri.color[insidePoints[0]].gf;
 			out_tri1.color[2].bf = t * (in_tri.color[outsidePoints[1]].bf - in_tri.color[insidePoints[0]].bf) + in_tri.color[insidePoints[0]].bf;
-			out_tri1.color[2].Set(out_tri1.color[2].rf, out_tri1.color[2].gf, out_tri1.color[2].bf, 1.0f);
+			out_tri1.color[2].af = t * (in_tri.color[outsidePoints[1]].af - in_tri.color[insidePoints[0]].af) + in_tri.color[insidePoints[0]].af;
+			out_tri1.color[2].Set(out_tri1.color[2].rf, out_tri1.color[2].gf, out_tri1.color[2].bf, out_tri1.color[2].af);
 			out_tri1.vertices[2].w = t * (in_tri.vertices[outsidePoints[1]].w - in_tri.vertices[insidePoints[0]].w) + in_tri.vertices[insidePoints[0]].w;
 			out_tri1.uvs[2].x = t * (in_tri.uvs[outsidePoints[1]].x - in_tri.uvs[insidePoints[0]].x) + in_tri.uvs[insidePoints[0]].x;
 			out_tri1.uvs[2].y = t * (in_tri.uvs[outsidePoints[1]].y - in_tri.uvs[insidePoints[0]].y) + in_tri.uvs[insidePoints[0]].y;
@@ -437,7 +439,8 @@ namespace game
 			out_tri1.color[2].rf = t * (in_tri.color[outsidePoints[0]].rf - in_tri.color[insidePoints[0]].rf) + in_tri.color[insidePoints[0]].rf;
 			out_tri1.color[2].gf = t * (in_tri.color[outsidePoints[0]].gf - in_tri.color[insidePoints[0]].gf) + in_tri.color[insidePoints[0]].gf;
 			out_tri1.color[2].bf = t * (in_tri.color[outsidePoints[0]].bf - in_tri.color[insidePoints[0]].bf) + in_tri.color[insidePoints[0]].bf;
-			out_tri1.color[2].Set(out_tri1.color[2].rf, out_tri1.color[2].gf, out_tri1.color[2].bf, 1.0f);
+			out_tri1.color[2].af = t * (in_tri.color[outsidePoints[0]].af - in_tri.color[insidePoints[0]].af) + in_tri.color[insidePoints[0]].af;
+			out_tri1.color[2].Set(out_tri1.color[2].rf, out_tri1.color[2].gf, out_tri1.color[2].bf, out_tri1.color[2].af);
 			out_tri1.vertices[2].w = t * (in_tri.vertices[outsidePoints[0]].w - in_tri.vertices[insidePoints[0]].w) + in_tri.vertices[insidePoints[0]].w;
 			out_tri1.uvs[2].x = t * (in_tri.uvs[outsidePoints[0]].x - in_tri.uvs[insidePoints[0]].x) + in_tri.uvs[insidePoints[0]].x;
 			out_tri1.uvs[2].y = t * (in_tri.uvs[outsidePoints[0]].y - in_tri.uvs[insidePoints[0]].y) + in_tri.uvs[insidePoints[0]].y;
@@ -462,7 +465,8 @@ namespace game
 			out_tri2.color[2].rf = t * (in_tri.color[outsidePoints[0]].rf - in_tri.color[insidePoints[1]].rf) + in_tri.color[insidePoints[1]].rf;
 			out_tri2.color[2].gf = t * (in_tri.color[outsidePoints[0]].gf - in_tri.color[insidePoints[1]].gf) + in_tri.color[insidePoints[1]].gf;
 			out_tri2.color[2].bf = t * (in_tri.color[outsidePoints[0]].bf - in_tri.color[insidePoints[1]].bf) + in_tri.color[insidePoints[1]].bf;
-			out_tri2.color[2].Set(out_tri2.color[2].rf, out_tri2.color[2].gf, out_tri2.color[2].bf, 1.0f);
+			out_tri2.color[2].af = t * (in_tri.color[outsidePoints[0]].af - in_tri.color[insidePoints[1]].af) + in_tri.color[insidePoints[1]].af;
+			out_tri2.color[2].Set(out_tri2.color[2].rf, out_tri2.color[2].gf, out_tri2.color[2].bf, out_tri2.color[2].af);
 			out_tri2.vertices[2].w = t * (in_tri.vertices[outsidePoints[0]].w - in_tri.vertices[insidePoints[1]].w) + in_tri.vertices[insidePoints[1]].w;
 			out_tri2.uvs[2].x = t * (in_tri.uvs[outsidePoints[0]].x - in_tri.uvs[insidePoints[1]].x) + in_tri.uvs[insidePoints[1]].x;
 			out_tri2.uvs[2].y = t * (in_tri.uvs[outsidePoints[0]].y - in_tri.uvs[insidePoints[1]].y) + in_tri.uvs[insidePoints[1]].y;

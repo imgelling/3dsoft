@@ -221,6 +221,31 @@ public:
 
 		alphaWall.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaWall.SetScale(0.5f, 0.5f, 0.5f);
+		game::Color col(1.0f, 0.0f, 0.0f, 0.5f);
+		game::Color col2(0.0f, 1.0f, 0.0f, 0.5f);
+		game::Color col3(0.0f, 0.0f, 1.0f, 0.5f);
+		game::Color set = col;
+		uint32_t ct = 0;
+		for (uint32_t i = 0; i < alphaWall.tris.size(); i++)
+		{			
+			alphaWall.tris[i].color[0] = set;
+			alphaWall.tris[i].color[1] = set;
+			alphaWall.tris[i].color[2] = set;
+			ct++;
+			ct %= 3;
+			if (ct == 0)
+			{
+				set = col;
+			}
+			if (ct == 1)
+			{
+				set = col2;
+			}
+			if (ct == 2)
+			{
+				set = col3;
+			}
+		}
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
 		model.SetTranslation(1.0f, 0.0f, 0.0f);
@@ -371,17 +396,12 @@ public:
 		camera.GenerateViewMatrix();
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		software3D.RenderMesh(alphaWall, mvpMat, camera, clip);
+
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
 
@@ -390,10 +410,22 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		software3D.RenderMesh(model, mvpMat, camera, clip);
+		//software3D.RenderMesh(model, mvpMat, camera, clip);
 		
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-		software3D.RenderMesh(torus, mvpMat, camera, clip);
+		//software3D.RenderMesh(torus, mvpMat, camera, clip);
+
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		software3D.RenderMesh(alphaWall, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 
 
 
