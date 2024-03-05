@@ -967,7 +967,7 @@ namespace game
 							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
 							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
 							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
-							float_t aFinal = 1.0f - (1.0f - aSource) * (1 - aDest);
+							float_t aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
 							float_t adnewa = aSource / aFinal;
@@ -1006,6 +1006,8 @@ namespace game
 						// calculate texture lookup
 						upDiv = min(upDiv, 1.0f); //clamp
 						vpDiv = min(vpDiv, 1.0f); //clamp
+						upDiv = max(upDiv, 0.0f);  // something is causing a negative value
+						vpDiv = max(vpDiv, 0.0f);
 						tx = max((uint32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
 						ty = max((uint32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
 						colorAtPixel.packedABGR = _currentTexture.data[ty * _currentTexture.size.width + tx];
@@ -1054,7 +1056,7 @@ namespace game
 							gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * colorAtPixel.oneOver255;
 							bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * colorAtPixel.oneOver255;
 							aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
-							float_t aFinal = 1.0f - (1.0f - aSource) * (1 - aDest);
+							float_t aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
 							float_t adnewa = aSource / aFinal;
 							float_t da1minadnewa = aDest * (1.0f - aSource) / aFinal;

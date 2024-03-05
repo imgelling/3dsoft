@@ -402,9 +402,10 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.RenderMesh(plane, mvpMat, camera, clip);
 
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.RenderMesh(sky, mvpMat, camera, clip);
 
 
