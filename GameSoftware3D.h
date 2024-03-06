@@ -1416,7 +1416,7 @@ namespace game
 	{
 		mesh.GenerateModelMatrix();
 		Matrix4x4f mvpCopy(mvp);
-		mvpCopy = mvpCopy * mesh.billboard * mesh.model;
+		mvpCopy = mvpCopy * mesh.billboard * mesh.model;// *mesh.billboard;
 		game::Triangle workingTriangle;
 
 
@@ -1450,7 +1450,7 @@ namespace game
 				{
 					changeWinding = 1;
 				}
-			} // 302
+			} 
 
 
 

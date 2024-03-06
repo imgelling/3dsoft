@@ -28,6 +28,7 @@ public:
 	game::Mesh model;
 	game::Mesh torus;
 	game::Mesh sky;
+	game::Mesh billboard;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -108,7 +109,6 @@ public:
 		}
 
 
-
 		game::ImageLoader imageloader;   // Load texture in software3D
 		uint32_t t = 0;
 		uint32_t texw = 0;
@@ -137,7 +137,7 @@ public:
 		memcpy(alphaCube.texture.data, temp, (size_t)texw * texh * 4);
 		alphaCube.texture.size.width = texw;
 		alphaCube.texture.size.height = texh;
-		
+
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -216,10 +216,12 @@ public:
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
+		billboard = plane;
+		billboard.texture = alphaCube.texture;
 
-		//plane.SetRotation(-3.14159f / 2.0f, 0, 0);
-		//plane.SetTranslation(0.0f, 0.1f, 0.0f);
-		//plane.SetScale(60.0f, 60.0f, 60.0f);
+		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
+		plane.SetTranslation(0.0f, 0.1f, 0.0f);
+		plane.SetScale(60.0f, 60.0f, 60.0f);
 
 		alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaCube.SetScale(0.5f, 0.5f, 0.5f);
@@ -260,7 +262,7 @@ public:
 		torus.SetTranslation(0.0f, -0.1f, 0.0f);
 
 		// Pre calc projection matrix
-		game::my_PerspectiveFOV2(90.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
+		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
 
 
@@ -392,9 +394,9 @@ public:
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
-		plane.GenerateBillboardMatrix2(camera);
-		plane.SetRotation(0.0f, 0.0f, rotation);
-		plane.SetTranslation(0, 0, (2.0f * sin(rotation)));
+		//billboard.SetRotation(0.0f, 0.0f, rotation);
+		//billboard.SetTranslation((2.0f * sin(rotation)),0,0);
+		billboard.GenerateBillboardMatrix2(camera);
 		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
 		//game::Vector3MultMatrix4x4(model.centerPoint, model.model, center);
@@ -407,7 +409,14 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
+		software3D.RenderMesh(billboard, mvpMat, camera, clip);
+
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(plane, mvpMat, camera, clip); 
 
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);

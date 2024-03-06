@@ -259,7 +259,7 @@ namespace game
 		{
 			Vector3f look;// = camera.position - position;
 			look.x = (-camera.position.x - (-position.x + centerPoint.x));
-			look.y = (-camera.position.y - (-position.y + centerPoint.y));
+			look.y = 0;// (-camera.position.y - (-position.y + centerPoint.y));
 			look.z = (-camera.position.z - (-position.z + centerPoint.z));
 
 			look.Normalize();
@@ -275,12 +275,13 @@ namespace game
 			billboard.m[9] = up.z;
 
 			billboard.m[2] = -look.x;
-			billboard.m[6] = -look.y;
+			billboard.m[6] = 0;// -look.y;
 			billboard.m[10] = -look.z;
 
-			billboard.m[12] = 0;// -position.x;
-			billboard.m[13] = 0;// -position.y;
-			billboard.m[14] = 0;// -position.z;
+			billboard.m[12] = position.x;
+			billboard.m[13] = position.y;
+			billboard.m[14] = position.z;
+			SetTranslation(0, 0, 0);
 
 			billboard.m[15] = 1.0f;
 		}
@@ -290,10 +291,16 @@ namespace game
 			Matrix4x4f x;
 			Matrix4x4f y;
 			Matrix4x4f z;
+			//Matrix4x4f t;
+			billboard.SetIdentity();
 			x.SetRotationX(-camera.rotation.x);
 			y.SetRotationY(camera.rotation.y -3.14159f / 2.0f);
 			z.SetRotationZ(camera.rotation.z);
-			billboard = z * y * x;
+			//SetTranslation(position.x, position.y, position.z);
+			//GenerateModelMatrix();
+			billboard = billboard * translate;
+			SetTranslation(0, 0, 0);
+			billboard = billboard * z * y * x;// *translate;
 		}
 	};
 
