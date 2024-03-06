@@ -190,6 +190,8 @@ namespace game
 		Matrix4x4f rotation;
 		Matrix4x4f scale;
 		Vector3f centerPoint;
+		Matrix4x4f billboard;
+		Vector3f position;
 		bool SetTexture(const Texture& inTexture) noexcept
 		{
 			if (texture.data == nullptr)
@@ -223,6 +225,7 @@ namespace game
 		inline void SetTranslation(const float_t x, const float_t y, const float_t z) noexcept
 		{
 			translate.SetTranslation(x, y, z);
+			position = { x,y,z };
 		}
 		inline void SetScale(const float_t x, const float_t y, const float_t z) noexcept
 		{
@@ -251,6 +254,35 @@ namespace game
 		{
 			model.SetIdentity();
 			model = translate * rotation * scale;
+		}
+		inline void GenerateBillboardMatrix(Camera3D& camera)
+		{
+			Vector3f look;// = camera.position - position;
+			look.x = (-camera.position.x - (-position.x + centerPoint.x));
+			look.y = (-camera.position.y - (-position.y + centerPoint.y));
+			look.z = (-camera.position.z - (-position.z + centerPoint.z));
+
+			look.Normalize();
+			//billboard.SetIdentity();
+			Vector3f right = camera.up.Cross(look);
+			Vector3f up = look.Cross(right);
+			billboard.m[0] = right.x;
+			billboard.m[4] = right.y;
+			billboard.m[8] = right.z;
+
+			billboard.m[1] = up.x;
+			billboard.m[5] = up.y;
+			billboard.m[9] = up.z;
+
+			billboard.m[2] = -look.x;
+			billboard.m[6] = -look.y;
+			billboard.m[10] = -look.z;
+
+			billboard.m[12] = 0;// -position.x;
+			billboard.m[13] = 0;// -position.y;
+			billboard.m[14] = 0;// -position.z;
+
+			billboard.m[15] = 1.0f;
 		}
 	};
 

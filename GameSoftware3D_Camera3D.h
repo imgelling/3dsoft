@@ -112,9 +112,13 @@ namespace game
 		view.m[6] = forward.y;
 		view.m[10] = forward.z;
 
-		Matrix4x4f ct;
-		ct.SetTranslation(-position.x, -position.y, -position.z);
-		view = view * ct;
+		view.m[12] = right.Dot(position * -1.0f);
+		view.m[13] = up.Dot(position * -1.0f);
+		view.m[14] = forward.Dot(position * -1.0f);
+
+		//Matrix4x4f ct;
+		//ct.SetTranslation(-position.x, -position.y, -position.z);
+		//view = view * ct;
 	}
 
 	inline void Camera3D::GenerateLookAtMatrix(Vector3f& point) noexcept

@@ -210,14 +210,16 @@ public:
 
 		plane.tris.emplace_back(topLeftTri);
 		plane.tris.emplace_back(bottomRightTri);
-
+		//plane.centerPoint.x = -2.0f;
+		//plane.centerPoint.y = -1.0f;
+		//plane.centerPoint.z = 0;
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
 
-		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
-		plane.SetTranslation(0.0f, 0.1f, 0.0f);
-		plane.SetScale(60.0f, 60.0f, 60.0f);
+		//plane.SetRotation(-3.14159f / 2.0f, 0, 0);
+		//plane.SetTranslation(0.0f, 0.1f, 0.0f);
+		//plane.SetScale(60.0f, 60.0f, 60.0f);
 
 		alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaCube.SetScale(0.5f, 0.5f, 0.5f);
@@ -390,27 +392,32 @@ public:
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
+		plane.GenerateBillboardMatrix(camera);
+		plane.SetRotation(0.0f, 0.0f, rotation);
+		//plane.SetTranslation((sin(rotation)), (sin(rotation)), 1);
 		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
 		//game::Vector3MultMatrix4x4(model.centerPoint, model.model, center);
-		//camera.GenerateLookAtMatrix(center);
+		//camera.GenerateLookAtMatrix(camera.forward);
 		camera.GenerateViewMatrix();
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		software3D.RenderMesh(plane, mvpMat, camera, clip);
+		software3D.RenderMesh(plane, mvpMat, camera, clip); 
 
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		software3D.RenderMesh(sky, mvpMat, camera, clip);
+		sky.GenerateModelMatrix();
+		software3D.RenderMesh(sky, mvpMat, camera, clip); 
 
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.RenderMesh(torus, mvpMat, camera, clip);
+		software3D.RenderMesh(torus, mvpMat, camera, clip); 
 
 		
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
@@ -423,7 +430,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		software3D.RenderMesh(model, mvpMat, camera, clip);
+		software3D.RenderMesh(model, mvpMat, camera, clip); 
 
 
 
