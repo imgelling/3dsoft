@@ -284,6 +284,17 @@ namespace game
 
 			billboard.m[15] = 1.0f;
 		}
+
+		inline void GenerateBillboardMatrix2(Camera3D& camera)
+		{
+			Matrix4x4f x;
+			Matrix4x4f y;
+			Matrix4x4f z;
+			x.SetRotationX(-camera.rotation.x);
+			y.SetRotationY(camera.rotation.y -3.14159f / 2.0f);
+			z.SetRotationZ(camera.rotation.z);
+			billboard = z * y * x;
+		}
 	};
 
 	struct ParameterEquation 
