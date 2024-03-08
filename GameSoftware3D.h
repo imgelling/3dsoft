@@ -972,7 +972,7 @@ namespace game
 							
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
 							float_t adnewa = aSource / aFinal;
-							float_t da1minadnewa = aDest * (1.0f - adnewa);// aSource) / aFinal;
+							float_t da1minadnewa = aDest * (1.0f - aSource) / aFinal;
 							//rd = rd * ad / newa + dr * da * (1.0f - ad) / newa;
 							//gd = gd * ad / newa + dg * da * (1.0f - ad) / newa;
 							//bd = bd * ad / newa + db * da * (1.0f - ad) / newa;
