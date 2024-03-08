@@ -241,31 +241,31 @@ public:
 
 		alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaCube.SetScale(0.5f, 0.5f, 0.5f);
-		//game::Color col(1.0f, 0.0f, 0.0f, 0.5f);
-		//game::Color col2(0.0f, 1.0f, 0.0f, 0.5f);
-		//game::Color col3(0.0f, 0.0f, 1.0f, 0.5f);
-		//game::Color set = col;
-		//uint32_t ct = 0;
-		//for (uint32_t i = 0; i < alphaCube.tris.size(); i++)
-		//{			
-		//	alphaCube.tris[i].color[0] = set;
-		//	alphaCube.tris[i].color[1] = set;
-		//	alphaCube.tris[i].color[2] = set;
-		//	//ct++;
-		//	//ct %= 3;
-		//	//if (ct == 0)
-		//	//{
-		//	//	set = col;
-		//	//}
-		//	//if (ct == 1)
-		//	//{
-		//	//	set = col2;
-		//	//}
-		//	//if (ct == 2)
-		//	//{
-		//	//	set = col3;
-		//	//}
-		//}
+		game::Color col(1.0f, 0.0f, 0.0f, 0.5f);
+		game::Color col2(0.0f, 1.0f, 0.0f, 0.5f);
+		game::Color col3(0.0f, 0.0f, 1.0f, 0.5f);
+		game::Color set = col;
+		uint32_t ct = 0;
+		for (uint32_t i = 0; i < alphaCube.tris.size(); i++)
+		{			
+			alphaCube.tris[i].color[0] = set;
+			alphaCube.tris[i].color[1] = set;
+			alphaCube.tris[i].color[2] = set;
+			ct++;
+			ct %= 3;
+			if (ct == 0)
+			{
+				set = col;
+			}
+			if (ct == 1)
+			{
+				set = col2;
+			}
+			if (ct == 2)
+			{
+				set = col3;
+			}
+		}
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
 		model.SetTranslation(1.0f, 0.0f, 0.0f);
@@ -404,7 +404,7 @@ public:
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		pixelMode.Clear(game::Colors::White);
+		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
 		torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
@@ -440,30 +440,34 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//sky.GenerateModelMatrix();
+		sky.GenerateModelMatrix();
 		software3D.RenderMesh(sky, mvpMat, camera, clip); 
 
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-		software3D.RenderMesh(torus, mvpMat, camera, clip); 
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+		//software3D.RenderMesh(torus, mvpMat, camera, clip); 
 
 		
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 
 		
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		//software3D.RenderMesh(model, mvpMat, camera, clip); 
-		software3D.RenderMesh(particle1, mvpMat, camera, clip);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		software3D.RenderMesh(model, mvpMat, camera, clip); 
+		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
 
 
 
