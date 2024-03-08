@@ -28,7 +28,7 @@ public:
 	game::Mesh model;
 	game::Mesh torus;
 	game::Mesh sky;
-	game::Mesh billboard;
+	game::Mesh particle1;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -138,6 +138,15 @@ public:
 		alphaCube.texture.size.width = texw;
 		alphaCube.texture.size.height = texh;
 
+		imageloader.UnLoad();
+		t = 0;
+		texw = 0;
+		texh = 0;
+		temp = (uint32_t*)imageloader.Load("content/particle1.png", texw, texh, t);
+		particle1.texture.data = new uint32_t[texw * texh];
+		memcpy(particle1.texture.data, temp, (size_t)texw * texh * 4);
+		particle1.texture.size.width = texw;
+		particle1.texture.size.height = texh;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -216,8 +225,15 @@ public:
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
-		billboard = plane;
-		billboard.texture = alphaCube.texture;
+		particle1.tris = plane.tris;
+		for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
+		{
+			for (uint32_t vert = 0; vert < 3; ++vert)
+			{
+				particle1.tris[tri].color[vert] = { 1.0f, 0.0f, 0.0f, 1.0f };
+			}
+		}
+		//particle1.texture = alphaCube.texture;
 
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
@@ -225,31 +241,31 @@ public:
 
 		alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaCube.SetScale(0.5f, 0.5f, 0.5f);
-		game::Color col(1.0f, 0.0f, 0.0f, 0.5f);
-		game::Color col2(0.0f, 1.0f, 0.0f, 0.5f);
-		game::Color col3(0.0f, 0.0f, 1.0f, 0.5f);
-		game::Color set = col;
-		uint32_t ct = 0;
-		for (uint32_t i = 0; i < alphaCube.tris.size(); i++)
-		{			
-			alphaCube.tris[i].color[0] = set;
-			alphaCube.tris[i].color[1] = set;
-			alphaCube.tris[i].color[2] = set;
-			//ct++;
-			//ct %= 3;
-			//if (ct == 0)
-			//{
-			//	set = col;
-			//}
-			//if (ct == 1)
-			//{
-			//	set = col2;
-			//}
-			//if (ct == 2)
-			//{
-			//	set = col3;
-			//}
-		}
+		//game::Color col(1.0f, 0.0f, 0.0f, 0.5f);
+		//game::Color col2(0.0f, 1.0f, 0.0f, 0.5f);
+		//game::Color col3(0.0f, 0.0f, 1.0f, 0.5f);
+		//game::Color set = col;
+		//uint32_t ct = 0;
+		//for (uint32_t i = 0; i < alphaCube.tris.size(); i++)
+		//{			
+		//	alphaCube.tris[i].color[0] = set;
+		//	alphaCube.tris[i].color[1] = set;
+		//	alphaCube.tris[i].color[2] = set;
+		//	//ct++;
+		//	//ct %= 3;
+		//	//if (ct == 0)
+		//	//{
+		//	//	set = col;
+		//	//}
+		//	//if (ct == 1)
+		//	//{
+		//	//	set = col2;
+		//	//}
+		//	//if (ct == 2)
+		//	//{
+		//	//	set = col3;
+		//	//}
+		//}
 
 		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
 		model.SetTranslation(1.0f, 0.0f, 0.0f);
@@ -275,6 +291,7 @@ public:
 		software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(model.texture);
 		software3D.DeleteTexture(alphaCube.texture);
+		software3D.DeleteTexture(particle1.texture);
 	}
 
 	void Update(const float_t msElapsed)
@@ -387,21 +404,23 @@ public:
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		pixelMode.Clear(game::Colors::Black);
+		pixelMode.Clear(game::Colors::White);
 		software3D.ClearDepth(100.0f);
 
 		torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
-		//billboard.SetRotation(0.0f, 0.0f, rotation);
-		//billboard.SetTranslation((2.0f * sin(rotation)),0,0);
-		billboard.GenerateBillboardMatrix2(camera);
+		particle1.SetRotation(0,0,rotation);
+		//particle1.SetTranslation(rotation,0,0);
+		particle1.GenerateModelMatrix();
 		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
-		//game::Vector3MultMatrix4x4(model.centerPoint, model.model, center);
+		//game::Vector3MultMatrix4x4(particle1.centerPoint, particle1.model, center);
 		//camera.GenerateLookAtMatrix(camera.forward);
 		camera.GenerateViewMatrix();
+		//camera.GenerateLookAtMatrix(center);
+		particle1.GenerateBillboardMatrix2(camera);
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
@@ -412,7 +431,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
-		software3D.RenderMesh(billboard, mvpMat, camera, clip);
+		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
 
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
@@ -421,25 +440,30 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		sky.GenerateModelMatrix();
+		//sky.GenerateModelMatrix();
 		software3D.RenderMesh(sky, mvpMat, camera, clip); 
 
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.RenderMesh(torus, mvpMat, camera, clip); 
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+		software3D.RenderMesh(torus, mvpMat, camera, clip); 
 
 		
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
+		
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		//software3D.RenderMesh(model, mvpMat, camera, clip); 
+		software3D.RenderMesh(particle1, mvpMat, camera, clip);
 
 
 

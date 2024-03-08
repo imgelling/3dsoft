@@ -616,7 +616,7 @@ namespace game
 		ParameterEquation gColorParam;//triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation bColorParam;//triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		ParameterEquation aColorParam;
-		if (!textured)
+		if (filled)
 		{
 			rColorParam.Set(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			gColorParam.Set(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -836,13 +836,13 @@ namespace game
 								vny.stepX(nYEval);
 							}
 						}
-						if (!textured)
-						{
+						//if (!textured)
+						//{
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
 							aColorParam.stepX(aEval);
-						}
+						//}
 						++colorBuffer;
 						++depthBufferPtr;
 						continue;
@@ -1029,20 +1029,53 @@ namespace game
 							}
 						}
 
+						if (rColorParam.first)
+						{
+							rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
+							gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
+							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
+							aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
+						}
+						else
+						{
+							rColorParam.stepX(rEval);
+							gColorParam.stepX(gEval);
+							bColorParam.stepX(bEval);
+							aColorParam.stepX(aEval);
+						}
+
+
+						//rSource = min(rEval * oneOverDepthEval, 1.0f);
+						//gSource = min(gEval * oneOverDepthEval, 1.0f);
+						//bSource = min(bEval * oneOverDepthEval, 1.0f);
+						//aSource = min(aEval * oneOverDepthEval, 1.0f);
+
+						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * colorAtPixel.oneOver255;
+						gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * colorAtPixel.oneOver255;
+						bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * colorAtPixel.oneOver255;
+						aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
+
+
+						rSource = ((rSource * min(rEval * oneOverDepthEval, 1.0f)));// * 0.5f);
+						gSource = ((gSource * min(gEval * oneOverDepthEval, 1.0f)));// * 0.5f);
+						bSource = ((bSource * min(bEval * oneOverDepthEval, 1.0f)));// * 0.5f);
+						aSource = ((aSource * min(aEval * oneOverDepthEval, 1.0f)));// * 0.5f);
+
 						// texture lighting
 						if (lighting)
 						{
-							rc = (colorAtPixel.packedABGR >> 0) & 0xFF;
-							gc = (colorAtPixel.packedABGR >> 8) & 0xFF;
-							bc = (colorAtPixel.packedABGR >> 16) & 0xFF;
-							ac = (colorAtPixel.packedABGR >> 24) & 0xFF;
-							rc = (uint32_t)(rc * luminance);
-							gc = (uint32_t)(gc * luminance);
-							bc = (uint32_t)(bc * luminance);
 
-							colorAtPixel.packedABGR = ((ac << 24) | (bc << 16) | (gc << 8) | (rc));
+							rSource *= luminance;
+							gSource *= luminance;
+							bSource *= luminance;
+							//gc = (uint32_t)(gc * luminance);
+							//bc = (uint32_t)(bc * luminance);
+
+							//colorAtPixel.packedABGR = ((ac << 24) | (bc << 16) | (gc << 8) | (rc));
 						}
 
+
+						float_t aFinal = 1.0f;
 						if (_enableAlphaBlend) 
 						{
 							uint32_t dest = *colorBuffer;
@@ -1052,11 +1085,11 @@ namespace game
 							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
 							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
 							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
-							rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * colorAtPixel.oneOver255;
-							gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * colorAtPixel.oneOver255;
-							bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * colorAtPixel.oneOver255;
-							aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
-							float_t aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
+							//rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * colorAtPixel.oneOver255;
+							//gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * colorAtPixel.oneOver255;
+							//bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * colorAtPixel.oneOver255;
+							//aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
 							float_t adnewa = aSource / aFinal;
 							float_t da1minadnewa = aDest * (1.0f - aSource) / aFinal;
@@ -1066,8 +1099,8 @@ namespace game
 							rSource = rSource * adnewa + rDest * da1minadnewa;
 							gSource = gSource * adnewa + gDest * da1minadnewa;
 							bSource = bSource * adnewa + bDest * da1minadnewa;
-							colorAtPixel.Set(rSource, gSource, bSource, aFinal);
 						}
+						colorAtPixel.Set(rSource, gSource, bSource, aFinal);
 						
 
 						//if (!lighting)
@@ -1080,13 +1113,13 @@ namespace game
 				++depthBufferPtr;
 			}
 			depthParam.first = 1;
-			if (!textured)
-			{
+			//if (!textured)
+			//{
 				rColorParam.first = 1;
 				gColorParam.first = 1;
 				bColorParam.first = 1;
 				aColorParam.first = 1;
-			}
+			//}
 			if (textured)
 			{
 				uParam.first = 1;
