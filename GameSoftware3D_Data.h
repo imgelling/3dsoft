@@ -255,7 +255,7 @@ namespace game
 			model.SetIdentity();
 			model = translate * rotation * scale;
 		}
-		inline void GenerateBillboardMatrix(Camera3D& camera)
+		inline void GenerateBillboardMatrix(Camera3D& camera) noexcept
 		{
 			Vector3f look;// = camera.position - position;
 			look.x = (-camera.position.x - (-position.x + centerPoint.x));
@@ -263,7 +263,7 @@ namespace game
 			look.z = (-camera.position.z - (-position.z + centerPoint.z));
 
 			look.Normalize();
-			//billboard.SetIdentity();
+			billboard.SetIdentity();
 			Vector3f right = camera.up.Cross(look);
 			Vector3f up = look.Cross(right);
 			billboard.m[0] = right.x;
@@ -286,7 +286,7 @@ namespace game
 			billboard.m[15] = 1.0f;
 		}
 
-		inline void GenerateBillboardMatrix2(Camera3D& camera)
+		inline void GenerateBillboardMatrix2(Camera3D& camera) noexcept
 		{
 			Matrix4x4f x;
 			Matrix4x4f y;

@@ -412,7 +412,7 @@ public:
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
 		particle1.SetRotation(0,0,rotation);
-		//particle1.SetTranslation(rotation,0,0);
+		particle1.SetTranslation(1.0f * sin(rotation),0,0);
 		particle1.GenerateModelMatrix();
 		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
@@ -446,7 +446,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-		software3D.RenderMesh(torus, mvpMat, camera, clip); 
+		//software3D.RenderMesh(torus, mvpMat, camera, clip); 
 
 		
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
@@ -454,15 +454,22 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
+		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
+		for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
+		{
+			for (uint32_t vert = 0; vert < 3; ++vert)
+			{
+				particle1.tris[tri].color[vert] = { abs(sin(rotation)), abs(-sin(rotation - 3.14159f/4.0f)), abs(-sin(rotation + 3.14159f / 2.0f)), abs(cos(rotation)) };
+			}
+		}
 		
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		software3D.RenderMesh(model, mvpMat, camera, clip); 
+		//software3D.RenderMesh(model, mvpMat, camera, clip); 
 		software3D.RenderMesh(particle1, mvpMat, camera, clip);
 
 

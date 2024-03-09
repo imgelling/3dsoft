@@ -612,9 +612,9 @@ namespace game
 
 		// Color parameter	
 		Color colorAtPixel;
-		ParameterEquation rColorParam;//triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation gColorParam;//triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation bColorParam;//triangle.color[0].bf * oneOverW.x, triangle.color[1].bf * oneOverW.y, triangle.color[2].bf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation rColorParam;
+		ParameterEquation gColorParam;
+		ParameterEquation bColorParam;
 		ParameterEquation aColorParam;
 		if (filled)
 		{
@@ -644,9 +644,9 @@ namespace game
 		}
 
 		// Vertex normal parameters (directional light)
-		ParameterEquation vnx;// triangle.normals[0].x* oneOverW.x, triangle.normals[1].x* oneOverW.y, triangle.normals[2].x* oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation vny;// triangle.normals[0].y* oneOverW.x, triangle.normals[1].y* oneOverW.y, triangle.normals[2].y* oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation vnz;// triangle.normals[0].z* oneOverW.x, triangle.normals[1].z* oneOverW.y, triangle.normals[2].z* oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation vnx;
+		ParameterEquation vny;
+		ParameterEquation vnz;
 		if (lighting)
 		{
 			vnx.Set(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -655,8 +655,8 @@ namespace game
 		}
 
 		// Texture parameters
-		ParameterEquation uParam;//(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		ParameterEquation vParam;//(triangle.uvs[0].v * oneOverW.x, triangle.uvs[1].v * oneOverW.y, triangle.uvs[2].v * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		ParameterEquation uParam;
+		ParameterEquation vParam;
 		if (textured)
 		{
 			uParam.Set(triangle.uvs[0].u * oneOverW.x, triangle.uvs[1].u * oneOverW.y, triangle.uvs[2].u * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
