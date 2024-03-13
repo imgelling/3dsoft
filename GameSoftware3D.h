@@ -804,8 +804,8 @@ namespace game
 					depthParam.stepX(dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
-				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
-				//if (oneOverDepthEval < *depthBufferPtr)
+				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
+				if (oneOverDepthEval < *depthBufferPtr)
 				{
 					if (textured)
 					{
@@ -1012,6 +1012,10 @@ namespace game
 							{
 								++colorBuffer;
 								++depthBufferPtr;
+								//uParam.first = 1;
+								//vParam.first = 1;
+								//depthParam.first = 1;
+								rColorParam.first = 1; // Without, the colors are not getting stepped
 								continue;
 							}
 							else
@@ -1423,7 +1427,7 @@ namespace game
 	{
 		mesh.GenerateModelMatrix();
 		Matrix4x4f mvpCopy(mvp);
-		mvpCopy = mvpCopy * /*mesh.billboard **/ mesh.model;// *mesh.billboard;
+		mvpCopy = mvpCopy * mesh.model;
 		game::Triangle workingTriangle;
 
 

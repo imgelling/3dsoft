@@ -414,7 +414,7 @@ public:
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
 		//particle1.SetRotation(0,0,rotation);
-		particle1.SetTranslation(0, 0, 0);// 3.0f * sin(rotation), -0.5f, 0);
+		//particle1.SetTranslation(3.0f * sin(rotation), -0.5f, 0);
 		//particle1.GenerateModelMatrix();
 		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
@@ -429,7 +429,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
@@ -437,14 +437,14 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
 
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(plane, mvpMat, camera, clip); 
 
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		sky.GenerateModelMatrix();
+		//sky.GenerateModelMatrix();
 		software3D.RenderMesh(sky, mvpMat, camera, clip); 
 
 
@@ -454,7 +454,7 @@ public:
 
 		
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
@@ -477,21 +477,35 @@ public:
 		
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+		
+
+	
+
+
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		//software3D.RenderMesh(model, mvpMat, camera, clip); 
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+
 		random.SetSeed(0);
+		particle1.GenerateBillboardMatrix2(camera);
 		for (uint32_t count = 0; count < 50000; count++)
 		{
 			//particle1.SetTranslation((float_t)random.RndRange(0, 100) - 50.0f, -0.25f, (float_t)random.RndRange(0, 100) - 50.0f);
 			particle1.position = { (float_t)random.RndRange(0, 100) - 50.0f, -0.25f, (float_t)random.RndRange(0, 100) - 50.0f };
-			particle1.GenerateBillboardMatrix(camera);
+			//particle1.SetRotation(0 ,0, rotation);
+			particle1.billboard.m[12] = particle1.position.x;// camera.view.m[3];
+			particle1.billboard.m[13] = particle1.position.y;// camera.view.m[7];
+			particle1.billboard.m[14] = particle1.position.z;// camera.view.m[11];
 			particle1.GenerateQuad(camera);
 		}
 		software3D.RenderMesh(particle1, mvpMat, camera, clip);
 		particle1.tris.clear();
+
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		//software3D.RenderMesh(model, mvpMat, camera, clip);
 
 
 

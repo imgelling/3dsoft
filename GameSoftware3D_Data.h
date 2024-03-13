@@ -225,7 +225,7 @@ namespace game
 		inline void SetTranslation(const float_t x, const float_t y, const float_t z) noexcept
 		{
 			translate.SetTranslation(x, y, z);
-			position = { x,y,z };
+			//position = { x,y,z };
 		}
 		inline void SetScale(const float_t x, const float_t y, const float_t z) noexcept
 		{
@@ -263,12 +263,13 @@ namespace game
 			look.z = (camera.position.z - position.z);
 			
 			look.Normalize();
-			billboard.SetIdentity();
+
 			Vector3f right = camera.up.Cross(look);
 			right.Normalize();
 			Vector3f up = look.Cross(right);
 			up.Normalize();
 
+			billboard.SetIdentity();
 			billboard.m[0] = right.x;
 			billboard.m[4] = right.y;
 			billboard.m[8] = right.z;
@@ -290,7 +291,7 @@ namespace game
 			//Matrix4x4f rotY;
 			//rotY.SetRotationY(3.14159f/2.0f);
 			//billboard = billboard * translate;
-			SetTranslation(0, 0, 0);
+			//SetTranslation(0, 0, 0);
 			//billboard = billboard *rotY;
 		}
 
@@ -319,22 +320,23 @@ namespace game
 			billboard.m[12] = position.x;// camera.view.m[3];
 			billboard.m[13] = position.y;// camera.view.m[7];
 			billboard.m[14] = position.z;// camera.view.m[11];
+			//position = { 0 ,0,0};
 			//GenerateModelMatrix();
 			//billboard = billboard * translate;
-			SetTranslation(0, 0, 0);
+			//SetTranslation(0, 0, 0);
 			//billboard = billboard * z * y * x;// *translate;
 		}
 
 		inline void GenerateQuad(const Camera3D& camera) noexcept
 		{
-			//tris.clear();
 			Triangle topLeftTri;
 			Triangle bottomRightTri;
 			float_t size = 0.5f;  // actually half size
-			float_t z = position.z;
+			float_t z = 0;// position.z;
+			//position = { 0,0,position.z };
 			// tl
-			topLeftTri.vertices[0].x = -size + position.x;
-			topLeftTri.vertices[0].y = -size + position.y;
+			topLeftTri.vertices[0].x = -size;// +position.x;
+			topLeftTri.vertices[0].y = -size;// +position.y;
 			topLeftTri.vertices[0].z = z;
 			topLeftTri.color[0] = game::Colors::White;
 			topLeftTri.uvs[0].u = 0.0f;
@@ -345,24 +347,24 @@ namespace game
 
 
 			// tr
-			topLeftTri.vertices[1].x = size + position.x;
-			topLeftTri.vertices[1].y = -size + position.y;
+			topLeftTri.vertices[1].x = size;// +position.x;
+			topLeftTri.vertices[1].y = -size;// +position.y;
 			topLeftTri.vertices[1].z = z;
 			topLeftTri.uvs[1].u = 1.0f;
 			topLeftTri.uvs[1].v = 0.0f;
 			topLeftTri.color[1] = game::Colors::White;
 
 			// bl
-			topLeftTri.vertices[2].x = -size + position.x;
-			topLeftTri.vertices[2].y = size + position.y;
+			topLeftTri.vertices[2].x = -size;// +position.x;
+			topLeftTri.vertices[2].y = size;// +position.y;
 			topLeftTri.vertices[2].z = z;
 			topLeftTri.uvs[2].u = 0.0f;
 			topLeftTri.uvs[2].v = 1.0f;
 			topLeftTri.color[2] = game::Colors::White;
 
 			// tr
-			bottomRightTri.vertices[0].x = size + position.x;
-			bottomRightTri.vertices[0].y = -size + position.y;
+			bottomRightTri.vertices[0].x = size;// +position.x;
+			bottomRightTri.vertices[0].y = -size;// +position.y;
 			bottomRightTri.vertices[0].z = z;
 			bottomRightTri.color[0] = game::Colors::White;
 			bottomRightTri.uvs[0].u = 1.0f;
@@ -372,16 +374,16 @@ namespace game
 			bottomRightTri.faceNormal.z = -1.0f;
 
 			// br
-			bottomRightTri.vertices[1].x = size + position.x;
-			bottomRightTri.vertices[1].y = size + position.y;
+			bottomRightTri.vertices[1].x = size;// +position.x;
+			bottomRightTri.vertices[1].y = size;// +position.y;
 			bottomRightTri.vertices[1].z = z;
 			bottomRightTri.uvs[1].u = 1.0f;
 			bottomRightTri.uvs[1].v = 1.0f;
 			bottomRightTri.color[1] = game::Colors::White;
 
 			// bl
-			bottomRightTri.vertices[2].x = -size + position.x;
-			bottomRightTri.vertices[2].y = size + position.y;
+			bottomRightTri.vertices[2].x = -size;// +position.x;
+			bottomRightTri.vertices[2].y = size;// +position.y;
 			bottomRightTri.vertices[2].z = z;
 			bottomRightTri.uvs[2].u = 0.0f;
 			bottomRightTri.uvs[2].v = 1.0f;
@@ -391,10 +393,10 @@ namespace game
 			{
 				topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
 				bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
-				topLeftTri.vertices[i] = topLeftTri.vertices[i] * billboard;
-				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * billboard;
+				topLeftTri.vertices[i] = topLeftTri.vertices[i] * rotation * billboard;
+				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * rotation * billboard;
 			}
-
+			rotation.SetIdentity();
 			tris.emplace_back(topLeftTri);
 			tris.emplace_back(bottomRightTri);
 
