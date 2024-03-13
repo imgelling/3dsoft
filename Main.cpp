@@ -43,6 +43,8 @@ public:
 	game::Pointi resolution = { 1280 , 720 };
 	bool showText;
 
+	game::Random random;
+
 	Game() : game::Engine()
 	{
 		maxFPS = 0;
@@ -142,7 +144,7 @@ public:
 		t = 0;
 		texw = 0;
 		texh = 0;
-		temp = (uint32_t*)imageloader.Load("content/particle1.png", texw, texh, t);
+		temp = (uint32_t*)imageloader.Load("content/tree.png", texw, texh, t);
 		particle1.texture.data = new uint32_t[texw * texh];
 		memcpy(particle1.texture.data, temp, (size_t)texw * texh * 4);
 		particle1.texture.size.width = texw;
@@ -225,14 +227,14 @@ public:
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
-		particle1.tris = plane.tris;
-		for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
-		{
-			for (uint32_t vert = 0; vert < 3; ++vert)
-			{
-				particle1.tris[tri].color[vert] = { 1.0f, 0.0f, 0.0f, 1.0f };
-			}
-		}
+		//particle1.tris = plane.tris;
+		//for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
+		//{
+		//	for (uint32_t vert = 0; vert < 3; ++vert)
+		//	{
+		//		particle1.tris[tri].color[vert] = { 1.0f, 0.0f, 0.0f, 1.0f };
+		//	}
+		//}
 		//particle1.texture = alphaCube.texture;
 
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
@@ -411,16 +413,18 @@ public:
 		
 		model.SetRotation(3.14159f / 2.0f, 3.14159f + rotation, 0.0f);
 		sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
-		particle1.SetRotation(0,0,rotation);
-		particle1.SetTranslation(1.0f * sin(rotation),0,0);
-		particle1.GenerateModelMatrix();
+		//particle1.SetRotation(0,0,rotation);
+		particle1.SetTranslation(0, 0, 0);// 3.0f * sin(rotation), -0.5f, 0);
+		//particle1.GenerateModelMatrix();
 		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
 		//game::Vector3f center;// (model.centerPoint);
 		//game::Vector3MultMatrix4x4(particle1.centerPoint, particle1.model, center);
 		//camera.GenerateLookAtMatrix(camera.forward);
 		camera.GenerateViewMatrix();
-		//camera.GenerateLookAtMatrix(center);
-		particle1.GenerateBillboardMatrix2(camera);
+		//camera.GenerateLookAtMatrix(particle1.position);
+
+
+		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
@@ -434,7 +438,7 @@ public:
 		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
 
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(plane, mvpMat, camera, clip); 
 
@@ -456,21 +460,38 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
-		for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
-		{
-			for (uint32_t vert = 0; vert < 3; ++vert)
-			{
-				particle1.tris[tri].color[vert] = { abs(sin(rotation)), abs(-sin(rotation - 3.14159f/4.0f)), abs(-sin(rotation + 3.14159f / 2.0f)), abs(cos(rotation)) };
-			}
-		}
+		//for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
+		//{
+		//	for (uint32_t vert = 0; vert < 3; ++vert)
+		//	{
+		//		particle1.tris[tri].color[vert] = { abs(sin(rotation)), abs(-sin(rotation - 3.14159f / 4.0f)), abs(-sin(rotation + 3.14159f / 2.0f)), 1.0f };// abs(cos(rotation))
+		//		particle1.tris[tri].color[vert] = { 1.0f,1.0f,1.0f,1.0f };
+		//	};
+		//	
+		//}
+		// render a lot of fireworks
+		// render a point sprite 
+		// (form a quad out of a point) - done
+		// I will need right and up vectors (need to make lookat billboarding work) - doneish
+
 		
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		//software3D.RenderMesh(model, mvpMat, camera, clip); 
+		random.SetSeed(0);
+		for (uint32_t count = 0; count < 50000; count++)
+		{
+			//particle1.SetTranslation((float_t)random.RndRange(0, 100) - 50.0f, -0.25f, (float_t)random.RndRange(0, 100) - 50.0f);
+			particle1.position = { (float_t)random.RndRange(0, 100) - 50.0f, -0.25f, (float_t)random.RndRange(0, 100) - 50.0f };
+			particle1.GenerateBillboardMatrix(camera);
+			particle1.GenerateQuad(camera);
+		}
 		software3D.RenderMesh(particle1, mvpMat, camera, clip);
+		particle1.tris.clear();
 
 
 
