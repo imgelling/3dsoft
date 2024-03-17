@@ -144,7 +144,7 @@ public:
 		t = 0;
 		texw = 0;
 		texh = 0;
-		temp = (uint32_t*)imageloader.Load("content/tree.png", texw, texh, t);
+		temp = (uint32_t*)imageloader.Load("content/particle1.png", texw, texh, t);
 		particle1.texture.data = new uint32_t[texw * texh];
 		memcpy(particle1.texture.data, temp, (size_t)texw * texh * 4);
 		particle1.texture.size.width = texw;
@@ -460,43 +460,63 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
-		//for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
-		//{
-		//	for (uint32_t vert = 0; vert < 3; ++vert)
-		//	{
-		//		particle1.tris[tri].color[vert] = { abs(sin(rotation)), abs(-sin(rotation - 3.14159f / 4.0f)), abs(-sin(rotation + 3.14159f / 2.0f)), 1.0f };// abs(cos(rotation))
-		//		particle1.tris[tri].color[vert] = { 1.0f,1.0f,1.0f,1.0f };
-		//	};
-		//	
-		//}
 		// render a lot of fireworks
-		// render a point sprite 
-		// (form a quad out of a point) - done
-		// I will need right and up vectors (need to make lookat billboarding work) - doneish
+		//		- Particle Emitter  class/struct
+		//		- Particle class/struct
+		//		- PointSprite class/struct
+		//			- position
+		//          - default quad (pre gen triangles)
 
+		/*
+			pointSprite needs:
+				vector3f position;
+				float rotation; // can use RotateZ(vector3f, theta) to rotate, can only rotate z
+				matrix4x4f billboard;
+				vector3f size;
+				color color;
+				generateQuad(output 2 triangles);
+				generateBillboard(camera); // generates a full billboard
+		*/
+
+		/*
+			particle needs:
+				vector3f velocity;
+				bool isAlive;
+				float timeToLive;
+				float maxTimeToLive;
+		*/
 		
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
 		
 
 	
 
 
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+
+
 
 		random.SetSeed(0);
 		particle1.GenerateBillboardMatrix2(camera);
-		for (uint32_t count = 0; count < 50000; count++)
+		game::Pointf size = { 0.1f,1.0f };// abs(sin(rotation));
+		game::Color color;
+		
+		for (uint32_t count = 0; count < 50; count++)
 		{
 			//particle1.SetTranslation((float_t)random.RndRange(0, 100) - 50.0f, -0.25f, (float_t)random.RndRange(0, 100) - 50.0f);
-			particle1.position = { (float_t)random.RndRange(0, 100) - 50.0f, -0.25f, (float_t)random.RndRange(0, 100) - 50.0f };
-			//particle1.SetRotation(0 ,0, rotation);
-			particle1.billboard.m[12] = particle1.position.x;// camera.view.m[3];
-			particle1.billboard.m[13] = particle1.position.y;// camera.view.m[7];
-			particle1.billboard.m[14] = particle1.position.z;// camera.view.m[11];
-			particle1.GenerateQuad(camera);
+			particle1.position = { (float_t)random.RndRange(0, 10000)/1000.0f - 5.0f, -0.25f, (float_t)random.RndRange(0, 10000)/1000.0f - 5.0f };
+			particle1.SetRotation(0 ,0, rotation);
+			particle1.billboard.m[12] = particle1.position.x;
+			particle1.billboard.m[13] = particle1.position.y;
+			particle1.billboard.m[14] = particle1.position.z;
+			color.Set(random.RndRange(0, 255), random.RndRange(0, 255), random.RndRange(0, 255), 255);
+			particle1.GenerateQuad(color, size);
 		}
 		software3D.RenderMesh(particle1, mvpMat, camera, clip);
 		particle1.tris.clear();

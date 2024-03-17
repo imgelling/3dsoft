@@ -88,7 +88,7 @@ namespace game
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
-			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) / 2;
+			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
@@ -317,9 +317,9 @@ namespace game
 			billboard.m[2] = camera.view.m[8];//look.x;
 			billboard.m[6] = camera.view.m[9];//look.y;
 			billboard.m[10] = camera.view.m[10];//look.z;
-			billboard.m[12] = position.x;// camera.view.m[3];
-			billboard.m[13] = position.y;// camera.view.m[7];
-			billboard.m[14] = position.z;// camera.view.m[11];
+			//billboard.m[12] = position.x;// camera.view.m[3];
+			//billboard.m[13] = position.y;// camera.view.m[7];
+			//billboard.m[14] = position.z;// camera.view.m[11];
 			//position = { 0 ,0,0};
 			//GenerateModelMatrix();
 			//billboard = billboard * translate;
@@ -327,18 +327,19 @@ namespace game
 			//billboard = billboard * z * y * x;// *translate;
 		}
 
-		inline void GenerateQuad(const Camera3D& camera) noexcept
+		inline void GenerateQuad(const Color &color, const Pointf size) noexcept
 		{
 			Triangle topLeftTri;
 			Triangle bottomRightTri;
-			float_t size = 0.5f;  // actually half size
+// ---------- ALL OF THE FOLLOWING CAN BE PRECALC -------------------------------
+			//float_t size = 0.5f;  // actually half size
 			float_t z = 0;// position.z;
 			//position = { 0,0,position.z };
 			// tl
-			topLeftTri.vertices[0].x = -size;// +position.x;
-			topLeftTri.vertices[0].y = -size;// +position.y;
+			topLeftTri.vertices[0].x = -size.width;// +position.x;
+			topLeftTri.vertices[0].y = -size.height;// +position.y;
 			topLeftTri.vertices[0].z = z;
-			topLeftTri.color[0] = game::Colors::White;
+			topLeftTri.color[0] = color;
 			topLeftTri.uvs[0].u = 0.0f;
 			topLeftTri.uvs[0].v = 0.0f;
 			topLeftTri.faceNormal.x = 0.0f;
@@ -347,26 +348,26 @@ namespace game
 
 
 			// tr
-			topLeftTri.vertices[1].x = size;// +position.x;
-			topLeftTri.vertices[1].y = -size;// +position.y;
+			topLeftTri.vertices[1].x = size.width;// +position.x;
+			topLeftTri.vertices[1].y = -size.height;// +position.y;
 			topLeftTri.vertices[1].z = z;
 			topLeftTri.uvs[1].u = 1.0f;
 			topLeftTri.uvs[1].v = 0.0f;
-			topLeftTri.color[1] = game::Colors::White;
+			topLeftTri.color[1] = color;
 
 			// bl
-			topLeftTri.vertices[2].x = -size;// +position.x;
-			topLeftTri.vertices[2].y = size;// +position.y;
+			topLeftTri.vertices[2].x = -size.width;// +position.x;
+			topLeftTri.vertices[2].y = size.height;// +position.y;
 			topLeftTri.vertices[2].z = z;
 			topLeftTri.uvs[2].u = 0.0f;
 			topLeftTri.uvs[2].v = 1.0f;
-			topLeftTri.color[2] = game::Colors::White;
+			topLeftTri.color[2] = color;
 
 			// tr
-			bottomRightTri.vertices[0].x = size;// +position.x;
-			bottomRightTri.vertices[0].y = -size;// +position.y;
+			bottomRightTri.vertices[0].x = size.width;// +position.x;
+			bottomRightTri.vertices[0].y = -size.height;// +position.y;
 			bottomRightTri.vertices[0].z = z;
-			bottomRightTri.color[0] = game::Colors::White;
+			bottomRightTri.color[0] = color;
 			bottomRightTri.uvs[0].u = 1.0f;
 			bottomRightTri.uvs[0].v = 0.0f;
 			bottomRightTri.faceNormal.x = 0.0f;
@@ -374,25 +375,26 @@ namespace game
 			bottomRightTri.faceNormal.z = -1.0f;
 
 			// br
-			bottomRightTri.vertices[1].x = size;// +position.x;
-			bottomRightTri.vertices[1].y = size;// +position.y;
+			bottomRightTri.vertices[1].x = size.width;// +position.x;
+			bottomRightTri.vertices[1].y = size.height;// +position.y;
 			bottomRightTri.vertices[1].z = z;
 			bottomRightTri.uvs[1].u = 1.0f;
 			bottomRightTri.uvs[1].v = 1.0f;
-			bottomRightTri.color[1] = game::Colors::White;
+			bottomRightTri.color[1] = color;
 
 			// bl
-			bottomRightTri.vertices[2].x = -size;// +position.x;
-			bottomRightTri.vertices[2].y = size;// +position.y;
+			bottomRightTri.vertices[2].x = -size.width;// +position.x;
+			bottomRightTri.vertices[2].y = size.height;// +position.y;
 			bottomRightTri.vertices[2].z = z;
 			bottomRightTri.uvs[2].u = 0.0f;
 			bottomRightTri.uvs[2].v = 1.0f;
-			bottomRightTri.color[2] = game::Colors::White;
+			bottomRightTri.color[2] = color;
 
 			for (uint32_t i = 0; i < 3; i++)
 			{
 				topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
 				bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
+// ---------------------------------------------------------------------------
 				topLeftTri.vertices[i] = topLeftTri.vertices[i] * rotation * billboard;
 				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * rotation * billboard;
 			}

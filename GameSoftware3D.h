@@ -38,7 +38,8 @@ namespace game
 		bool SetTexture(const RenderTarget& target) noexcept;
 		bool SetDefaultTexture() noexcept;
 		void Fence(const uint64_t fenceValue) noexcept;
-		const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
+		//const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
+		void TriangleBoundingBox(Triangle& tri) const noexcept;
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled, bool lighting, bool textured>
 		void DrawColored(const Triangle& tri, const Recti& clip) noexcept;
@@ -581,9 +582,9 @@ namespace game
 		_fence++;
 	}
 
-	inline const Recti Software3D::TriangleBoundingBox(const Triangle& tri) const noexcept
+	inline void Software3D::TriangleBoundingBox(Triangle& tri) const noexcept
 	{
-		Recti boundingBox;
+		//Recti boundingBox;
 
 		float_t sx1 = (tri.vertices[0].x);
 		float_t sx2 = (tri.vertices[1].x);
@@ -592,12 +593,12 @@ namespace game
 		float_t sy2 = (tri.vertices[1].y);
 		float_t sy3 = (tri.vertices[2].y);
 
-		boundingBox.right = (int32_t)(sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3));
-		boundingBox.bottom = (int32_t)(sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3));
-		boundingBox.left = (int32_t)(sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3));
-		boundingBox.top = (int32_t)(sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3));
+		tri.boundingBox.right = (int32_t)(sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3));
+		tri.boundingBox.bottom = (int32_t)(sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3));
+		tri.boundingBox.left = (int32_t)(sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3));
+		tri.boundingBox.top = (int32_t)(sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3));
 
-		return boundingBox;
+		//return boundingBox;
 	}
 
 	template<bool renderWireFrame, bool filled, bool lighting, bool textured>
@@ -804,8 +805,8 @@ namespace game
 					depthParam.stepX(dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
-				//if (oneOverDepthEval+0.00001f < *depthBufferPtr)
-				if (oneOverDepthEval < *depthBufferPtr)
+				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
+				//if (oneOverDepthEval < *depthBufferPtr)
 				{
 					if (textured)
 					{
@@ -1120,7 +1121,7 @@ namespace game
 		clip.clippedTris[index].clear();
 		Triangle outTri;
 		uint64_t inSize = in.size();
-		for (uint32_t tri = 0; tri < inSize; tri++)
+		for (uint32_t tri = 0; tri < inSize; ++tri)
 		{
 			//Triangle outTri(in[tri]);
 			if (in[tri].backFaceCulled) continue; // was backface culled before
@@ -1129,6 +1130,27 @@ namespace game
 			if ((in[tri].vertices[0].w > 100.0f) ||
 				(in[tri].vertices[1].w > 100.0f) ||
 				(in[tri].vertices[2].w > 100.0f))
+			{
+				continue;
+			}
+
+			if (!in[tri].boundingCalculated)
+			{
+				TriangleBoundingBox(in[tri]);
+				in[tri].boundingCalculated = true;
+			}
+			// Screen clipping
+			// Offscreen completely
+			//if ((in[tri].boundingBox.right < 0) || (in[tri].boundingBox.left > _defaultRenderTarget.size.width-1) ||
+			//	(in[tri].boundingBox.bottom < 0) || (in[tri].boundingBox.top > _defaultRenderTarget.size.height-1))
+			//{
+			//	in[tri].backFaceCulled = true;
+			//	continue;
+			//}
+
+			// Outside clipping rect completely // by itself 336
+			if ((in[tri].boundingBox.right < clip.clips[index].left) || (in[tri].boundingBox.left > clip.clips[index].right) ||
+				(in[tri].boundingBox.bottom < clip.clips[index].top) || (in[tri].boundingBox.top > clip.clips[index].bottom))
 			{
 				continue;
 			}
@@ -1162,18 +1184,10 @@ namespace game
 					}
 				}
 			}
-			if (!in[tri].boundingCalculated)
-			{
-				in[tri].boundingBox = TriangleBoundingBox(in[tri]);
-				in[tri].boundingCalculated = true;
-			}
-			// Screen clipping
-			// Offscreen completely
-			if ((in[tri].boundingBox.right < clip.clips[index].left) || (in[tri].boundingBox.left > clip.clips[index].right) ||
-				(in[tri].boundingBox.bottom < clip.clips[index].top) || (in[tri].boundingBox.top > clip.clips[index].bottom))
-			{
-				continue;
-			}
+
+
+
+
 
 			// This needs copied as the bounding box modification 
 			// will only apply to this clip
