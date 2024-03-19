@@ -8,6 +8,7 @@
 #include "GameSoftware3D_Camera3D.h"
 #include "GameSoftware3D_Data.h"
 #include "GameSoftware3D_Math.h"
+#include "GameSoftware3D_PointSprite.h"
 #include "GameThreadPool.h"
 
 #define GAME_SOFTWARE3D_STATE_FILL_MODE 0
@@ -22,6 +23,7 @@
 #define GAME_SOFTWARE3D_DEPTH_WRITE 9
 #define GAME_SOFTWARE3D_SORT 10
 #define GAME_SOFTWARE3D_ALPHA_BLEND 11
+#define GAME_SOFTWARE3D_COLOR_TINTING 12
 
  
 namespace game
@@ -80,6 +82,7 @@ namespace game
 		bool _enableLighting;
 		bool _enableBackFaceCulling;
 		bool _enableDepthWrite;
+		bool _enableColorTinting;
 		LightingType _lightingType;
 		bool _enableAlphaTest;
 		uint32_t _alphaTestValue;
@@ -108,11 +111,12 @@ namespace game
 		_alphaTestValue = 128;
 		_enableAlphaBlend = false;
 		_numbuffers = 5;
+		_enableColorTinting = false;
 		for (uint32_t i = 0; i < 10; i++)
 			_clearDepthBuffer[i] = nullptr;
 		_fillMode = FillMode::WireFrameFilled;
-		CreateTexture(64, 64, _defaultTexture);
-		_GenerateDefaultTexture(_defaultTexture.data, 64, 64);
+		CreateTexture(1024, 1024, _defaultTexture);
+		_GenerateDefaultTexture(_defaultTexture.data, 1024, 1024);
 		SetTexture(_defaultTexture);
 		trianglesToRender.reserve(1000);
 	}
@@ -224,12 +228,13 @@ namespace game
 		game::Color col2 = game::Colors::Magenta;
 		for (uint32_t y = 0; y < h; y++)
 		{
-			if (y % 2 == 0)
-				std::swap(col1, col2);
+			//if (y % 2 == 0)
+				//std::swap(col1, col2);
 			for (uint32_t x = 0; x < w; x++)
 			{
-				if (x % 2 == 0)
-					std::swap(col1, col2);
+				//if (x % 2 == 0)
+					//std::swap(col1, col2);
+				col1.Set(x ^ y, x ^ y, x ^ y, 255);
 				buff[y * w + x] = col1.packedABGR;
 			}
 		}
@@ -437,6 +442,11 @@ namespace game
 			_enableAlphaBlend = value;
 			return true;
 		}
+
+		if (state == GAME_SOFTWARE3D_COLOR_TINTING)
+		{
+			_enableColorTinting = value;
+		}
 		return false;
 	}
 
@@ -617,7 +627,7 @@ namespace game
 		ParameterEquation gColorParam;
 		ParameterEquation bColorParam;
 		ParameterEquation aColorParam;
-		if (filled)
+		if (filled || _enableColorTinting)
 		{
 			rColorParam.Set(triangle.color[0].rf * oneOverW.x, triangle.color[1].rf * oneOverW.y, triangle.color[2].rf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			gColorParam.Set(triangle.color[0].gf * oneOverW.x, triangle.color[1].gf * oneOverW.y, triangle.color[2].gf * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -805,7 +815,7 @@ namespace game
 					depthParam.stepX(dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
-				if (oneOverDepthEval+0.00001f < *depthBufferPtr)
+				if (oneOverDepthEval-0.00001f < *depthBufferPtr)
 				//if (oneOverDepthEval < *depthBufferPtr)
 				{
 					if (textured)
@@ -837,13 +847,14 @@ namespace game
 								vny.stepX(nYEval);
 							}
 						}
-						//if (!textured)
-						//{
+						if (!textured || _enableColorTinting)
+						{
+
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
 							aColorParam.stepX(aEval);
-						//}
+						}
 						++colorBuffer;
 						++depthBufferPtr;
 						continue;
@@ -1029,19 +1040,22 @@ namespace game
 							}
 						}
 
-						if (rColorParam.first)
+						if (_enableColorTinting)
 						{
-							rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
-							gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
-							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
-							aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
-						}
-						else
-						{
-							rColorParam.stepX(rEval);
-							gColorParam.stepX(gEval);
-							bColorParam.stepX(bEval);
-							aColorParam.stepX(aEval);
+							if (rColorParam.first)
+							{
+								rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
+								gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
+								bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
+								aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
+							}
+							else
+							{
+								rColorParam.stepX(rEval);
+								gColorParam.stepX(gEval);
+								bColorParam.stepX(bEval);
+								aColorParam.stepX(aEval);
+							}
 						}
 
 						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * colorAtPixel.oneOver255;
@@ -1050,11 +1064,14 @@ namespace game
 						aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
 
 
-						// Apply color tint
-						rSource = ((rSource * min(rEval * oneOverDepthEval, 1.0f)));
-						gSource = ((gSource * min(gEval * oneOverDepthEval, 1.0f)));
-						bSource = ((bSource * min(bEval * oneOverDepthEval, 1.0f)));
-						aSource = ((aSource * min(aEval * oneOverDepthEval, 1.0f)));
+						if (_enableColorTinting)
+						{
+							// Apply color tint
+							rSource = ((rSource * min(rEval * oneOverDepthEval, 1.0f)));
+							gSource = ((gSource * min(gEval * oneOverDepthEval, 1.0f)));
+							bSource = ((bSource * min(bEval * oneOverDepthEval, 1.0f)));
+							aSource = ((aSource * min(aEval * oneOverDepthEval, 1.0f)));
+						}
 
 						// texture lighting
 						if (lighting)

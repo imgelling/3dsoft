@@ -390,13 +390,14 @@ namespace game
 			bottomRightTri.uvs[2].v = 1.0f;
 			bottomRightTri.color[2] = color;
 
+			Matrix4x4f mat = billboard * rotation;
 			for (uint32_t i = 0; i < 3; i++)
 			{
 				topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
 				bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
 // ---------------------------------------------------------------------------
-				topLeftTri.vertices[i] = topLeftTri.vertices[i] * rotation * billboard;
-				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * rotation * billboard;
+				topLeftTri.vertices[i] = topLeftTri.vertices[i] * mat;
+				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * mat;
 			}
 			rotation.SetIdentity();
 			tris.emplace_back(topLeftTri);
@@ -404,6 +405,8 @@ namespace game
 
 		}
 	};
+
+	
 
 	struct ParameterEquation 
 	{

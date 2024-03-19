@@ -96,15 +96,14 @@ namespace game
 		return ret;
 	}
 
-	template<typename T>
-	inline Vector3<T> RotateZ(const Vector3<T>& in, const float_t theta) noexcept
+	inline Vector3f RotateZ(const Vector3f& in, const float_t theta) noexcept
 	{
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
-		Vector3<T> ret(in);
+		Vector3f ret(in);
 
-		ret.x = (T)(in.x * ctheta - in.y * stheta);
-		ret.y = (T)(in.x * stheta + in.y * ctheta);
+		ret.x = (in.x * ctheta - in.y * stheta);
+		ret.y = (in.x * stheta + in.y * ctheta);
 
 		return ret;
 	}

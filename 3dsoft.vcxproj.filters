@@ -35,5 +35,8 @@
     <ClInclude Include="GameSoftware3D_Camera3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GameSoftware3D_PointSprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
