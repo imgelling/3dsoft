@@ -450,7 +450,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//sky.GenerateModelMatrix();
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(sky, mvpMat, camera, clip); 
 
 
@@ -481,32 +481,10 @@ public:
 				Update(time)
 		*/
 
+		/*
+			PointSprite : generateMinQuad - will only change what is necessary, size, color, rotation
+		*/
 
-		//random.SetSeed(0);
-		////game::Color color;
-		//game::PointSprite sprite;
-		//game::Triangle tri1;
-		//game::Triangle tri2;
-		//sprite.GenerateBillboardMatrix(camera);
-		////float s = abs(sin(rotation) / 25.0f);
-		//sprite.size = { 1.025f,0.025f };
-		//sprite.position = { model.centerPoint.x, model.centerPoint.y - 0.1f, model.centerPoint.z };
-		//for (uint32_t count = 0; count < 1; count++)
-		//{
-		//	//sprite.position = { 0,-1,0};
-		//	sprite.rotation = 0;// rotation;
-		//	sprite.billboard.m[12] = sprite.position.x;
-		//	sprite.billboard.m[13] = sprite.position.y;
-		//	sprite.billboard.m[14] = sprite.position.z;
-
-		//	sprite.color.Set(random.RndRange(0, 255), random.RndRange(0, 255), random.RndRange(0, 255), 255);
-
-		//	sprite.GenerateQuad(tri1, tri2);
-		//	particle1.tris.emplace_back(tri1);
-		//	particle1.tris.emplace_back(tri2);
-		//}
-		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
-		//particle1.tris.clear();
 
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
