@@ -29,6 +29,7 @@ public:
 	game::Mesh torus;
 	game::Mesh sky;
 	game::Mesh particle1;
+	game::PointSprite sprite;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -285,7 +286,14 @@ public:
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
-
+		game::Triangle t1, t2;
+		for (uint32_t points = 0; points < 200000; ++points)
+		{
+			sprite.GenerateQuad(t1, t2);
+			particle1.tris.emplace_back(t1);
+			particle1.tris.emplace_back(t2);
+		}
+		//particle1.tris.clear();
 
 
 	}
@@ -435,6 +443,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
@@ -445,7 +454,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		software3D.RenderMesh(plane, mvpMat, camera, clip); 
+		software3D.RenderMesh(plane,plane.tris.size(), mvpMat, camera, clip);
 
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
@@ -488,12 +497,14 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		software3D.RenderMesh(model, mvpMat, camera, clip);
+		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
+
+
 
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
@@ -507,9 +518,9 @@ public:
 		// white yellow orange red black
 		//random.SetSeed(0);
 		//game::Color color;
-		game::PointSprite sprite;
-		game::Triangle tri1;
-		game::Triangle tri2;
+
+		//game::Triangle tri1;
+		//game::Triangle tri2;
 		sprite.GenerateBillboardMatrix(camera);
 		//float s = abs(sin(rotation) / 25.0f);
 		sprite.size = { 0.025f,0.025f };
@@ -517,7 +528,9 @@ public:
 		//sprite.position = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
 		sprite.position = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
 		//sprite.position = sprite.position * model.rotation;
-		for (uint32_t count = 0; count < 1; count++)
+
+		//sprite.GenerateQuad(tri1, tri2);
+		for (uint32_t count = 0; count < 50000; count+=2)
 		{
 			//sprite.position = { 0,-1,0};
 			sprite.position.y -= pos;
@@ -526,19 +539,21 @@ public:
 				sprite.position.y = model.centerPoint.y;
 				pos = 0.0f;
 			}
-			sprite.rotation = 0;// rotation;
+			sprite.rotation = rotation;
 			sprite.billboard.m[12] = sprite.position.x;
 			sprite.billboard.m[13] = sprite.position.y;
 			sprite.billboard.m[14] = sprite.position.z;
 
 			sprite.color.Set(random.RndRange(0, 255), random.RndRange(0, 255), random.RndRange(0, 255), 255);
 
-			sprite.GenerateQuad(tri1, tri2);
-			particle1.tris.emplace_back(tri1);
-			particle1.tris.emplace_back(tri2);
+			//std::cout << count << " ";
+			sprite.UpdateQuad(particle1.tris[count], particle1.tris[count+1]);
+			//std::cout << count << "\n";
+			//particle1.tris.emplace_back(tri1);
+			//particle1.tris.emplace_back(tri2);
 		}
-		software3D.RenderMesh(particle1, mvpMat, camera, clip);
-		particle1.tris.clear();
+		software3D.RenderMesh(particle1, 10000, mvpMat, camera, clip);
+		//particle1.tris.clear();
 
 
 

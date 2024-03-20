@@ -58,8 +58,8 @@ namespace game
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
 
-		void VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
-		void RenderMesh(Mesh& mesh, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip);
+		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
+		void RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept;
 		std::vector<game::Triangle> trianglesToRender;
 		float_t* depthBuffer;
 	private:
@@ -479,10 +479,10 @@ namespace game
 		return true;
 	}
 
-	inline void Software3D::RenderMesh(Mesh& mesh, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip)
+	inline void Software3D::RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept
 	{
 		
-		VertexProcessor(mesh, projection, trianglesToRender, camera);
+		VertexProcessor(mesh, numberOfTris, projection, trianglesToRender, camera);
 		SetTexture(mesh.texture);
 		uint64_t fenceCount = 0;
 
@@ -1454,7 +1454,7 @@ namespace game
 		//vector = ret;
 	}
 
-	inline void Software3D::VertexProcessor(game::Mesh& mesh, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
 	{
 		mesh.GenerateModelMatrix();
 		Matrix4x4f mvpCopy(mvp);
@@ -1464,12 +1464,12 @@ namespace game
 
 		game::Triangle newClippedTris[2];
 		uint32_t numberTrisGenerated = 0;
-		uint64_t meshSize = mesh.tris.size();
+		//uint64_t meshSize = mesh.tris.size();
 		//int culled = 0;
 		uint32_t changeWinding = 0;
 
 		Vector3f cameraRay; // pre change 332
-		for (uint32_t i = 0; i < meshSize; i++)
+		for (uint32_t i = 0; i < numberOfTris; i++)
 		{
 			changeWinding = 0;
 			workingTriangle = mesh.tris[i];
