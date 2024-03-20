@@ -552,7 +552,7 @@ public:
 			//particle1.tris.emplace_back(tri1);
 			//particle1.tris.emplace_back(tri2);
 		}
-		software3D.RenderMesh(particle1, 10000, mvpMat, camera, clip);
+		software3D.RenderMesh(particle1, 50000, mvpMat, camera, clip);
 		//particle1.tris.clear();
 
 

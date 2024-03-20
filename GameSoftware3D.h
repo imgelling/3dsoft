@@ -65,7 +65,7 @@ namespace game
 	private:
 		RenderTarget _currentRenderTarget;
 		float_t* _clearDepthBuffer[10];
-		void _Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
+		void _Render(const std::vector<Triangle>& __restrict tris, const Recti& __restrict clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
 		std::atomic<uint32_t> _fence;
 		bool _multiThreaded;
@@ -490,9 +490,6 @@ namespace game
 			{
 				float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;
 				float_t bz = b.vertices[0].z + b.vertices[1].z + b.vertices[2].z;
-				//float_t ad = max(max(a.vertices[0].z, a.vertices[1].z), a.vertices[2].z);
-				//float_t bd = max(max(b.vertices[0].z, b.vertices[1].z), b.vertices[2].z);
-				//std::cout << az << "," << bz << "\n";
 				return az > bz;
 			};
 		auto frontToBack = [](const game::Triangle& a, const game::Triangle& b)
@@ -541,6 +538,11 @@ namespace game
 	inline void Software3D::_Render(const std::vector<Triangle>& __restrict tris, const Recti& __restrict clip) noexcept //445
 	{
 		std::function<void(Triangle)> renderer;
+
+		// lit variants
+		// alpha blend variants
+		// alpha test variants
+		// tint variants
 
 		if (_enableLighting && _enableTexturing)
 		{
@@ -1464,11 +1466,10 @@ namespace game
 
 		game::Triangle newClippedTris[2];
 		uint32_t numberTrisGenerated = 0;
-		//uint64_t meshSize = mesh.tris.size();
 		//int culled = 0;
 		uint32_t changeWinding = 0;
 
-		Vector3f cameraRay; // pre change 332
+		Vector3f cameraRay; 
 		for (uint32_t i = 0; i < numberOfTris; i++)
 		{
 			changeWinding = 0;
@@ -1483,9 +1484,9 @@ namespace game
 
 			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
 			{
-				//culled++;
 				if (_enableBackFaceCulling)
 				{
+					//culled++;
 					continue;
 				}
 				else
@@ -1496,19 +1497,19 @@ namespace game
 
 
 
-			workingTriangle.vertices[0] = (workingTriangle.vertices[0] * mvpCopy);
-			workingTriangle.vertices[1] = (workingTriangle.vertices[1] * mvpCopy);
-			workingTriangle.vertices[2] = (workingTriangle.vertices[2] * mvpCopy);
-			//Vector3MultMatrix4x4(mesh.tris[i].vertices[0], mvpCopy, workingTriangle.vertices[0]);
-			//Vector3MultMatrix4x4(mesh.tris[i].vertices[1], mvpCopy, workingTriangle.vertices[1]);
-			//Vector3MultMatrix4x4(mesh.tris[i].vertices[2], mvpCopy, workingTriangle.vertices[2]);
+			//workingTriangle.vertices[0] = (workingTriangle.vertices[0] * mvpCopy);
+			//workingTriangle.vertices[1] = (workingTriangle.vertices[1] * mvpCopy);
+			//workingTriangle.vertices[2] = (workingTriangle.vertices[2] * mvpCopy);
+			Vector3MultMatrix4x4(mesh.tris[i].vertices[0], mvpCopy, workingTriangle.vertices[0]);
+			Vector3MultMatrix4x4(mesh.tris[i].vertices[1], mvpCopy, workingTriangle.vertices[1]);
+			Vector3MultMatrix4x4(mesh.tris[i].vertices[2], mvpCopy, workingTriangle.vertices[2]);
 
-			workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
-			workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
-			workingTriangle.normals[2] = workingTriangle.normals[2] * mesh.rotation;
-			//Vector3MultMatrix4x4(mesh.tris[i].normals[0], mesh.rotation, workingTriangle.normals[0]);
-			//Vector3MultMatrix4x4(mesh.tris[i].normals[1], mesh.rotation, workingTriangle.normals[1]);
-			//Vector3MultMatrix4x4(mesh.tris[i].normals[2], mesh.rotation, workingTriangle.normals[2]);
+			//workingTriangle.normals[0] = workingTriangle.normals[0] * mesh.rotation;
+			//workingTriangle.normals[1] = workingTriangle.normals[1] * mesh.rotation;
+			//workingTriangle.normals[2] = workingTriangle.normals[2] * mesh.rotation;
+			Vector3MultMatrix4x4(mesh.tris[i].normals[0], mesh.rotation, workingTriangle.normals[0]);
+			Vector3MultMatrix4x4(mesh.tris[i].normals[1], mesh.rotation, workingTriangle.normals[1]);
+			Vector3MultMatrix4x4(mesh.tris[i].normals[2], mesh.rotation, workingTriangle.normals[2]);
 
 			if ((workingTriangle.vertices[0].z < 0.0) ||
 				(workingTriangle.vertices[1].z < 0.0) ||
@@ -1517,11 +1518,14 @@ namespace game
 				numberTrisGenerated = ClipAgainstNearZ(workingTriangle, newClippedTris[0], newClippedTris[1]);
 				for (uint32_t tri = 0; tri < numberTrisGenerated; ++tri)
 				{
-					//PerspectiveDivide(newClippedTris[tri]);
+					// Perspective divide
 					newClippedTris[tri].vertices[0] /= newClippedTris[tri].vertices[0].w;
 					newClippedTris[tri].vertices[1] /= newClippedTris[tri].vertices[1].w;
 					newClippedTris[tri].vertices[2] /= newClippedTris[tri].vertices[2].w;
+
 					ScaleToScreen(newClippedTris[tri], _currentRenderTarget.halfSize);
+
+					// New triangles can be generated "backwards"
 					if (CheckWinding(newClippedTris[tri].vertices[0], newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[2]) < 0)
 					{
 						std::swap(newClippedTris[tri].vertices[1], newClippedTris[tri].vertices[0]);
@@ -1534,8 +1538,6 @@ namespace game
 			}
 			else
 			{
-				//PerspectiveDivide(workingTriangle);
-
 				if (changeWinding)
 				{
 					std::swap(workingTriangle.vertices[1], workingTriangle.vertices[0]);
@@ -1543,6 +1545,7 @@ namespace game
 					std::swap(workingTriangle.uvs[1], workingTriangle.uvs[0]);
 					std::swap(workingTriangle.color[1], workingTriangle.color[0]);
 				}
+				// Perspective Divide
 				workingTriangle.vertices[0] /= workingTriangle.vertices[0].w;
 				workingTriangle.vertices[1] /= workingTriangle.vertices[1].w;
 				workingTriangle.vertices[2] /= workingTriangle.vertices[2].w;
@@ -1553,7 +1556,6 @@ namespace game
 			}
 		}
 		//std::cout << culled << "\n";
-
 	}
 }
 
