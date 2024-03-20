@@ -355,7 +355,9 @@ namespace game
 
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value) noexcept
 	{
-		if (state == GAME_SOFTWARE3D_STATE_FILL_MODE)
+		switch (state)
+		{
+		case GAME_SOFTWARE3D_STATE_FILL_MODE:
 		{
 			if ((value < (int32_t)FillMode::WireFrame) || (value >= (int32_t)FillMode::None))
 			{
@@ -363,9 +365,9 @@ namespace game
 			}
 			_fillMode = (FillMode)value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_STATE_THREADED)
+		case GAME_SOFTWARE3D_STATE_THREADED:
 		{
 			if (value >= 0)
 			{
@@ -379,75 +381,176 @@ namespace game
 				_threadPool.Stop();
 			}
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_LIGHTING)
+		case GAME_SOFTWARE3D_LIGHTING:
 		{
 			_enableLighting = value;
 			return true;
+			break;
 		}
-		
-		if (state == GAME_SOFTWARE3D_LIGHTING_TYPE)
+		case GAME_SOFTWARE3D_LIGHTING_TYPE:
 		{
 			if (value < LightingType::Face) return false;
 			if (value > LightingType::Depth) return false;
-			
+
 			_lightingType = (LightingType)value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_TEXTURE)
+		case GAME_SOFTWARE3D_TEXTURE:
 		{
 			_enableTexturing = value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_ALPHA_TEST)
+		case GAME_SOFTWARE3D_ALPHA_TEST:
 		{
 			_enableAlphaTest = value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_ALPHA_TEST_VALUE)
+		case GAME_SOFTWARE3D_ALPHA_TEST_VALUE:
 		{
 			if (value < 0) return false;
 			if (value > 255) return false;
 			_alphaTestValue = value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_BACKFACECULL)
+		case GAME_SOFTWARE3D_BACKFACECULL:
 		{
 			_enableBackFaceCulling = value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_DEPTH_WRITE)
+		case GAME_SOFTWARE3D_DEPTH_WRITE:
 		{
 			_enableDepthWrite = value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_SORT)
+		case GAME_SOFTWARE3D_SORT:
 		{
 			if ((value < SortingType::BackToFront) && (value > SortingType::NoSort))
 				return false;
 
 			_sortType = (SortingType)value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_ALPHA_BLEND)
+		case GAME_SOFTWARE3D_ALPHA_BLEND:
 		{
 			_enableAlphaBlend = value;
 			return true;
+			break;
 		}
-
-		if (state == GAME_SOFTWARE3D_COLOR_TINTING)
+		case GAME_SOFTWARE3D_COLOR_TINTING:
 		{
 			_enableColorTinting = value;
+			return true;
+			break;
 		}
-		return false;
+		default: 
+		{
+			return false;
+			break;
+		}
+		}
+		//if (state == GAME_SOFTWARE3D_STATE_FILL_MODE)
+		//{
+		//	if ((value < (int32_t)FillMode::WireFrame) || (value >= (int32_t)FillMode::None))
+		//	{
+		//		return false;
+		//	}
+		//	_fillMode = (FillMode)value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_STATE_THREADED)
+		//{
+		//	if (value >= 0)
+		//	{
+		//		_multiThreaded = true;
+		//		_threadPool.Stop();
+		//		_threadPool.Start(value);
+		//	}
+		//	else
+		//	{
+		//		_multiThreaded = false;
+		//		_threadPool.Stop();
+		//	}
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_LIGHTING)
+		//{
+		//	_enableLighting = value;
+		//	return true;
+		//}
+		
+		//if (state == GAME_SOFTWARE3D_LIGHTING_TYPE)
+		//{
+		//	if (value < LightingType::Face) return false;
+		//	if (value > LightingType::Depth) return false;
+		//	
+		//	_lightingType = (LightingType)value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_TEXTURE)
+		//{
+		//	_enableTexturing = value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_ALPHA_TEST)
+		//{
+		//	_enableAlphaTest = value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_ALPHA_TEST_VALUE)
+		//{
+		//	if (value < 0) return false;
+		//	if (value > 255) return false;
+		//	_alphaTestValue = value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_BACKFACECULL)
+		//{
+		//	_enableBackFaceCulling = value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_DEPTH_WRITE)
+		//{
+		//	_enableDepthWrite = value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_SORT)
+		//{
+		//	if ((value < SortingType::BackToFront) && (value > SortingType::NoSort))
+		//		return false;
+
+		//	_sortType = (SortingType)value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_ALPHA_BLEND)
+		//{
+		//	_enableAlphaBlend = value;
+		//	return true;
+		//}
+
+		//if (state == GAME_SOFTWARE3D_COLOR_TINTING)
+		//{
+		//	_enableColorTinting = value;
+		//	return true;
+		//}
+		//return false;
 	}
 
 	inline bool Software3D::Initialize(PixelMode& pixelMode, const int32_t threads = -1)

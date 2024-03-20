@@ -498,8 +498,8 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
@@ -531,7 +531,7 @@ public:
 
 		sprite.GenerateBillboardMatrix(camera);
 		//sprite.GenerateQuad(tri1, tri2);
-		for (uint32_t count = 0; count < 1; count+=2)
+		for (uint32_t count = 0; count < 50000; count+=2)
 		{
 			//sprite.position = { 0,-1,0};
 			sprite.position.y -= pos;
@@ -541,20 +541,16 @@ public:
 				pos = 0.0f;
 			}
 
-			sprite.rotation = 0;// rotation;
+			sprite.rotation = rotation;
 			sprite.billboard.m[12] = sprite.position.x;
 			sprite.billboard.m[13] = sprite.position.y;
 			sprite.billboard.m[14] = sprite.position.z;
 
 			sprite.color.Set(random.RndRange(0, 255), random.RndRange(0, 255), random.RndRange(0, 255), 255);
 
-			//std::cout << count << " ";
 			sprite.UpdateQuad(particle1.tris[count], particle1.tris[count+1]);
-			//std::cout << count << "\n";
-			//particle1.tris.emplace_back(tri1);
-			//particle1.tris.emplace_back(tri2);
 		}
-		software3D.RenderMesh(particle1, 2, mvpMat, camera, clip);
+		software3D.RenderMesh(particle1, 50000, mvpMat, camera, clip);
 		//particle1.tris.clear();
 
 
