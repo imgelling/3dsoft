@@ -44,7 +44,7 @@ namespace game
 		void TriangleBoundingBox(Triangle& tri) const noexcept;
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled, bool lighting, bool textured>
-		void DrawColored(const Triangle& tri, const Recti& clip) noexcept;
+		void DrawColored(const Triangle& tri, const Recti& __restrict clip) noexcept;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth(const float_t depth);
 		void ClearRenderTarget(const Color& color, const float_t depth);
@@ -58,14 +58,14 @@ namespace game
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
 
-		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
+		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
 		void RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept;
 		std::vector<game::Triangle> trianglesToRender;
 		float_t* depthBuffer;
 	private:
 		RenderTarget _currentRenderTarget;
 		float_t* _clearDepthBuffer[10];
-		void _Render(const std::vector<Triangle>& __restrict tris, const Recti& __restrict clip) noexcept;
+		void _Render(const std::vector<Triangle>& tris, const Recti& __restrict clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
 		std::atomic<uint32_t> _fence;
 		bool _multiThreaded;
@@ -535,7 +535,7 @@ namespace game
 		}
 	}
 
-	inline void Software3D::_Render(const std::vector<Triangle>& __restrict tris, const Recti& __restrict clip) noexcept //445
+	inline void Software3D::_Render(const std::vector<Triangle>& tris, const Recti& __restrict clip) noexcept //445
 	{
 		std::function<void(Triangle)> renderer;
 
@@ -614,7 +614,7 @@ namespace game
 	}
 
 	template<bool renderWireFrame, bool filled, bool lighting, bool textured>
-	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& clip) noexcept
+	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& __restrict clip) noexcept
 	{
 		uint32_t foundTriangle(0);
 		uint32_t videoBufferStride(_currentRenderTarget.size.width);
@@ -1456,7 +1456,7 @@ namespace game
 		//vector = ret;
 	}
 
-	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
 	{
 		mesh.GenerateModelMatrix();
 		Matrix4x4f mvpCopy(mvp);

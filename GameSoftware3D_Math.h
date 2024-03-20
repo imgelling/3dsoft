@@ -67,7 +67,7 @@ namespace game
 		//memcpy(proj.m, m, sizeof(float) * 16);
 	}
 
-	inline Triangle RotateZ(const Triangle& tri, const float_t theta) noexcept
+	inline Triangle RotateZ(const Triangle& __restrict tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
 		float_t ctheta = cos(theta);
@@ -96,19 +96,21 @@ namespace game
 		return ret;
 	}
 
-	inline Vector3f RotateZ(const Vector3f& in, const float_t theta) noexcept
+	inline Vector3f RotateZ(const Vector3f& __restrict in, const float_t theta) noexcept
 	{
 		float_t ctheta = cos(theta);
 		float_t stheta = sin(theta);
-		Vector3f ret(in);
+		Vector3f ret;// (in);
 
 		ret.x = (in.x * ctheta - in.y * stheta);
 		ret.y = (in.x * stheta + in.y * ctheta);
+		ret.z = in.z;
+
 
 		return ret;
 	}
 
-	inline Triangle RotateX(const Triangle& tri, const float_t theta) noexcept
+	inline Triangle RotateX(const Triangle& __restrict tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
 		float_t ctheta = cos(theta);
@@ -150,7 +152,7 @@ namespace game
 		return ret;
 	}
 
-	inline Triangle RotateY(const Triangle& tri, const float_t theta) noexcept
+	inline Triangle RotateY(const Triangle& __restrict tri, const float_t theta) noexcept
 	{
 		Triangle ret(tri);
 		float_t ctheta = cos(theta);
@@ -192,83 +194,8 @@ namespace game
 		return ret;
 	}
 
-	inline Triangle RotateXYZ(const Triangle& tri, const float_t thetaX, const float_t thetaY, const float_t thetaZ) noexcept
-	{
-		Triangle ret(tri);
-
-		ret = RotateX(ret, thetaX);
-		ret = RotateY(ret, thetaY);
-		ret = RotateZ(ret, thetaZ);
-
-		return ret;
-	}
-
-	template<typename T>
-	inline Vector3<T> RotateXYZ(const Vector3<T>& in, const float_t thetaX, const float_t thetaY, const float_t thetaZ) noexcept
-	{
-		Vector3<T> ret(in);
-
-		ret = RotateX(ret, thetaX);
-		ret = RotateY(ret, thetaY);
-		ret = RotateZ(ret, thetaZ);
-
-		return ret;
-	}
-
-	inline Triangle Translate(const Triangle& tri, const float_t _x, const float_t _y, const float_t _z) noexcept
-	{
-		Triangle ret(tri);
-
-		ret.vertices[0].x += _x;
-		ret.vertices[0].y += _y;
-		ret.vertices[0].z += _z;
-		ret.vertices[1].x += _x;
-		ret.vertices[1].y += _y;
-		ret.vertices[1].z += _z;
-		ret.vertices[2].x += _x;
-		ret.vertices[2].y += _y;
-		ret.vertices[2].z += _z;
-
-		return ret;
-	}
-
-	inline Triangle Translate(const Triangle& tri, Vector3f& translate) noexcept
-	{
-		Triangle ret(tri);
-
-		ret.vertices[0] += translate;
-		ret.vertices[1] += translate;
-		ret.vertices[2] += translate;
-
-		return ret;
-	}
-
-	//inline Triangle Project(const Triangle& triangle, const Projection& proj) noexcept
-	//{
-	//	Triangle ret(triangle);
-
-	//	ret.vertices[0].x = triangle.vertices[0].x * proj.a;
-	//	ret.vertices[1].x = triangle.vertices[1].x * proj.a;
-	//	ret.vertices[2].x = triangle.vertices[2].x * proj.a;
-
-	//	ret.vertices[0].y = triangle.vertices[0].y * proj.b;
-	//	ret.vertices[1].y = triangle.vertices[1].y * proj.b;
-	//	ret.vertices[2].y = triangle.vertices[2].y * proj.b;
-
-	//	ret.vertices[0].z = (triangle.vertices[0].z * proj.c) + (triangle.vertices[0].w * proj.e);
-	//	ret.vertices[1].z = (triangle.vertices[1].z * proj.c) + (triangle.vertices[1].w * proj.e);
-	//	ret.vertices[2].z = (triangle.vertices[2].z * proj.c) + (triangle.vertices[2].w * proj.e);
-
-	//	ret.vertices[0].w = triangle.vertices[0].z;
-	//	ret.vertices[1].w = triangle.vertices[1].z;
-	//	ret.vertices[2].w = triangle.vertices[2].z;
-
-	//	return ret;
-	//}
-
-
 	// Returns +1 if the triangle ABC is CCW, -1 if CW, and 0 if collinear
-	inline float_t CheckWinding(Vector3f A, Vector3f B, Vector3f C)
+	inline float_t CheckWinding(Vector3f & __restrict A, Vector3f & __restrict B, Vector3f & __restrict C)
 	{
 		Vector3f AB = B - A; // Vector from A to B
 		Vector3f AC = C - A; // Vector from A to C
@@ -276,7 +203,7 @@ namespace game
 		return (N.z); // Sign of the z-component of N
 	}
 
-	inline Vector3f VectorIntersectPlane(const float_t planeNormalDotPoint, const Vector3f plane_n, Vector3f& lineStart, Vector3f& lineEnd, float_t& t) noexcept
+	inline Vector3f VectorIntersectPlane(const float_t planeNormalDotPoint, const Vector3f& __restrict plane_n, Vector3f& __restrict lineStart, Vector3f& __restrict lineEnd, float_t& t) noexcept
 	{
 		float_t plane_d = -planeNormalDotPoint;
 		float_t ad = lineStart.Dot(plane_n);
@@ -427,7 +354,7 @@ namespace game
 			out_tri1.color[1] = in_tri.color[insidePoints[1]];
 
 			float_t t = 0.0f;
-			float r = 0.0f, g = 0.0f, b = 0.0f;
+			float_t r = 0.0f, g = 0.0f, b = 0.0f;
 
 			// First intersection
 			out_tri1.vertices[2] = VectorIntersectPlane(planeNormalDotPoint, planeNormal, in_tri.vertices[insidePoints[0]], in_tri.vertices[outsidePoints[0]], t);

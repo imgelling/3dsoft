@@ -529,8 +529,9 @@ public:
 		sprite.position = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
 		//sprite.position = sprite.position * model.rotation;
 
+		sprite.GenerateBillboardMatrix(camera);
 		//sprite.GenerateQuad(tri1, tri2);
-		for (uint32_t count = 0; count < 50000; count+=2)
+		for (uint32_t count = 0; count < 1; count+=2)
 		{
 			//sprite.position = { 0,-1,0};
 			sprite.position.y -= pos;
@@ -539,7 +540,8 @@ public:
 				sprite.position.y = model.centerPoint.y;
 				pos = 0.0f;
 			}
-			sprite.rotation = rotation;
+
+			sprite.rotation = 0;// rotation;
 			sprite.billboard.m[12] = sprite.position.x;
 			sprite.billboard.m[13] = sprite.position.y;
 			sprite.billboard.m[14] = sprite.position.z;
@@ -552,7 +554,7 @@ public:
 			//particle1.tris.emplace_back(tri1);
 			//particle1.tris.emplace_back(tri2);
 		}
-		software3D.RenderMesh(particle1, 50000, mvpMat, camera, clip);
+		software3D.RenderMesh(particle1, 2, mvpMat, camera, clip);
 		//particle1.tris.clear();
 
 

@@ -20,7 +20,7 @@ namespace game
 		Matrix4x4f lookAt;
 		Camera3D();
 		Camera3D(const Vector3f& inPosition, const Vector3f& inRotation);
-		void GenerateLookAtMatrix(Vector3f& point) noexcept;
+		void GenerateLookAtMatrix(Vector3f& __restrict point) noexcept;
 		void GenerateViewMatrix() noexcept;
 		//float yaw, pitch, roll;
 		Matrix4x4f rotateM(const float ang, const Vector3f& axis) noexcept;
@@ -121,7 +121,7 @@ namespace game
 		//view = view * ct;
 	}
 
-	inline void Camera3D::GenerateLookAtMatrix(Vector3f& point) noexcept
+	inline void Camera3D::GenerateLookAtMatrix(Vector3f& __restrict point) noexcept
 	{
 		lookAt.SetIdentity();
 		Vector3f f = point - position;
