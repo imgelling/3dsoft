@@ -8,6 +8,7 @@
 #include "GameSoftware3D_Camera3D.h"
 #include "GameSoftware3D_Data.h"
 #include "GameSoftware3D_Math.h"
+#include "GameSoftware3D_Particle.h"
 #include "GameSoftware3D_PointSprite.h"
 #include "GameThreadPool.h"
 
@@ -457,100 +458,6 @@ namespace game
 			break;
 		}
 		}
-		//if (state == GAME_SOFTWARE3D_STATE_FILL_MODE)
-		//{
-		//	if ((value < (int32_t)FillMode::WireFrame) || (value >= (int32_t)FillMode::None))
-		//	{
-		//		return false;
-		//	}
-		//	_fillMode = (FillMode)value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_STATE_THREADED)
-		//{
-		//	if (value >= 0)
-		//	{
-		//		_multiThreaded = true;
-		//		_threadPool.Stop();
-		//		_threadPool.Start(value);
-		//	}
-		//	else
-		//	{
-		//		_multiThreaded = false;
-		//		_threadPool.Stop();
-		//	}
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_LIGHTING)
-		//{
-		//	_enableLighting = value;
-		//	return true;
-		//}
-		
-		//if (state == GAME_SOFTWARE3D_LIGHTING_TYPE)
-		//{
-		//	if (value < LightingType::Face) return false;
-		//	if (value > LightingType::Depth) return false;
-		//	
-		//	_lightingType = (LightingType)value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_TEXTURE)
-		//{
-		//	_enableTexturing = value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_ALPHA_TEST)
-		//{
-		//	_enableAlphaTest = value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_ALPHA_TEST_VALUE)
-		//{
-		//	if (value < 0) return false;
-		//	if (value > 255) return false;
-		//	_alphaTestValue = value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_BACKFACECULL)
-		//{
-		//	_enableBackFaceCulling = value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_DEPTH_WRITE)
-		//{
-		//	_enableDepthWrite = value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_SORT)
-		//{
-		//	if ((value < SortingType::BackToFront) && (value > SortingType::NoSort))
-		//		return false;
-
-		//	_sortType = (SortingType)value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_ALPHA_BLEND)
-		//{
-		//	_enableAlphaBlend = value;
-		//	return true;
-		//}
-
-		//if (state == GAME_SOFTWARE3D_COLOR_TINTING)
-		//{
-		//	_enableColorTinting = value;
-		//	return true;
-		//}
-		//return false;
 	}
 
 	inline bool Software3D::Initialize(PixelMode& pixelMode, const int32_t threads = -1)
@@ -1263,12 +1170,12 @@ namespace game
 			}
 			// Screen clipping
 			// Offscreen completely
-			//if ((in[tri].boundingBox.right < 0) || (in[tri].boundingBox.left > _defaultRenderTarget.size.width-1) ||
-			//	(in[tri].boundingBox.bottom < 0) || (in[tri].boundingBox.top > _defaultRenderTarget.size.height-1))
-			//{
-			//	in[tri].backFaceCulled = true;
-			//	continue;
-			//}
+			if ((in[tri].boundingBox.right < 0) || (in[tri].boundingBox.left > _defaultRenderTarget.size.width-1) ||
+				(in[tri].boundingBox.bottom < 0) || (in[tri].boundingBox.top > _defaultRenderTarget.size.height-1))
+			{
+				in[tri].backFaceCulled = true;
+				continue;
+			}
 
 			// Outside clipping rect completely // by itself 336
 			if ((in[tri].boundingBox.right < clip.clips[index].left) || (in[tri].boundingBox.left > clip.clips[index].right) ||

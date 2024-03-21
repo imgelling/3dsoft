@@ -28,8 +28,9 @@ public:
 	game::Mesh model;
 	game::Mesh torus;
 	game::Mesh sky;
-	game::Mesh particle1;
-	game::PointSprite sprite;
+	//game::Mesh particle1;
+	//game::PointSprite sprite;
+	game::Emitter emitter;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -146,10 +147,10 @@ public:
 		texw = 0;
 		texh = 0;
 		temp = (uint32_t*)imageloader.Load("content/particle1.png", texw, texh, t);
-		particle1.texture.data = new uint32_t[texw * texh];
-		memcpy(particle1.texture.data, temp, (size_t)texw * texh * 4);
-		particle1.texture.size.width = texw;
-		particle1.texture.size.height = texh;
+		emitter.mesh.texture.data = new uint32_t[texw * texh];
+		memcpy(emitter.mesh.texture.data, temp, (size_t)texw * texh * 4);
+		emitter.mesh.texture.size.width = texw;
+		emitter.mesh.texture.size.height = texh;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -286,16 +287,18 @@ public:
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
-		game::Triangle t1, t2;
-		for (uint32_t points = 0; points < 200000; ++points)
-		{
-			sprite.GenerateQuad(t1, t2);
-			particle1.tris.emplace_back(t1);
-			particle1.tris.emplace_back(t2);
-		}
-		//particle1.tris.clear();
-
-
+		//game::Triangle t1, t2;
+		//for (uint32_t points = 0; points < 100; ++points)
+		//{
+		//	sprite.GenerateQuad(t1, t2);
+		//	particle1.tris.emplace_back(t1);
+		//	particle1.tris.emplace_back(t2);
+		//}
+		////particle1.tris.clear();
+		emitter.Initialize(1000, { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f });
+		game::Pointf s = { 0.025f,0.025f };
+		game::Vector3f p = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
+		emitter.InitializeParticles(s, p, 0, game::Colors::Red);
 	}
 
 	void Shutdown()
@@ -304,7 +307,7 @@ public:
 		software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(model.texture);
 		software3D.DeleteTexture(alphaCube.texture);
-		software3D.DeleteTexture(particle1.texture);
+		software3D.DeleteTexture(emitter.mesh.texture);
 	}
 
 	void Update(const float_t msElapsed)
@@ -432,7 +435,8 @@ public:
 		//game::Vector3MultMatrix4x4(particle1.centerPoint, particle1.model, center);
 		//camera.GenerateLookAtMatrix(camera.forward);
 		camera.GenerateViewMatrix();
-		//camera.GenerateLookAtMatrix(particle1.position);
+		//game::Vector3f c = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
+		//camera.GenerateLookAtMatrix2(c); // doesn't work with billboards
 
 
 		
@@ -460,12 +464,12 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//sky.GenerateModelMatrix();
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		//software3D.RenderMesh(sky, mvpMat, camera, clip); 
+		//software3D.RenderMesh(sky, sky.tris.size(), mvpMat, camera, clip); 
 
 
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-		//software3D.RenderMesh(torus, mvpMat, camera, clip); 
+		//software3D.RenderMesh(torus, torus.tris.size(), mvpMat, camera, clip); 
 
 		
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
@@ -516,41 +520,12 @@ public:
 
 		// fire color
 		// white yellow orange red black
-		//random.SetSeed(0);
-		//game::Color color;
 
-		//game::Triangle tri1;
-		//game::Triangle tri2;
-		sprite.GenerateBillboardMatrix(camera);
-		//float s = abs(sin(rotation) / 25.0f);
-		sprite.size = { 0.025f,0.025f };
-		// center of the fire pit
-		//sprite.position = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
-		sprite.position = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
-		//sprite.position = sprite.position * model.rotation;
-
-		sprite.GenerateBillboardMatrix(camera);
-		//sprite.GenerateQuad(tri1, tri2);
-		for (uint32_t count = 0; count < 50000; count+=2)
-		{
-			//sprite.position = { 0,-1,0};
-			sprite.position.y -= pos;
-			if (sprite.position.y < -0.5f)
-			{
-				sprite.position.y = model.centerPoint.y;
-				pos = 0.0f;
-			}
-
-			sprite.rotation = rotation;
-			sprite.billboard.m[12] = sprite.position.x;
-			sprite.billboard.m[13] = sprite.position.y;
-			sprite.billboard.m[14] = sprite.position.z;
-
-			sprite.color.Set(random.RndRange(0, 255), random.RndRange(0, 255), random.RndRange(0, 255), 255);
-
-			sprite.UpdateQuad(particle1.tris[count], particle1.tris[count+1]);
-		}
-		software3D.RenderMesh(particle1, 50000, mvpMat, camera, clip);
+		// add particles instead
+		//emitter.InitializeParticles({ 0.025f,0.025f }, { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f }, rotation, game::Colors::Red);
+		emitter.UpdateBillboard(camera);
+		emitter.Update(msElapsed);
+		software3D.RenderMesh(emitter.mesh, emitter.partsAlive*2, mvpMat, camera, clip);
 		//particle1.tris.clear();
 
 

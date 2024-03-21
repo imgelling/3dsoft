@@ -19,8 +19,9 @@ namespace game
 		Matrix4x4f view;
 		Matrix4x4f lookAt;
 		Camera3D();
-		Camera3D(const Vector3f& inPosition, const Vector3f& inRotation);
+		Camera3D(const Vector3f& __restrict inPosition, const Vector3f& __restrict inRotation);
 		void GenerateLookAtMatrix(Vector3f& __restrict point) noexcept;
+		void GenerateLookAtMatrix2(Vector3f& __restrict point) noexcept;
 		void GenerateViewMatrix() noexcept;
 		//float yaw, pitch, roll;
 		Matrix4x4f rotateM(const float ang, const Vector3f& axis) noexcept;
@@ -158,6 +159,43 @@ namespace game
 		//lookAt = lookAt * ct;
 	}
 
+	inline void Camera3D::GenerateLookAtMatrix2(Vector3f& __restrict point) noexcept
+	{
+		lookAt.SetIdentity();
+		//Vector3f f = point - position;
+		forward = point - position;
+		//f.Normalize();
+		forward.Normalize();
+		//Vector3f r = defaultUp.Cross(f);
+		right = defaultUp.Cross(forward);
+		//r.Normalize();
+		right.Normalize();
+		//Vector3f u = f.Cross(r);
+		up = (forward.Cross(right));
+		up.Normalize();
+		//u.Normalize();
+
+		lookAt.m[0] = right.x;
+		lookAt.m[4] = right.y;
+		lookAt.m[8] = right.z;
+
+		lookAt.m[1] = up.x;
+		lookAt.m[5] = up.y;
+		lookAt.m[9] = up.z;
+
+		lookAt.m[2] = forward.x;
+		lookAt.m[6] = forward.y;
+		lookAt.m[10] = forward.z;
+
+		lookAt.m[12] = right.Dot(position * -1.0f);
+		lookAt.m[13] = up.Dot(position * -1.0f);
+		lookAt.m[14] = forward.Dot(position * -1.0f);
+
+		//Matrix4x4f ct;
+		//ct.SetTranslation(-position.x, -position.y, -position.z);
+		//lookAt = lookAt * ct;
+	}
+
 
 
 	inline Camera3D::Camera3D()
@@ -170,7 +208,7 @@ namespace game
 		SetRotation(0, 0, 0);
 	}
 
-	inline Camera3D::Camera3D(const Vector3f& inPosition, const Vector3f& inRotation)
+	inline Camera3D::Camera3D(const Vector3f& __restrict inPosition, const Vector3f& __restrict inRotation)
 	{
 		position = inPosition;
 		rotation = inRotation;

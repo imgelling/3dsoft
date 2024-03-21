@@ -11,14 +11,20 @@ namespace game
 	class PointSprite
 	{
 	public:
+
 		Vector3f position;
 		Matrix4x4f billboard;
 		float_t rotation;
 		Vector2f size;
-		Color color = Colors::White;
+		Color color;
+		PointSprite()
+		{
+			rotation = 0;
+			color = Colors::Black;
+		}
 		inline void GenerateBillboardMatrix(const Camera3D& camera) noexcept
 		{
-			billboard.SetIdentity();
+			//billboard.SetIdentity();
 			billboard.m[0] = camera.view.m[0];
 			billboard.m[4] = camera.view.m[1];
 			billboard.m[8] = camera.view.m[2];
@@ -30,6 +36,12 @@ namespace game
 			billboard.m[2] = camera.view.m[8];
 			billboard.m[6] = camera.view.m[9];
 			billboard.m[10] = camera.view.m[10];
+
+			billboard.m[3] = 0;
+			billboard.m[7] = 0;
+			billboard.m[11] = 0;
+
+			billboard.m[15] = 1;
 
 			//billboard.m[12] = position.x;
 			//billboard.m[13] = position.y;

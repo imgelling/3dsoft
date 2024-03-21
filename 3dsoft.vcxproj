@@ -144,6 +144,7 @@
     <ClInclude Include="GameSoftware3D.h" />
     <ClInclude Include="GameSoftware3D_Data.h" />
     <ClInclude Include="GameSoftware3D_Math.h" />
+    <ClInclude Include="GameSoftware3D_Particle.h" />
     <ClInclude Include="GameSoftware3D_PointSprite.h" />
     <ClInclude Include="Header.h" />
   </ItemGroup>
