@@ -46,6 +46,7 @@ namespace game
 		{
 			numberOfParticles = numParticles;
 			mesh.centerPoint = position;
+			Position = position;
 			
 			Triangle t1, t2;
 			Particle particle;
@@ -68,28 +69,27 @@ namespace game
 			Random random;
 			Vector3f pos;// = inposition;
 			float_t rpos = 0;
-			uint32_t c = 0;
+			//uint32_t c = 0;
 			Color col;
 			random.NewSeed();
 			for (Particle& parts : particles)
 			{
-				rpos = (random.RndRange(0, 100) / 400.0f) - 0.13f;
+				rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
 				pos = Position;
 				pos.x += rpos;
-				rpos = (random.RndRange(0, 100) / 400.0f) - 0.13f;
+				rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
 				pos.z += rpos;
 				parts.velocity.y = (random.RndRange(0, 200) / 400.0f);
 				parts.velocity.y = max(parts.velocity.y, 0.005f);
-				//c = random.RndRange(0, 2);
-				//if (c == 0)
-					col = Colors::Yellow;
-				//else if (c == 1)
-					//col = Colors::Red;
-				//else if (c == 2)
-					//col = Colors::DarkGray;
-				//parts.sprite.color.Set(random.RndRange(0, 255), random.RndRange(0, 255), random.RndRange(0, 255), 255);
+				parts.velocity.x = (random.RndRange(0, 200) / 400.0f);
+				parts.velocity.x = parts.velocity.x > 0.15f ? 0.15f : parts.velocity.x;
+
 				parts.alive = true;
-				parts.timeToLive = 0.5f + random.RndRange(0, 100) / 100.0f;
+				parts.timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+				//parts.sprite.size.x = 1.0f / parts.timeToLive * 0.025f;
+				//parts.sprite.size.y = 1.0f / parts.timeToLive * 0.025f;
+				parts.sprite.size.x = parts.timeToLive * 0.025f;
+				parts.sprite.size.y = parts.timeToLive * 0.025f;
 				parts.Initialize(size, pos, rotation, col);
 			}
 		}
@@ -120,25 +120,58 @@ namespace game
 			partsAlive = 0;
 			for (Particle &part:particles)
 			{
-				//sprite.position = { 0,-1,0};
+
 				part.sprite.position.y -= part.velocity.y * (time);
+				part.sprite.position.x -= part.velocity.x * (time);
 				part.timeToLive -= time;
-				part.sprite.size = lerp2D({ 0.025f,0.025f }, { 0,0 }, part.timeToLive);
-				if (part.timeToLive < 0.95)
+				//part.sprite.size = lerp2D({ 0.025f,0.025f }, { 0,0 }, min(part.timeToLive,1.0f));
+				part.sprite.size.x = part.timeToLive * 0.025f;
+				part.sprite.size.y = part.timeToLive * 0.025f;
+				if (part.timeToLive < 1.1)
 				{
-					part.sprite.color = Colors::Red;
+					part.sprite.color = Colors::White;
 				}
-				if (part.timeToLive < 0.55)
+				if (part.timeToLive < 1.0)
 				{
-					part.sprite.color = Colors::DarkGray;
-				}
-				if (/*part.sprite.position.y < -0.5f ||*/ part.timeToLive < 0.0f)
-				{
-					part.sprite.position.y = Position.y;// model.centerPoint.y;
-					part.sprite.size.x = 0.025f;
-					part.sprite.size.y = 0.025f;
-					part.timeToLive = 0.85f + random.RndRange(0,100) / 100.0f;
 					part.sprite.color = Colors::Yellow;
+				}
+				if (part.timeToLive < 0.9)
+				{
+					part.sprite.color = Colors::DarkOrange;
+				}
+				if (part.timeToLive < 0.5)
+				{
+					part.sprite.color.Set(1.0f, 0.25f, 0, 0.75f);
+				}
+				if (part.timeToLive < 0.35)
+				{
+					part.sprite.color.Set(1.0f, 0.25f, 0, 0.25f);
+				}
+				if (part.timeToLive < 0.0f)
+				{
+					float_t rpos = 0;
+					Vector3f pos = Position;
+					rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					pos.x += rpos;
+					rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					pos.z += rpos;
+
+					part.velocity.y = (random.RndRange(0, 200) / 400.0f);
+					part.velocity.y = max(part.velocity.y, 0.005f);
+					part.velocity.x = (random.RndRange(0, 200) / 400.0f);
+					part.velocity.x = part.velocity.x > 0.15f ? 0.15f : part.velocity.x;
+
+					part.sprite.position.y = pos.y;
+					part.sprite.position.x = pos.x;
+					part.sprite.position.z = pos.z;
+
+					//part.sprite.size.x = 0.025f;
+					//part.sprite.size.y = 0.025f;
+
+					part.timeToLive = 0.85f + random.RndRange(0,25) / 100.0f;
+					part.sprite.size.x = part.timeToLive * 0.025f;
+					part.sprite.size.y = part.timeToLive * 0.025f;
+					part.sprite.color = Colors::White;
 					//pos = 0.0f;
 
 					// kills particle, wont be rendered
@@ -164,7 +197,7 @@ namespace game
 		std::vector<Particle> particles;
 		Vector3f Position;
 		Mesh mesh;
-		uint32_t partsAlive;
+		uint64_t partsAlive;
 
 	private:
 	};

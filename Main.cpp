@@ -295,7 +295,7 @@ public:
 		//	particle1.tris.emplace_back(t2);
 		//}
 		////particle1.tris.clear();
-		emitter.Initialize(1000, { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f });
+		emitter.Initialize(1000, { model.centerPoint.x, model.centerPoint.y - 0.075f, model.centerPoint.z - 0.07f });
 		game::Pointf s = { 0.025f,0.025f };
 		game::Vector3f p = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
 		emitter.InitializeParticles(s, p, 0, game::Colors::Red);
@@ -526,7 +526,7 @@ public:
 		emitter.UpdateBillboard(camera);
 		emitter.Update(msElapsed);
 		software3D.RenderMesh(emitter.mesh, emitter.partsAlive*2, mvpMat, camera, clip);
-		//particle1.tris.clear();
+
 
 
 

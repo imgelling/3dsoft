@@ -1036,10 +1036,12 @@ namespace game
 							{
 								++colorBuffer;
 								++depthBufferPtr;
-								//uParam.first = 1;
-								//vParam.first = 1;
-								//depthParam.first = 1;
-								rColorParam.first = 1; // Without, the colors are not getting stepped
+								//rColorParam.first = 1; // Without, the colors are not getting stepped
+								//						// Probably could just be a stepx
+								rColorParam.stepX(rEval);
+								gColorParam.stepX(gEval);
+								bColorParam.stepX(bEval);
+								aColorParam.stepX(aEval);
 								continue;
 							}
 							else
@@ -1088,12 +1090,10 @@ namespace game
 						// texture lighting
 						if (lighting)
 						{
-
 							rSource *= luminance;
 							gSource *= luminance;
 							bSource *= luminance;
 						}
-
 
 						float_t aFinal = aSource; 
 						if (_enableAlphaBlend) 
