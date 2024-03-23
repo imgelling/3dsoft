@@ -66,7 +66,7 @@ namespace game
 			//{
 			//	parts.Initialize(size, position, rotation, color);
 			//}
-			Random random;
+			//Random random;
 			Vector3f pos;// = inposition;
 			float_t rpos = 0;
 			//uint32_t c = 0;
@@ -109,85 +109,77 @@ namespace game
 
 		void Update(const float_t msElapsed)
 		{		
-			//static float_t pos = 0.0f;
 			static float_t rotation = 0.0f;
-			game::Random random;
+
 			float_t time = msElapsed / 1000.0f;
 			rotation += (2 * 3.14f / 10.0f) * (time);
-			//pos = 0.5f * (msElapsed / 1000.0f);
 			
 			uint32_t count = 0;
 			partsAlive = 0;
 			for (Particle &part:particles)
 			{
-
-				part.sprite.position.y -= part.velocity.y * (time);
-				part.sprite.position.x -= part.velocity.x * (time);
 				part.timeToLive -= time;
-				//part.sprite.size = lerp2D({ 0.025f,0.025f }, { 0,0 }, min(part.timeToLive,1.0f));
-				part.sprite.size.x = part.timeToLive * 0.025f;
-				part.sprite.size.y = part.timeToLive * 0.025f;
-				if (part.timeToLive < 1.1)
+				if (part.timeToLive <= 0.0f)
 				{
-					part.sprite.color = Colors::White;
-				}
-				if (part.timeToLive < 1.0)
-				{
-					part.sprite.color = Colors::Yellow;
-				}
-				if (part.timeToLive < 0.9)
-				{
-					part.sprite.color = Colors::DarkOrange;
-				}
-				if (part.timeToLive < 0.5)
-				{
-					part.sprite.color.Set(1.0f, 0.25f, 0, 0.75f);
-				}
-				if (part.timeToLive < 0.35)
-				{
-					part.sprite.color.Set(1.0f, 0.25f, 0, 0.25f);
-				}
-				if (part.timeToLive < 0.0f)
-				{
-					float_t rpos = 0;
-					Vector3f pos = Position;
-					rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
-					pos.x += rpos;
-					rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
-					pos.z += rpos;
+					part.sprite.position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					part.sprite.position.y = Position.y;
+					part.sprite.position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
 
 					part.velocity.y = (random.RndRange(0, 200) / 400.0f);
-					part.velocity.y = max(part.velocity.y, 0.005f);
+					part.velocity.y = part.velocity.y < 0.005f ? 0.005f : part.velocity.y;
 					part.velocity.x = (random.RndRange(0, 200) / 400.0f);
 					part.velocity.x = part.velocity.x > 0.15f ? 0.15f : part.velocity.x;
 
-					part.sprite.position.y = pos.y;
-					part.sprite.position.x = pos.x;
-					part.sprite.position.z = pos.z;
 
-					//part.sprite.size.x = 0.025f;
-					//part.sprite.size.y = 0.025f;
-
-					part.timeToLive = 0.85f + random.RndRange(0,25) / 100.0f;
+					part.timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
 					part.sprite.size.x = part.timeToLive * 0.025f;
 					part.sprite.size.y = part.timeToLive * 0.025f;
 					part.sprite.color = Colors::White;
-					//pos = 0.0f;
 
 					// kills particle, wont be rendered
 					//part.alive = false;
 				}
-				if (part.alive)
+				else
 				{
-					part.sprite.billboard = billboard;
-					part.sprite.rotation = rotation;
-					part.sprite.billboard.m[12] = part.sprite.position.x;
-					part.sprite.billboard.m[13] = part.sprite.position.y;
-					part.sprite.billboard.m[14] = part.sprite.position.z;
+					part.sprite.position.y -= part.velocity.y * (time);
+					part.sprite.position.x -= part.velocity.x * (time);
 
-					part.sprite.UpdateQuad(mesh.tris[count], mesh.tris[(uint64_t)1 + count]);
-					count += 2;
-					partsAlive++;
+					//part.sprite.size = lerp2D({ 0.025f,0.025f }, { 0,0 }, min(part.timeToLive,1.0f));
+					part.sprite.size.x = part.timeToLive * 0.025f;
+					part.sprite.size.y = part.timeToLive * 0.025f;
+
+					if (part.timeToLive < 0.35)
+					{
+						part.sprite.color.Set(1.0f, 0.25f, 0, 0.25f);
+					}
+					else if (part.timeToLive < 0.5)
+					{
+						part.sprite.color.Set(1.0f, 0.25f, 0, 0.75f);
+					}
+					else if (part.timeToLive < 0.9)
+					{
+						part.sprite.color = Colors::DarkOrange;
+					}
+					else if (part.timeToLive < 1.0)
+					{
+						part.sprite.color = Colors::Yellow;
+					}
+					else if (part.timeToLive < 1.1)
+					{
+						part.sprite.color = Colors::White;
+					}
+
+					//if (part.alive)
+					{
+						part.sprite.rotation = rotation;
+						billboard.m[12] = part.sprite.position.x;
+						billboard.m[13] = part.sprite.position.y;
+						billboard.m[14] = part.sprite.position.z;
+
+						part.sprite.UpdateQuad(mesh.tris[count], mesh.tris[(uint64_t)1 + count], billboard);
+						count += 2;
+						partsAlive++;
+					}
 				}
 			}
 		}
@@ -198,6 +190,7 @@ namespace game
 		Vector3f Position;
 		Mesh mesh;
 		uint64_t partsAlive;
+		game::Random random;
 
 	private:
 	};

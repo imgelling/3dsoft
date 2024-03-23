@@ -122,7 +122,7 @@ namespace game
 			//rotation.SetIdentity();
 		}
 
-		inline void UpdateQuad(Triangle& topLeftTri, Triangle& bottomRightTri) 
+		inline void UpdateQuad(Triangle& topLeftTri, Triangle& bottomRightTri, const Matrix4x4f & __restrict bill) 
 		{
 			//float_t size = 0.5f;  // actually half size
 			float_t z = 0;// position.z;
@@ -189,10 +189,10 @@ namespace game
 				//bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
 				// ---------------------------------------------------------------------------
 				topLeftTri.vertices[i] = RotateZ(topLeftTri.vertices[i], rotation);
-				topLeftTri.vertices[i] = topLeftTri.vertices[i] * billboard;
+				topLeftTri.vertices[i] = topLeftTri.vertices[i] * bill;// board;
 
 				bottomRightTri.vertices[i] = RotateZ(bottomRightTri.vertices[i], rotation);
-				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * billboard;
+				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * bill;// board;
 			}
 			//rotation.SetIdentity();
 		}
