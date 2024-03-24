@@ -752,6 +752,14 @@ namespace game
 		uint32_t bc = 0;
 		uint32_t ac = 0;
 
+		float_t rDest = 0;
+		float_t gDest = 0;
+		float_t bDest = 0;
+		float_t aDest = 0;
+		float_t aFinal = 0;
+
+		uint32_t dest = 0;
+
 		Vector3f vertexNormalEval;
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
@@ -861,7 +869,6 @@ namespace game
 						}
 						if (!textured || _enableColorTinting)
 						{
-
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
@@ -983,16 +990,16 @@ namespace game
 						}
 
 						// alpha blending
-						float_t aFinal = aSource;
+						aFinal = aSource;
 						if (_enableAlphaBlend) 
 						{
-							uint32_t dest = *colorBuffer;
+							dest = *colorBuffer;
 							// extract dest						
-							float_t rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
-							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
-							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
-							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
-							float_t aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
+							rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
+							gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
+							bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
+							aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
 							float_t adnewa = aSource / aFinal;
@@ -1026,7 +1033,7 @@ namespace game
 						upDiv = min(upDiv, 1.0f); //clamp
 						vpDiv = min(vpDiv, 1.0f); //clamp
 						upDiv = max(upDiv, 0.0f);  // something is causing a negative value
-						vpDiv = max(vpDiv, 0.0f);
+						vpDiv = max(vpDiv, 0.0f);  // so these are here
 						tx = max((uint32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
 						ty = max((uint32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
 						colorAtPixel.packedABGR = _currentTexture.data[ty * _currentTexture.size.width + tx];
@@ -1095,15 +1102,15 @@ namespace game
 							bSource *= luminance;
 						}
 
-						float_t aFinal = aSource; 
+						aFinal = aSource; 
 						if (_enableAlphaBlend) 
 						{
-							uint32_t dest = *colorBuffer;
+							dest = *colorBuffer;
 							// extract dest
-							float_t rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
-							float_t gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
-							float_t bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
-							float_t aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
+							gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
+							bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
+							aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
 
 							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
@@ -1123,21 +1130,23 @@ namespace game
 				++depthBufferPtr;
 			}
 			depthParam.first = 1;
-
-			rColorParam.first = 1;
-			gColorParam.first = 1;
-			bColorParam.first = 1;
-			aColorParam.first = 1;
+			if (filled || _enableColorTinting)
+			{
+				rColorParam.first = 1;
+				//gColorParam.first = 1;
+				//bColorParam.first = 1;
+				//aColorParam.first = 1;
+			}
 			if (textured)
 			{
 				uParam.first = 1;
-				vParam.first = 1;
+				//vParam.first = 1;
 			}
 			if (lighting)
 			{
 				vnx.first = 1;
-				vny.first = 1;
-				vnz.first = 1;
+				//vny.first = 1;
+				//vnz.first = 1;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;

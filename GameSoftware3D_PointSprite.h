@@ -11,36 +11,35 @@ namespace game
 	class PointSprite
 	{
 	public:
-
 		Vector3f position;
-		Matrix4x4f billboard;
+		Matrix4x4f pointSprite;
 		float_t rotation;
 		Vector2f size;
 		Color color;
 		PointSprite()
 		{
 			rotation = 0;
-			color = Colors::Black;
+			color = Colors::White;
 		}
-		inline void GenerateBillboardMatrix(const Camera3D& camera) noexcept
+		inline void GeneratePointSpriteMatrix(const Camera3D& camera) noexcept
 		{
-			billboard.m[0] = camera.view.m[0];
-			billboard.m[4] = camera.view.m[1];
-			billboard.m[8] = camera.view.m[2];
+			pointSprite.m[0] = camera.view.m[0];
+			pointSprite.m[4] = camera.view.m[1];
+			pointSprite.m[8] = camera.view.m[2];
 
-			billboard.m[1] = camera.view.m[4];
-			billboard.m[5] = camera.view.m[5];
-			billboard.m[9] = camera.view.m[6];
+			pointSprite.m[1] = camera.view.m[4];
+			pointSprite.m[5] = camera.view.m[5];
+			pointSprite.m[9] = camera.view.m[6];
 
-			billboard.m[2] = camera.view.m[8];
-			billboard.m[6] = camera.view.m[9];
-			billboard.m[10] = camera.view.m[10];
+			pointSprite.m[2] = camera.view.m[8];
+			pointSprite.m[6] = camera.view.m[9];
+			pointSprite.m[10] = camera.view.m[10];
 
-			billboard.m[3] = 0;
-			billboard.m[7] = 0;
-			billboard.m[11] = 0;
+			pointSprite.m[3] = 0;
+			pointSprite.m[7] = 0;
+			pointSprite.m[11] = 0;
 
-			billboard.m[15] = 1;
+			pointSprite.m[15] = 1;
 		}
 		inline void GenerateQuad(Triangle& topLeftTri, Triangle& bottomRightTri) noexcept
 		{
@@ -99,19 +98,17 @@ namespace game
 			bottomRightTri.uvs[2].v = 1.0f;
 			bottomRightTri.color[2] = color;
 
-			//Matrix4x4f mat = billboard;// *rotation;
 			for (uint32_t i = 0; i < 3; i++)
 			{
 				topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
 				bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
-				// ---------------------------------------------------------------------------
+
 				topLeftTri.vertices[i] = RotateZ(topLeftTri.vertices[i], rotation);
-				topLeftTri.vertices[i] = topLeftTri.vertices[i] * billboard;
+				topLeftTri.vertices[i] = topLeftTri.vertices[i] * pointSprite;
 
 				bottomRightTri.vertices[i] = RotateZ(bottomRightTri.vertices[i], rotation);
-				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * billboard;
+				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * pointSprite;
 			}
-			//rotation.SetIdentity();
 		}
 
 		inline void UpdateQuad(Triangle& topLeftTri, Triangle& bottomRightTri, const Matrix4x4f & __restrict bill) 
