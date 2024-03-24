@@ -24,7 +24,6 @@ namespace game
 		}
 		inline void GenerateBillboardMatrix(const Camera3D& camera) noexcept
 		{
-			//billboard.SetIdentity();
 			billboard.m[0] = camera.view.m[0];
 			billboard.m[4] = camera.view.m[1];
 			billboard.m[8] = camera.view.m[2];
@@ -42,20 +41,13 @@ namespace game
 			billboard.m[11] = 0;
 
 			billboard.m[15] = 1;
-
-			//billboard.m[12] = position.x;
-			//billboard.m[13] = position.y;
-			//billboard.m[14] = position.z;
 		}
 		inline void GenerateQuad(Triangle& topLeftTri, Triangle& bottomRightTri) noexcept
 		{
-			//float_t size = 0.5f;  // actually half size
-			float_t z = 0;// position.z;
-			//position = { 0,0,position.z };
 			// tl
-			topLeftTri.vertices[0].x = -size.width;// +position.x;
-			topLeftTri.vertices[0].y = -size.height;// +position.y;
-			topLeftTri.vertices[0].z = z;
+			topLeftTri.vertices[0].x = -size.width; 
+			topLeftTri.vertices[0].y = -size.height;
+			topLeftTri.vertices[0].z = 0;
 			topLeftTri.color[0] = color;
 			topLeftTri.uvs[0].u = 0.0f;
 			topLeftTri.uvs[0].v = 0.0f;
@@ -65,25 +57,25 @@ namespace game
 
 
 			// tr
-			topLeftTri.vertices[1].x = size.width;// +position.x;
-			topLeftTri.vertices[1].y = -size.height;// +position.y;
-			topLeftTri.vertices[1].z = z;
+			topLeftTri.vertices[1].x = size.width;  
+			topLeftTri.vertices[1].y = -size.height;
+			topLeftTri.vertices[1].z = 0;
 			topLeftTri.uvs[1].u = 1.0f;
 			topLeftTri.uvs[1].v = 0.0f;
 			topLeftTri.color[1] = color;
 
 			// bl
-			topLeftTri.vertices[2].x = -size.width;// +position.x;
-			topLeftTri.vertices[2].y = size.height;// +position.y;
-			topLeftTri.vertices[2].z = z;
+			topLeftTri.vertices[2].x = -size.width;
+			topLeftTri.vertices[2].y = size.height;
+			topLeftTri.vertices[2].z = 0;
 			topLeftTri.uvs[2].u = 0.0f;
 			topLeftTri.uvs[2].v = 1.0f;
 			topLeftTri.color[2] = color;
 
 			// tr
-			bottomRightTri.vertices[0].x = size.width;// +position.x;
-			bottomRightTri.vertices[0].y = -size.height;// +position.y;
-			bottomRightTri.vertices[0].z = z;
+			bottomRightTri.vertices[0].x = size.width;  
+			bottomRightTri.vertices[0].y = -size.height;
+			bottomRightTri.vertices[0].z = 0;
 			bottomRightTri.color[0] = color;
 			bottomRightTri.uvs[0].u = 1.0f;
 			bottomRightTri.uvs[0].v = 0.0f;
@@ -92,17 +84,17 @@ namespace game
 			bottomRightTri.faceNormal.z = -1.0f;
 
 			// br
-			bottomRightTri.vertices[1].x = size.width;// +position.x;
-			bottomRightTri.vertices[1].y = size.height;// +position.y;
-			bottomRightTri.vertices[1].z = z;
+			bottomRightTri.vertices[1].x = size.width; 
+			bottomRightTri.vertices[1].y = size.height;
+			bottomRightTri.vertices[1].z = 0;
 			bottomRightTri.uvs[1].u = 1.0f;
 			bottomRightTri.uvs[1].v = 1.0f;
 			bottomRightTri.color[1] = color;
 
 			// bl
-			bottomRightTri.vertices[2].x = -size.width;// +position.x;
-			bottomRightTri.vertices[2].y = size.height;// +position.y;
-			bottomRightTri.vertices[2].z = z;
+			bottomRightTri.vertices[2].x = -size.width;
+			bottomRightTri.vertices[2].y = size.height;
+			bottomRightTri.vertices[2].z = 0;
 			bottomRightTri.uvs[2].u = 0.0f;
 			bottomRightTri.uvs[2].v = 1.0f;
 			bottomRightTri.color[2] = color;
@@ -124,77 +116,76 @@ namespace game
 
 		inline void UpdateQuad(Triangle& topLeftTri, Triangle& bottomRightTri, const Matrix4x4f & __restrict bill) 
 		{
-			//float_t size = 0.5f;  // actually half size
-			float_t z = 0;// position.z;
-			//position = { 0,0,position.z };
 			// tl
-			topLeftTri.vertices[0].x = -size.width;// +position.x;
-			topLeftTri.vertices[0].y = -size.height;// +position.y;
-			topLeftTri.vertices[0].z = z;
+			topLeftTri.vertices[0].x = -size.width; 
+			topLeftTri.vertices[0].y = -size.height;
+			topLeftTri.vertices[0].z = 0;
 			topLeftTri.color[0] = color;
-			//topLeftTri.uvs[0].u = 0.0f;
-			//topLeftTri.uvs[0].v = 0.0f;
-			//topLeftTri.faceNormal.x = 0.0f;
-			//topLeftTri.faceNormal.y = 0.0f;
-			//topLeftTri.faceNormal.z = -1.0f;
-
 
 			// tr
-			topLeftTri.vertices[1].x = size.width;// +position.x;
-			topLeftTri.vertices[1].y = -size.height;// +position.y;
-			topLeftTri.vertices[1].z = z;
-			//topLeftTri.uvs[1].u = 1.0f;
-			//topLeftTri.uvs[1].v = 0.0f;
+			topLeftTri.vertices[1].x = size.width;  
+			topLeftTri.vertices[1].y = -size.height;
+			topLeftTri.vertices[1].z = 0;
 			topLeftTri.color[1] = color;
 
 			// bl
-			topLeftTri.vertices[2].x = -size.width;// +position.x;
-			topLeftTri.vertices[2].y = size.height;// +position.y;
-			topLeftTri.vertices[2].z = z;
-			//topLeftTri.uvs[2].u = 0.0f;
-			//topLeftTri.uvs[2].v = 1.0f;
+			topLeftTri.vertices[2].x = -size.width;
+			topLeftTri.vertices[2].y = size.height;
+			topLeftTri.vertices[2].z = 0;
 			topLeftTri.color[2] = color;
 
 			// tr
-			bottomRightTri.vertices[0].x = size.width;// +position.x;
-			bottomRightTri.vertices[0].y = -size.height;// +position.y;
-			bottomRightTri.vertices[0].z = z;
+			bottomRightTri.vertices[0].x = size.width;  
+			bottomRightTri.vertices[0].y = -size.height;
+			bottomRightTri.vertices[0].z = 0;
 			bottomRightTri.color[0] = color;
-			//bottomRightTri.uvs[0].u = 1.0f;
-			//bottomRightTri.uvs[0].v = 0.0f;
-			//bottomRightTri.faceNormal.x = 0.0f;
-			//bottomRightTri.faceNormal.y = 0.0f;
-			//bottomRightTri.faceNormal.z = -1.0f;
 
 			// br
-			bottomRightTri.vertices[1].x = size.width;// +position.x;
-			bottomRightTri.vertices[1].y = size.height;// +position.y;
-			bottomRightTri.vertices[1].z = z;
-			//bottomRightTri.uvs[1].u = 1.0f;
-			//bottomRightTri.uvs[1].v = 1.0f;
+			bottomRightTri.vertices[1].x = size.width;
+			bottomRightTri.vertices[1].y = size.height;
+			bottomRightTri.vertices[1].z = 0;
 			bottomRightTri.color[1] = color;
 
 			// bl
-			bottomRightTri.vertices[2].x = -size.width;// +position.x;
-			bottomRightTri.vertices[2].y = size.height;// +position.y;
-			bottomRightTri.vertices[2].z = z;
-			//bottomRightTri.uvs[2].u = 0.0f;
-			//bottomRightTri.uvs[2].v = 1.0f;
+			bottomRightTri.vertices[2].x = -size.width;
+			bottomRightTri.vertices[2].y = size.height;
+			bottomRightTri.vertices[2].z = 0;
 			bottomRightTri.color[2] = color;
+			// 189
+			float_t ctheta = cos(rotation);
+			float_t stheta = sin(rotation);
+			Vector3f ret;// (topLeftTri.vertices[0]);
 
-			//Matrix4x4f mat = billboard;// *rotation;
-			for (uint32_t i = 0; i < 3; i++)
-			{
-				//topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
-				//bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
-				// ---------------------------------------------------------------------------
-				topLeftTri.vertices[i] = RotateZ(topLeftTri.vertices[i], rotation);
-				topLeftTri.vertices[i] = topLeftTri.vertices[i] * bill;// board;
+			ret = topLeftTri.vertices[0];
+			topLeftTri.vertices[0].x = ret.x * ctheta - ret.y * stheta;
+			topLeftTri.vertices[0].y = ret.x * stheta + ret.y * ctheta;
+			topLeftTri.vertices[0] = topLeftTri.vertices[0] * bill;
 
-				bottomRightTri.vertices[i] = RotateZ(bottomRightTri.vertices[i], rotation);
-				bottomRightTri.vertices[i] = bottomRightTri.vertices[i] * bill;// board;
-			}
-			//rotation.SetIdentity();
+			ret = bottomRightTri.vertices[0];
+			bottomRightTri.vertices[0].x = ret.x * ctheta - ret.y * stheta;
+			bottomRightTri.vertices[0].y = ret.x * stheta + ret.y * ctheta;
+			bottomRightTri.vertices[0] = bottomRightTri.vertices[0] * bill;
+
+			ret = topLeftTri.vertices[1];
+			topLeftTri.vertices[1].x = ret.x * ctheta - ret.y * stheta;
+			topLeftTri.vertices[1].y = ret.x * stheta + ret.y * ctheta;
+			topLeftTri.vertices[1] = topLeftTri.vertices[1] * bill;
+
+			ret = bottomRightTri.vertices[1];
+			bottomRightTri.vertices[1].x = ret.x * ctheta - ret.y * stheta;
+			bottomRightTri.vertices[1].y = ret.x * stheta + ret.y * ctheta;
+			bottomRightTri.vertices[1] = bottomRightTri.vertices[1] * bill;
+
+			ret = topLeftTri.vertices[2];
+			topLeftTri.vertices[2].x = ret.x * ctheta - ret.y * stheta;
+			topLeftTri.vertices[2].y = ret.x * stheta + ret.y * ctheta;
+			topLeftTri.vertices[2] = topLeftTri.vertices[2] * bill;
+
+			ret = bottomRightTri.vertices[2];
+			bottomRightTri.vertices[2].x = ret.x * ctheta - ret.y * stheta;
+			bottomRightTri.vertices[2].y = ret.x * stheta + ret.y * ctheta;
+			bottomRightTri.vertices[2] = bottomRightTri.vertices[2] * bill;
+			//}
 		}
 
 

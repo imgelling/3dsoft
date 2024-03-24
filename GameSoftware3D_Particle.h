@@ -59,38 +59,26 @@ namespace game
 			}			
 		}
 
+		// needs to be custom, maybe just add a particle
 		void InitializeParticles(const Pointf& __restrict size, const Vector3f& __restrict inposition, const float_t rotation, const Color& color)
 		{
-			// original
-			//for (Particle &parts:particles)
-			//{
-			//	parts.Initialize(size, position, rotation, color);
-			//}
-			//Random random;
-			Vector3f pos;// = inposition;
-			float_t rpos = 0;
-			//uint32_t c = 0;
-			Color col;
 			random.NewSeed();
-			for (Particle& parts : particles)
+			for (Particle& part : particles)
 			{
-				rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
-				pos = Position;
-				pos.x += rpos;
-				rpos = (random.RndRange(0, 100) / 650.0f) - 0.07f;
-				pos.z += rpos;
-				parts.velocity.y = (random.RndRange(0, 200) / 400.0f);
-				parts.velocity.y = max(parts.velocity.y, 0.005f);
-				parts.velocity.x = (random.RndRange(0, 200) / 400.0f);
-				parts.velocity.x = parts.velocity.x > 0.15f ? 0.15f : parts.velocity.x;
+				part.sprite.position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+				part.sprite.position.y = Position.y;
+				part.sprite.position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
 
-				parts.alive = true;
-				parts.timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
-				//parts.sprite.size.x = 1.0f / parts.timeToLive * 0.025f;
-				//parts.sprite.size.y = 1.0f / parts.timeToLive * 0.025f;
-				parts.sprite.size.x = parts.timeToLive * 0.025f;
-				parts.sprite.size.y = parts.timeToLive * 0.025f;
-				parts.Initialize(size, pos, rotation, col);
+				part.velocity.y = (random.RndRange(0, 200) / 400.0f);
+				part.velocity.y = part.velocity.y < 0.005f ? 0.005f : part.velocity.y;
+				part.velocity.x = (random.RndRange(0, 200) / 400.0f);
+				part.velocity.x = part.velocity.x > 0.15f ? 0.15f : part.velocity.x;
+
+
+				part.timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+				part.sprite.size.x = part.timeToLive * 0.025f;
+				part.sprite.size.y = part.timeToLive * 0.025f;
+				part.sprite.color = Colors::White;
 			}
 		}
 
@@ -100,6 +88,7 @@ namespace game
 			billboard = particles[0].sprite.billboard;
 		}
 
+		// go in gamemath.h
 		Pointf lerp2D(const Pointf& __restrict b, const Pointf& __restrict a, float_t t) {
 			Pointf result;
 			result.x = a.x + t * (b.x - a.x);
