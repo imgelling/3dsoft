@@ -151,7 +151,7 @@ namespace game
 			bottomRightTri.vertices[2].y = size.height;
 			bottomRightTri.vertices[2].z = 0;
 			bottomRightTri.color[2] = color;
-			// 189
+
 			float_t ctheta = cos(rotation);
 			float_t stheta = sin(rotation);
 			Vector3f ret;// (topLeftTri.vertices[0]);
@@ -185,7 +185,6 @@ namespace game
 			bottomRightTri.vertices[2].x = ret.x * ctheta - ret.y * stheta;
 			bottomRightTri.vertices[2].y = ret.x * stheta + ret.y * ctheta;
 			bottomRightTri.vertices[2] = bottomRightTri.vertices[2] * bill;
-			//}
 		}
 
 
