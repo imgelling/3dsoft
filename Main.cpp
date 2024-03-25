@@ -68,7 +68,7 @@ public:
 		geSetAttributes(attributes);
 
 		//GenerateClips(numclips, clip, resolution);
-		clip.SetNumberOfClipsRects(16);
+		clip.SetNumberOfClipsRects(24);
 		clip.GenerateClips(resolution);
 	}
 
@@ -117,7 +117,7 @@ public:
 		uint32_t t = 0;
 		uint32_t texw = 0;
 		uint32_t texh = 0;
-		uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap3.png", texw, texh, t);
+		uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
 		model.texture.data = new uint32_t[texw * texh];
 		memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
 		model.texture.size.width = texw;
@@ -459,7 +459,11 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.RenderMesh(plane,plane.tris.size(), mvpMat, camera, clip);
-
+		for (int a = 0; a < clip.numberOfClipRects; a++)
+		{
+			if (clip.clippedTris[a].size())
+				pixelMode.Rect(clip.clips[a], game::Colors::Yellow);
+		}
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//sky.GenerateModelMatrix();
@@ -499,7 +503,7 @@ public:
 		*/
 
 
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
@@ -516,7 +520,11 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-
+		for (int a = 0; a < clip.numberOfClipRects; a++)
+		{
+			if (clip.clippedTris[a].size())
+				pixelMode.Rect(clip.clips[a], game::Colors::Yellow);
+		}
 
 		// fire color
 		// white yellow orange red black
@@ -527,7 +535,11 @@ public:
 		emitter.Update(msElapsed);
 		software3D.RenderMesh(emitter.mesh, emitter.partsAlive*2, mvpMat, camera, clip);
 
-
+		for (int a = 0; a < clip.numberOfClipRects; a++)
+		{
+			if (clip.clippedTris[a].size())
+			pixelMode.Rect(clip.clips[a], game::Colors::Yellow);
+		}
 
 
 
