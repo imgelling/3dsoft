@@ -459,11 +459,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.RenderMesh(plane,plane.tris.size(), mvpMat, camera, clip);
-		for (int a = 0; a < clip.numberOfClipRects; a++)
-		{
-			if (clip.clippedTris[a].size())
-				pixelMode.Rect(clip.clips[a], game::Colors::Yellow);
-		}
+
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//sky.GenerateModelMatrix();
@@ -483,25 +479,6 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
-		// render a lot of fireworks
-		//		- Particle Emitter  class/struct
-		//		- Particle class/struct
-		//		- PointSprite class/struct
-		//          - default quad (pre gen triangles)
-
-		/*
-			particle needs:
-				vector3f velocity;
-				bool isAlive;
-				float timeToLive;
-				//float maxTimeToLive;
-				Update(time)
-		*/
-
-		/*
-			PointSprite : generateMinQuad - will only change what is necessary, size, color, rotation
-		*/
-
 
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
@@ -520,26 +497,11 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		for (int a = 0; a < clip.numberOfClipRects; a++)
-		{
-			if (clip.clippedTris[a].size())
-				pixelMode.Rect(clip.clips[a], game::Colors::Yellow);
-		}
 
-		// fire color
-		// white yellow orange red black
-
-		// add particles instead
-		//emitter.InitializeParticles({ 0.025f,0.025f }, { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f }, rotation, game::Colors::Red);
 		emitter.UpdateBillboard(camera);
 		emitter.Update(msElapsed);
-		software3D.RenderMesh(emitter.mesh, emitter.partsAlive*2, mvpMat, camera, clip);
+		software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
 
-		for (int a = 0; a < clip.numberOfClipRects; a++)
-		{
-			if (clip.clippedTris[a].size())
-			pixelMode.Rect(clip.clips[a], game::Colors::Yellow);
-		}
 
 
 
