@@ -87,7 +87,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/fire-basket.obj", model))
+		if (!LoadObj("Content/arena.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -223,22 +223,11 @@ public:
 
 		plane.tris.emplace_back(topLeftTri);
 		plane.tris.emplace_back(bottomRightTri);
-		//plane.centerPoint.x = -2.0f;
-		//plane.centerPoint.y = -1.0f;
-		//plane.centerPoint.z = 0;
+
 
 		// Preset some world stuff
 		camera.position.z = -1.0f;
 		camera.position.y = -0.2f;
-		//particle1.tris = plane.tris;
-		//for (uint32_t tri = 0; tri < particle1.tris.size(); ++tri)
-		//{
-		//	for (uint32_t vert = 0; vert < 3; ++vert)
-		//	{
-		//		particle1.tris[tri].color[vert] = { 1.0f, 0.0f, 0.0f, 1.0f };
-		//	}
-		//}
-		//particle1.texture = alphaCube.texture;
 
 		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
 		plane.SetTranslation(0.0f, 0.1f, 0.0f);
@@ -246,37 +235,11 @@ public:
 
 		alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
 		alphaCube.SetScale(0.5f, 0.5f, 0.5f);
-		//game::Color col(1.0f, 0.0f, 0.0f, 0.5f);
-		//game::Color col2(0.0f, 1.0f, 0.0f, 0.5f);
-		//game::Color col3(0.0f, 0.0f, 1.0f, 0.5f);
-		//game::Color set = col;
-		//uint32_t ct = 0;
-		//for (uint32_t i = 0; i < alphaCube.tris.size(); i++)
-		//{			
-		//	alphaCube.tris[i].color[0] = set;
-		//	alphaCube.tris[i].color[1] = set;
-		//	alphaCube.tris[i].color[2] = set;
-		//	//ct++;
-		//	//ct %= 3;
-		//	//if (ct == 0)
-		//	//{
-		//	//	set = col;
-		//	//}
-		//	//if (ct == 1)
-		//	//{
-		//	//	set = col2;
-		//	//}
-		//	//if (ct == 2)
-		//	//{
-		//	//	set = col3;
-		//	//}
-		//}
 
-		model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetScale(2.0f, 2.0f, 2.0f);
+		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		model.SetScale(1.0f, 1.0f, 1.0f);
 		model.SetTranslation(0, 0.1f, 0);
-		//model.SetTranslation(1.0f, 0.0f, 0.0f);
-		//model.GenerateModelMatrix();
+
 
 		sky.SetRotation(3.14159f / 2.0f, 0.0f, 0.0f);
 		sky.SetScale(50.0f, 50.0f, 50.0f);
@@ -287,15 +250,8 @@ public:
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
-		//game::Triangle t1, t2;
-		//for (uint32_t points = 0; points < 100; ++points)
-		//{
-		//	sprite.GenerateQuad(t1, t2);
-		//	particle1.tris.emplace_back(t1);
-		//	particle1.tris.emplace_back(t2);
-		//}
-		////particle1.tris.clear();
-		emitter.Initialize(1000, { model.centerPoint.x, model.centerPoint.y - 0.075f, model.centerPoint.z - 0.07f });
+
+		emitter.Initialize(1000, { 0,0,0 });
 		game::Pointf s = { 0.025f,0.025f };
 		game::Vector3f p = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
 		emitter.InitializeParticles(s, p, 0, game::Colors::Red);
@@ -485,21 +441,22 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 
 
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
-		emitter.UpdateBillboard(camera);
-		emitter.Update(msElapsed);
+		emitter.Update(msElapsed, camera);
 		software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
 
 
