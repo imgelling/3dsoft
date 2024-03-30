@@ -129,7 +129,7 @@ namespace game
 		{
 			if (_clearDepthBuffer[i] != nullptr)
 			{
-				delete[] _clearDepthBuffer[i];
+				_aligned_free(_clearDepthBuffer[i]);
 				_clearDepthBuffer[i] = nullptr;
 			}
 		}
@@ -193,7 +193,7 @@ namespace game
 		{
 			return false;
 		}
-		texture.data = new uint32_t[width * height];
+		texture.data = (uint32_t*)_aligned_malloc((size_t)width * height * sizeof(float_t), 16); //new uint32_t[width * height];
 		if (texture.data == nullptr)
 		{
 			return false;
@@ -212,9 +212,10 @@ namespace game
 
 	inline void Software3D::DeleteTexture(Texture& texture) noexcept
 	{
-		if (texture.data)
+		if (texture.data != nullptr)
 		{
-			delete[] texture.data;
+			//delete[] texture.data;
+			_aligned_free(texture.data);
 			texture.data = nullptr;
 		}
 		texture.size.width = 0;
@@ -478,9 +479,9 @@ namespace game
 			_threadPool.Start(threads);
 		}
 	
-		for (uint32_t i = 0; i < _numbuffers; i++)
+		for (uint32_t i = 0; i < _numbuffers; i++)	
 		{
-			_clearDepthBuffer[i] = new float_t[_totalBufferSize];
+			_clearDepthBuffer[i] = (float_t*)_aligned_malloc(_totalBufferSize * sizeof(float_t), 16);
 			std::fill_n(_clearDepthBuffer[i], _totalBufferSize, 100.0f);
 		}
 		_currentDepth = 0;

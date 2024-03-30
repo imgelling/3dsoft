@@ -58,7 +58,6 @@ public:
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 		//_CrtSetBreakAlloc(613);
 #endif
-		//XMVECTORF32 b = { 1.0f,1.0f,1.0f,1.0f };
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
@@ -119,17 +118,24 @@ public:
 		uint32_t texw = 0;
 		uint32_t texh = 0;
 		uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
-		model.texture.data = new uint32_t[texw * texh];
-		memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
+		model.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
+		if (sky.texture.data != nullptr)
+		{
+			memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
+		}
 		model.texture.size.width = texw;
 		model.texture.size.height = texh;
 		imageloader.UnLoad();
+
 		t = 0;
 		texw = 0;
 		texh = 0;
-		 temp = (uint32_t*)imageloader.Load("content/sky.png", texw, texh, t);
-		sky.texture.data = new uint32_t[texw * texh];
-		memcpy(sky.texture.data, temp, (size_t)texw * texh * 4);
+		temp = (uint32_t*)imageloader.Load("content/sky.png", texw, texh, t);
+		sky.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
+		if (sky.texture.data != nullptr)
+		{
+			memcpy(sky.texture.data, temp, (size_t)texw * texh * 4);
+		}
 		sky.texture.size.width = texw;
 		sky.texture.size.height = texh;
 
@@ -138,8 +144,11 @@ public:
 		texw = 0;
 		texh = 0;
 		temp = (uint32_t*)imageloader.Load("content/grate0_alpha.png", texw, texh, t);
-		alphaCube.texture.data = new uint32_t[texw * texh];
-		memcpy(alphaCube.texture.data, temp, (size_t)texw * texh * 4);
+		alphaCube.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
+		if (alphaCube.texture.data != nullptr)
+		{
+			memcpy(alphaCube.texture.data, temp, (size_t)texw * texh * 4);
+		}
 		alphaCube.texture.size.width = texw;
 		alphaCube.texture.size.height = texh;
 
@@ -148,8 +157,11 @@ public:
 		texw = 0;
 		texh = 0;
 		temp = (uint32_t*)imageloader.Load("content/particle1.png", texw, texh, t);
-		emitter.mesh.texture.data = new uint32_t[texw * texh];
-		memcpy(emitter.mesh.texture.data, temp, (size_t)texw * texh * 4);
+		emitter.mesh.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
+		if (emitter.mesh.texture.data != nullptr)
+		{
+			memcpy(emitter.mesh.texture.data, temp, (size_t)texw * texh * 4);
+		}
 		emitter.mesh.texture.size.width = texw;
 		emitter.mesh.texture.size.height = texh;
 
