@@ -7,7 +7,6 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
-
 class Game : public game::Engine
 {
 
@@ -59,6 +58,7 @@ public:
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 		//_CrtSetBreakAlloc(613);
 #endif
+		//XMVECTORF32 b = { 1.0f,1.0f,1.0f,1.0f };
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
 		attributes.VsyncOn = false;
@@ -70,6 +70,7 @@ public:
 		//GenerateClips(numclips, clip, resolution);
 		clip.SetNumberOfClipsRects(24);
 		clip.GenerateClips(resolution);
+
 	}
 
 	void LoadContent()
@@ -102,15 +103,15 @@ public:
 			std::cout << "Could not load model\n";
 		}
 
-		if (!LoadObj("Content/cubetest.obj", alphaCube))
-		{
-			std::cout << "Could not load model\n";
-		}
+		//if (!LoadObj("Content/cubetest.obj", alphaCube))
+		//{
+		//	std::cout << "Could not load model\n";
+		//}
 
-		if (!software3D.CreateRenderTarget(1280 >> 3, 720 >> 3, renderTarget))
-		{
-			std::cout << "Could not create render target\n";
-		}
+		//if (!software3D.CreateRenderTarget(1280 >> 3, 720 >> 3, renderTarget))
+		//{
+		//	std::cout << "Could not create render target\n";
+		//}
 
 
 		game::ImageLoader imageloader;   // Load texture in software3D

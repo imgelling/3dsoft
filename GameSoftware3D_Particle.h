@@ -46,11 +46,13 @@ namespace game
 		Mesh mesh;
 		uint64_t partsAlive;
 		game::Random random;
+		bool Enabled;
 
 		Emitter()
 		{
 			numberOfParticles = 0;
 			partsAlive = 0;
+			Enabled = true;
 		}
 		void Initialize(const uint32_t numParticles, const Vector3f& position)
 		{
@@ -94,13 +96,13 @@ namespace game
 			}
 		}
 
-		// go in gamemath.h
-		Pointf lerp2D(const Pointf& __restrict b, const Pointf& __restrict a, float_t t) {
-			Pointf result;
-			result.x = a.x + t * (b.x - a.x);
-			result.y = a.y + t * (b.y - a.y);
-			return result;
-		}
+		//// go in gamemath.h
+		//Pointf lerp2D(const Pointf& __restrict b, const Pointf& __restrict a, float_t t) {
+		//	Pointf result;
+		//	result.x = a.x + t * (b.x - a.x);
+		//	result.y = a.y + t * (b.y - a.y);
+		//	return result;
+		//}
 
 		void Update(const float_t msElapsed, const Camera3D& camera)
 		{		
