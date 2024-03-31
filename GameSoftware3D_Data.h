@@ -71,17 +71,19 @@ namespace game
 		}
 	}
 
-
+#pragma pack(push,16)
 	class EdgeEquation 
 	{
 	public:
 		float_t a;
 		float_t b;
 		float_t c;
+		uint32_t first;
 		bool fillRule;
-		EdgeEquation() { a=(0.0f); b=(0.0f); c=(0.0f); fillRule=(false); }
+		EdgeEquation() { a = (0.0f); b = (0.0f); c = (0.0f); fillRule = (false); first = (0); }
 		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
+			first = 0;
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
 			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
@@ -90,6 +92,7 @@ namespace game
 
 		inline void Set(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
+			first = 0;
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
 			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
@@ -99,7 +102,14 @@ namespace game
 		// Evaluate the edge equation for the given point.
 		inline float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
+			//first = 0;
 			return a * x + b * y + c;
+		}
+
+		inline void evaluate2(float_t x, float_t y, float &out) const noexcept
+		{
+			//first = 0;
+			out = a * x + b * y + c;
 		}
 
 		// Test if the given point is inside the edge.
@@ -115,9 +125,13 @@ namespace game
 		}
 
 		// Step the equation value v to the x direction.
-		float_t stepX(const float_t v) const noexcept
+		//float_t stepX(const float_t v) const noexcept
+		//{
+		//	return v + a;
+		//}
+		inline void stepX(float_t& v) const noexcept
 		{
-			return v + a;
+			v = v + a;
 		}
 
 		// Step the equation value v to the x direction.
@@ -138,7 +152,9 @@ namespace game
 			return v + b * stepSize;
 		}
 	};
+#pragma pack(pop)
 
+#pragma pack(push,16)
 	struct Triangle
 	{
 		Vector3f vertices[3];
@@ -159,6 +175,7 @@ namespace game
 		Recti boundingBox;
 		float_t area = 0.0;
 	};
+#pragma pack(pop)
 
 	struct Texture
 	{

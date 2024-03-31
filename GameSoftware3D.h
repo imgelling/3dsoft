@@ -762,6 +762,11 @@ namespace game
 		uint32_t dest = 0;
 
 		Vector3f vertexNormalEval;
+
+		float e0 = 0;
+		float e1 = 0;
+		float e2 = 0;
+
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
@@ -773,6 +778,9 @@ namespace game
 			//}
 			foundTriangle = 0;
 			pixelOffset.y = j + 0.5f;
+			const_cast<Triangle&>(triangle).edge0.first = 1;
+			//const_cast<Triangle&>(triangle).edge1.first = 1;
+			//const_cast<Triangle&>(triangle).edge2.first = 1;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -783,13 +791,31 @@ namespace game
 				//	continue;
 				//}
 				pixelOffset.x = i + 0.5f;
+				// 174
+				if (!triangle.edge0.first)
+				{
+					triangle.edge0.stepX(e0);
+					triangle.edge1.stepX(e1);
+					triangle.edge2.stepX(e2);
+				}
+				else
+				{
+					triangle.edge0.evaluate2(pixelOffset.x, pixelOffset.y, e0);
+					const_cast<Triangle&>(triangle).edge0.first = 0;
+					triangle.edge1.evaluate2(pixelOffset.x, pixelOffset.y, e1);
+					//const_cast<Triangle&>(triangle).edge1.first = 0;
+					triangle.edge2.evaluate2(pixelOffset.x, pixelOffset.y, e2);
+					//const_cast<Triangle&>(triangle).edge2.first = 0;
+				}
 
-				if (triangle.edge0.test(pixelOffset.x, pixelOffset.y))
+				if (triangle.edge0.test(e0))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
+
 					if (foundTriangle)
 					{
+						const_cast<Triangle&>(triangle).edge0.first = 1;
 						break;
 					}
 					else
@@ -797,12 +823,13 @@ namespace game
 						continue;
 					}
 				}
-				if (triangle.edge1.test(pixelOffset.x, pixelOffset.y))
+				if (triangle.edge1.test(e1))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
 					if (foundTriangle)
 					{
+						const_cast<Triangle&>(triangle).edge0.first = 1;
 						break;
 					}
 					else
@@ -810,12 +837,13 @@ namespace game
 						continue;
 					}
 				}
-				if (triangle.edge2.test(pixelOffset.x, pixelOffset.y))
+				if (triangle.edge2.test(e2))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
 					if (foundTriangle)
 					{
+						const_cast<Triangle&>(triangle).edge0.first = 1;
 						break;
 					}
 					else
@@ -823,6 +851,7 @@ namespace game
 						continue;
 					}
 				}
+
 				// If we got here, we found the triangle for this scanline
 				foundTriangle = 1;
 
@@ -877,6 +906,9 @@ namespace game
 						}
 						++colorBuffer;
 						++depthBufferPtr;
+						//const_cast<Triangle&>(triangle).edge0.first = 0;
+						//const_cast<Triangle&>(triangle).edge1.first = 0;
+						//const_cast<Triangle&>(triangle).edge2.first = 0;
 						continue;
 					}
 				}
