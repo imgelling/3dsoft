@@ -779,8 +779,6 @@ namespace game
 			foundTriangle = 0;
 			pixelOffset.y = j + 0.5f;
 			const_cast<Triangle&>(triangle).edge0.first = 1;
-			//const_cast<Triangle&>(triangle).edge1.first = 1;
-			//const_cast<Triangle&>(triangle).edge2.first = 1;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -791,7 +789,6 @@ namespace game
 				//	continue;
 				//}
 				pixelOffset.x = i + 0.5f;
-				// 174
 				if (!triangle.edge0.first)
 				{
 					triangle.edge0.stepX(e0);
@@ -800,12 +797,10 @@ namespace game
 				}
 				else
 				{
-					triangle.edge0.evaluate2(pixelOffset.x, pixelOffset.y, e0);
+					triangle.edge0.evaluate(pixelOffset.x, pixelOffset.y, e0);
+					triangle.edge1.evaluate(pixelOffset.x, pixelOffset.y, e1);
+					triangle.edge2.evaluate(pixelOffset.x, pixelOffset.y, e2);
 					const_cast<Triangle&>(triangle).edge0.first = 0;
-					triangle.edge1.evaluate2(pixelOffset.x, pixelOffset.y, e1);
-					//const_cast<Triangle&>(triangle).edge1.first = 0;
-					triangle.edge2.evaluate2(pixelOffset.x, pixelOffset.y, e2);
-					//const_cast<Triangle&>(triangle).edge2.first = 0;
 				}
 
 				if (triangle.edge0.test(e0))
@@ -815,7 +810,6 @@ namespace game
 
 					if (foundTriangle)
 					{
-						const_cast<Triangle&>(triangle).edge0.first = 1;
 						break;
 					}
 					else
@@ -829,7 +823,6 @@ namespace game
 					++depthBufferPtr;
 					if (foundTriangle)
 					{
-						const_cast<Triangle&>(triangle).edge0.first = 1;
 						break;
 					}
 					else
@@ -843,7 +836,6 @@ namespace game
 					++depthBufferPtr;
 					if (foundTriangle)
 					{
-						const_cast<Triangle&>(triangle).edge0.first = 1;
 						break;
 					}
 					else
@@ -856,13 +848,13 @@ namespace game
 				foundTriangle = 1;
 
 				// depth buffer test
-				if (depthParam.first)
+				if (!depthParam.first)
 				{
-					depthParam.evaluate(pixelOffset.x, pixelOffset.y, dEval);
+					depthParam.stepX(dEval);
 				}
 				else
 				{
-					depthParam.stepX(dEval);
+					depthParam.evaluate(pixelOffset.x, pixelOffset.y, dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
 				if (oneOverDepthEval-0.00001f < *depthBufferPtr)
@@ -906,9 +898,6 @@ namespace game
 						}
 						++colorBuffer;
 						++depthBufferPtr;
-						//const_cast<Triangle&>(triangle).edge0.first = 0;
-						//const_cast<Triangle&>(triangle).edge1.first = 0;
-						//const_cast<Triangle&>(triangle).edge2.first = 0;
 						continue;
 					}
 				}
@@ -959,17 +948,17 @@ namespace game
 						if (_lightingType == LightingType::Vertex)
 						{
 							// Vertex normal lighting
-							if (vnx.first)
-							{
-								vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
-								vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
-								vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
-							}
-							else
+							if (!vnx.first)
 							{
 								vnx.stepX(nXEval);
 								vny.stepX(nYEval);
 								vnz.stepX(nZEval);
+							}
+							else
+							{
+								vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
+								vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
+								vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
 							}
 							vertexNormalEval.x = nXEval * oneOverDepthEval;
 							vertexNormalEval.y = nYEval * oneOverDepthEval;
@@ -993,19 +982,19 @@ namespace game
 					// Just colored
 					if (!textured)
 					{
-						if (rColorParam.first)
-						{
-							rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
-							gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
-							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
-							aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
-						}
-						else
+						if (!rColorParam.first)
 						{
 							rColorParam.stepX(rEval);
 							gColorParam.stepX(gEval);
 							bColorParam.stepX(bEval);
 							aColorParam.stepX(aEval);
+						}
+						else
+						{
+							rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
+							gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
+							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
+							aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
 						}
 						if (lighting)
 						{
@@ -1050,15 +1039,15 @@ namespace game
 					
 					if (textured)
 					{
-						if (uParam.first)
-						{
-							uParam.evaluate(pixelOffset.x, pixelOffset.y, uEval);
-							vParam.evaluate(pixelOffset.x, pixelOffset.y, vEval);
-						}
-						else
+						if (!uParam.first)
 						{
 							uParam.stepX(uEval);
 							vParam.stepX(vEval);
+						}
+						else
+						{
+							uParam.evaluate(pixelOffset.x, pixelOffset.y, uEval);
+							vParam.evaluate(pixelOffset.x, pixelOffset.y, vEval);
 						}
 						upDiv = uEval * oneOverDepthEval;
 						vpDiv = vEval * oneOverDepthEval;
@@ -1096,19 +1085,19 @@ namespace game
 
 						if (_enableColorTinting)
 						{
-							if (rColorParam.first)
-							{
-								rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
-								gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
-								bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
-								aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
-							}
-							else
+							if (!rColorParam.first)
 							{
 								rColorParam.stepX(rEval);
 								gColorParam.stepX(gEval);
 								bColorParam.stepX(bEval);
 								aColorParam.stepX(aEval);
+							}
+							else
+							{
+								rColorParam.evaluate(pixelOffset.x, pixelOffset.y, rEval);
+								gColorParam.evaluate(pixelOffset.x, pixelOffset.y, gEval);
+								bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
+								aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
 							}
 						}
 

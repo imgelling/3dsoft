@@ -102,13 +102,11 @@ namespace game
 		// Evaluate the edge equation for the given point.
 		inline float_t evaluate(const float_t x, const float_t y) const noexcept
 		{
-			//first = 0;
 			return a * x + b * y + c;
 		}
 
-		inline void evaluate2(float_t x, float_t y, float &out) const noexcept
+		inline void evaluate(float_t x, float_t y, float &out) const noexcept
 		{
-			//first = 0;
 			out = a * x + b * y + c;
 		}
 
@@ -129,28 +127,29 @@ namespace game
 		//{
 		//	return v + a;
 		//}
+
 		inline void stepX(float_t& v) const noexcept
 		{
 			v = v + a;
 		}
 
-		// Step the equation value v to the x direction.
-		float_t stepX(const float_t v, const float_t stepSize) const noexcept
-		{
-			return v + a * stepSize;
-		}
+		//// Step the equation value v to the x direction.
+		//float_t stepX(const float_t v, const float_t stepSize) const noexcept
+		//{
+		//	return v + a * stepSize;
+		//}
 
-		// Step the equation value v to the y direction.
-		float_t stepY(const float_t v) const noexcept
-		{
-			return v + b;
-		}
+		//// Step the equation value v to the y direction.
+		//float_t stepY(const float_t v) const noexcept
+		//{
+		//	return v + b;
+		//}
 
-		// Step the equation value vto the y direction.
-		float_t stepY(const float_t v, const float_t stepSize) const noexcept
-		{
-			return v + b * stepSize;
-		}
+		//// Step the equation value vto the y direction.
+		//float_t stepY(const float_t v, const float_t stepSize) const noexcept
+		//{
+		//	return v + b * stepSize;
+		//}
 	};
 #pragma pack(pop)
 
@@ -177,13 +176,15 @@ namespace game
 	};
 #pragma pack(pop)
 
+#pragma pack(push,16)
 	struct Texture
 	{
 		uint32_t* data = nullptr;
 		Pointi size;
-		//Pointf oneOverSize;
 	};
+#pragma pack(pop)
 
+#pragma pack(push,16)
 	struct RenderTarget
 	{
 		uint32_t* colorBuffer = nullptr;
@@ -193,7 +194,9 @@ namespace game
 		uint32_t totalBufferSize = 0;
 		Matrix4x4f projection;
 	};
+#pragma pack(pop)
 
+#pragma pack(push,16)
 	struct Mesh
 	{
 		std::vector<Triangle> tris;
@@ -269,9 +272,10 @@ namespace game
 			model = translate * rotation * scale;
 		}
 	};
+#pragma pack(pop)
 
 	
-
+#pragma pack(push,16)
 	struct ParameterEquation 
 	{
 		float_t a = 0.0f;
@@ -326,7 +330,9 @@ namespace game
 			v = v + a;
 		}
 	};
+#pragma pack(pop)
 
+#pragma pack(push,16)
 	struct Projection {
 		float_t a = 0.0f;
 		float_t b = 0.0f;
@@ -334,6 +340,7 @@ namespace game
 		float_t d = 0.0f;
 		float_t e = 0.0f;
 	};
+#pragma pack(pop)
 
 	class ClippingRects
 	{
