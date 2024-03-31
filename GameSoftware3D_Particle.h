@@ -54,7 +54,7 @@ namespace game
 			partsAlive = 0;
 			Enabled = true;
 		}
-		void Initialize(const uint32_t numParticles, const Vector3f& position)
+		void Initialize(const uint32_t numParticles, const Vector3f& position) noexcept
 		{
 			numberOfParticles = numParticles;
 			mesh.centerPoint = position;
@@ -71,12 +71,15 @@ namespace game
 			}			
 		}
 
+
+
 		// needs to be custom, maybe just add a particle
-		void InitializeParticles(const Pointf& __restrict size, const Vector3f& __restrict inposition, const float_t rotation, const Color& color)
+		void InitializeParticles(const Pointf& __restrict size, const Vector3f& __restrict inposition, const float_t rotation, const Color& color) noexcept
 		{
 			random.NewSeed();
 			for (Particle& part : particles)
 			{
+				part.alive = true;
 				part.position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
 				part.position.y = Position.y;
 				part.position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
@@ -96,13 +99,7 @@ namespace game
 			}
 		}
 
-		//// go in gamemath.h
-		//Pointf lerp2D(const Pointf& __restrict b, const Pointf& __restrict a, float_t t) {
-		//	Pointf result;
-		//	result.x = a.x + t * (b.x - a.x);
-		//	result.y = a.y + t * (b.y - a.y);
-		//	return result;
-		//}
+
 
 		void Update(const float_t msElapsed, const Camera3D& camera)
 		{		

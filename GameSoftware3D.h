@@ -40,8 +40,8 @@ namespace game
 		bool SetTexture(const Texture& texture) noexcept;
 		bool SetTexture(const RenderTarget& target) noexcept;
 		bool SetDefaultTexture() noexcept;
+		bool LoadTexture(const std::string& file, Texture& texture);
 		void Fence(const uint64_t fenceValue) noexcept;
-		//const Recti TriangleBoundingBox(const Triangle& tri) const noexcept;
 		void TriangleBoundingBox(Triangle& tri) const noexcept;
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled, bool lighting, bool textured>
@@ -61,9 +61,9 @@ namespace game
 
 		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
 		void RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept;
-		std::vector<game::Triangle> trianglesToRender;
 		float_t* depthBuffer;
 	private:
+		std::vector<game::Triangle> _trianglesToRender;
 		RenderTarget _currentRenderTarget;
 		float_t* _clearDepthBuffer[10];
 		void _Render(const std::vector<Triangle>& tris, const Recti& __restrict clip) noexcept;
@@ -119,7 +119,7 @@ namespace game
 		CreateTexture(1024, 1024, _defaultTexture);
 		_GenerateDefaultTexture(_defaultTexture.data, 1024, 1024);
 		SetTexture(_defaultTexture);
-		trianglesToRender.reserve(1000);
+		_trianglesToRender.reserve(1000);
 	}
 
 	Software3D::~Software3D()
@@ -240,6 +240,31 @@ namespace game
 				buff[y * w + x] = col1.packedABGR;
 			}
 		}
+	}
+
+	inline bool Software3D::LoadTexture(const std::string& file, Texture& texture)
+	{
+		game::ImageLoader imageloader;   
+		uint32_t t = 0;
+		uint32_t texw = 0;
+		uint32_t texh = 0;
+		uint32_t* temp = (uint32_t*)imageloader.Load(file.c_str(), texw, texh, t);
+		if (temp == nullptr)
+		{
+			std::cout << "Could not load texture \"" << file << "\" and default texture will be used!\n";
+			return false;
+		}
+		else
+		{
+			texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
+			if (texture.data != nullptr)
+			{
+				memcpy(texture.data, temp, (size_t)texw * texh * 4);
+			}
+			texture.size.width = texw;
+			texture.size.height = texh;
+		}
+		return true;
 	}
 
 	inline bool Software3D::CreateRenderTarget(const uint32_t width, const uint32_t height, RenderTarget& target) noexcept
@@ -493,7 +518,7 @@ namespace game
 	inline void Software3D::RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept
 	{
 		
-		VertexProcessor(mesh, numberOfTris, projection, trianglesToRender, camera);
+		VertexProcessor(mesh, numberOfTris, projection, _trianglesToRender, camera);
 		SetTexture(mesh.texture);
 		uint64_t fenceCount = 0;
 
@@ -512,7 +537,7 @@ namespace game
 
 		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
 		{
-			ScreenClip(trianglesToRender, clip, c);
+			ScreenClip(_trianglesToRender, clip, c);
 			if (!clip.clippedTris[c].size()) continue;
 			switch (_sortType)
 			{
@@ -527,7 +552,7 @@ namespace game
 			fenceCount++;
 		}
 		Fence(fenceCount);
-		trianglesToRender.clear();
+		_trianglesToRender.clear();
 	}
 
 	inline void Software3D::Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept

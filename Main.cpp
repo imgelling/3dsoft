@@ -113,65 +113,10 @@ public:
 		//}
 
 
-		game::ImageLoader imageloader;   // Load texture in software3D
-		uint32_t t = 0;
-		uint32_t texw = 0;
-		uint32_t texh = 0;
-		uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
-		if (temp == nullptr)
-		{
-			std::cout << "Could not load texture \"" << "content/colormap2.png\" and default texture will be used!\n";
-		}
-		else
-		{
-			model.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
-			if (model.texture.data != nullptr)
-			{
-				memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
-			}
-			model.texture.size.width = texw;
-			model.texture.size.height = texh;
-		}
-		imageloader.UnLoad();
-		software3D.DeleteTexture(model.texture);
-
-		t = 0;
-		texw = 0;
-		texh = 0;
-		temp = (uint32_t*)imageloader.Load("content/sky.png", texw, texh, t);
-		sky.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
-		if (sky.texture.data != nullptr)
-		{
-			memcpy(sky.texture.data, temp, (size_t)texw * texh * 4);
-		}
-		sky.texture.size.width = texw;
-		sky.texture.size.height = texh;
-
-		imageloader.UnLoad();
-		t = 0;
-		texw = 0;
-		texh = 0;
-		temp = (uint32_t*)imageloader.Load("content/grate0_alpha.png", texw, texh, t);
-		alphaCube.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
-		if (alphaCube.texture.data != nullptr)
-		{
-			memcpy(alphaCube.texture.data, temp, (size_t)texw * texh * 4);
-		}
-		alphaCube.texture.size.width = texw;
-		alphaCube.texture.size.height = texh;
-
-		imageloader.UnLoad();
-		t = 0;
-		texw = 0;
-		texh = 0;
-		temp = (uint32_t*)imageloader.Load("content/particle1.png", texw, texh, t);
-		emitter.mesh.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
-		if (emitter.mesh.texture.data != nullptr)
-		{
-			memcpy(emitter.mesh.texture.data, temp, (size_t)texw * texh * 4);
-		}
-		emitter.mesh.texture.size.width = texw;
-		emitter.mesh.texture.size.height = texh;
+		software3D.LoadTexture("content/colormap2.png", model.texture);
+		software3D.LoadTexture("content/sky.png", sky.texture);
+		software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
+		software3D.LoadTexture("content/particle1.png", emitter.mesh.texture);
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -389,18 +334,18 @@ public:
 
 	void Render(const float_t msElapsed)
 	{
-		static float_t rotation = 0.0f;
-		static float_t pos = 0.0f;
+		//static float_t rotation = 0.0f;
+		//static float_t pos = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
-		pos += 0.5f * (msElapsed / 1000.0f);
+		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		//pos += 0.5f * (msElapsed / 1000.0f);
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
-		torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
+		//torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
 		
 		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
 		//sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
@@ -419,14 +364,14 @@ public:
 		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
 		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
@@ -435,7 +380,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		software3D.RenderMesh(plane,plane.tris.size(), mvpMat, camera, clip);
+		//software3D.RenderMesh(plane,plane.tris.size(), mvpMat, camera, clip);
 
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
@@ -462,16 +407,15 @@ public:
 
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
-		//emitter.Update(msElapsed, camera);
-		//software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
+		emitter.Update(msElapsed, camera);
+		software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
 
 
 
