@@ -757,7 +757,7 @@ namespace game
 		float_t gDest = 0;
 		float_t bDest = 0;
 		float_t aDest = 0;
-		float_t aFinal = 0;
+		float_t aFinal = 1.0f;
 
 		uint32_t dest = 0;
 
@@ -766,13 +766,14 @@ namespace game
 		float_t e0 = 0;
 		float_t e1 = 0;
 		float_t e2 = 0;
-		bool firstTestOfLine = true;
+		uint32_t firstTestOfLine = 1;
 
 		pixelOffset.y = (float_t)triangle.boundingBox.top - 0.5f;
 		
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
+			pixelOffset.y += 1;
 			//if ((j % 2 == 0))  // cheap scanline effect
 			//{
 			//	colorBuffer += videoBufferStride - xLoopCount;
@@ -780,18 +781,12 @@ namespace game
 			//	continue;
 			//}
 			foundTriangle = 0;
-			pixelOffset.y += 1;
-			firstTestOfLine = true;
+
+			firstTestOfLine = 1;
 			pixelOffset.x = (float_t)triangle.boundingBox.left - 0.5f;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
-				//if (i % 2 == 0)  // cheap scanline effect
-				//{
-				//	colorBuffer++;// = videoBufferStride - xLoopCount;
-				//	depthBufferPtr++;// += videoBufferStride - xLoopCount;
-				//	continue;
-				//}
 				pixelOffset.x += 1;// = i + 0.5f;
 				if (!firstTestOfLine)
 				{
@@ -1016,7 +1011,6 @@ namespace game
 						}
 
 						// alpha blending
-						aFinal = aSource;
 						if (_enableAlphaBlend) 
 						{
 							dest = *colorBuffer;
@@ -1126,7 +1120,6 @@ namespace game
 							bSource *= luminance;
 						}
 
-						aFinal = aSource; 
 						if (_enableAlphaBlend) 
 						{
 							dest = *colorBuffer;

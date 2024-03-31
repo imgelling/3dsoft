@@ -470,8 +470,8 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
-		emitter.Update(msElapsed, camera);
-		software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
+		//emitter.Update(msElapsed, camera);
+		//software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
 
 
 
