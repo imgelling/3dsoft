@@ -78,12 +78,10 @@ namespace game
 		float_t a;
 		float_t b;
 		float_t c;
-		uint32_t first;
 		bool fillRule;
-		EdgeEquation() { a = (0.0f); b = (0.0f); c = (0.0f); fillRule = (false); first = (0); }
+		EdgeEquation() { a = (0.0f); b = (0.0f); c = (0.0f); fillRule = (false);}
 		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
-			first = 0;
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
 			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
@@ -92,7 +90,6 @@ namespace game
 
 		inline void Set(const game::Vector3f& v0, const game::Vector3f& v1)
 		{
-			first = 0;
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
 			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
@@ -122,34 +119,10 @@ namespace game
 			return (v < 0 || v == 0 && fillRule);
 		}
 
-		// Step the equation value v to the x direction.
-		//float_t stepX(const float_t v) const noexcept
-		//{
-		//	return v + a;
-		//}
-
 		inline void stepX(float_t& v) const noexcept
 		{
 			v = v + a;
 		}
-
-		//// Step the equation value v to the x direction.
-		//float_t stepX(const float_t v, const float_t stepSize) const noexcept
-		//{
-		//	return v + a * stepSize;
-		//}
-
-		//// Step the equation value v to the y direction.
-		//float_t stepY(const float_t v) const noexcept
-		//{
-		//	return v + b;
-		//}
-
-		//// Step the equation value vto the y direction.
-		//float_t stepY(const float_t v, const float_t stepSize) const noexcept
-		//{
-		//	return v + b * stepSize;
-		//}
 	};
 #pragma pack(pop)
 

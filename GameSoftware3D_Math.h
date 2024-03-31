@@ -200,7 +200,7 @@ namespace game
 		Vector3f AB = B - A; // Vector from A to B
 		Vector3f AC = C - A; // Vector from A to C
 		Vector3f N = AB.Cross(AC); // Cross product of AB and AC
-		return (N.z); // Sign of the z-component of N
+		return N.z; // Sign of the z-component of N
 	}
 
 	inline Vector3f VectorIntersectPlane(const float_t planeNormalDotPoint, const Vector3f& __restrict plane_n, Vector3f& __restrict lineStart, Vector3f& __restrict lineEnd, float_t& t) noexcept
@@ -214,6 +214,8 @@ namespace game
 		return lineStart + lineToIntersect;
 	}
 
+	// Modified code from
+	// From OLC PGE, https://github.com/OneLoneCoder/olcPixelGameEngine
 	inline uint32_t ClipAgainstNearZ(Triangle& __restrict in_tri, Triangle& out_tri1, Triangle& out_tri2) noexcept
 	{
 		game::Vector3f planePoint(0.0f, 0.0f, 0.0f);

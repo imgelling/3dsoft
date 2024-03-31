@@ -737,10 +737,10 @@ namespace game
 		float_t nYEval = 0.0f;
 		float_t nZEval = 0.0f;
 
-		float_t rSource = 0.0f;
-		float_t gSource = 0.0f;
-		float_t bSource = 0.0f;
-		float_t aSource = 0.0f;
+		float_t  rSource = 0.0f;
+		float_t  gSource = 0.0f;
+		float_t  bSource = 0.0f;
+		float_t  aSource = 0.0f;
 
 		uint32_t tx = 0;
 		uint32_t ty = 0;
@@ -763,10 +763,13 @@ namespace game
 
 		Vector3f vertexNormalEval;
 
-		float e0 = 0;
-		float e1 = 0;
-		float e2 = 0;
+		float_t e0 = 0;
+		float_t e1 = 0;
+		float_t e2 = 0;
+		bool firstTestOfLine = true;
 
+		pixelOffset.y = (float_t)triangle.boundingBox.top - 0.5f;
+		
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
 			xLoopCount = 0;
@@ -777,8 +780,9 @@ namespace game
 			//	continue;
 			//}
 			foundTriangle = 0;
-			pixelOffset.y = j + 0.5f;
-			const_cast<Triangle&>(triangle).edge0.first = 1;
+			pixelOffset.y += 1;
+			firstTestOfLine = true;
+			pixelOffset.x = (float_t)triangle.boundingBox.left - 0.5f;
 			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
 			{
 				++xLoopCount;
@@ -788,8 +792,8 @@ namespace game
 				//	depthBufferPtr++;// += videoBufferStride - xLoopCount;
 				//	continue;
 				//}
-				pixelOffset.x = i + 0.5f;
-				if (!triangle.edge0.first)
+				pixelOffset.x += 1;// = i + 0.5f;
+				if (!firstTestOfLine)
 				{
 					triangle.edge0.stepX(e0);
 					triangle.edge1.stepX(e1);
@@ -800,7 +804,7 @@ namespace game
 					triangle.edge0.evaluate(pixelOffset.x, pixelOffset.y, e0);
 					triangle.edge1.evaluate(pixelOffset.x, pixelOffset.y, e1);
 					triangle.edge2.evaluate(pixelOffset.x, pixelOffset.y, e2);
-					const_cast<Triangle&>(triangle).edge0.first = 0;
+					firstTestOfLine = 0;
 				}
 
 				if (triangle.edge0.test(e0))
@@ -1003,7 +1007,7 @@ namespace game
 							bSource = min(bEval * oneOverDepthEval, 1.0f) * luminance;
 							aSource = min(aEval * oneOverDepthEval, 1.0f) * luminance;
 						}
-						if (!lighting)
+						else
 						{
 							rSource = min(rEval * oneOverDepthEval, 1.0f);
 							gSource = min(gEval * oneOverDepthEval, 1.0f);
@@ -1065,8 +1069,6 @@ namespace game
 							{
 								++colorBuffer;
 								++depthBufferPtr;
-								//rColorParam.first = 1; // Without, the colors are not getting stepped
-								//						// Probably could just be a stepx
 								rColorParam.stepX(rEval);
 								gColorParam.stepX(gEval);
 								bColorParam.stepX(bEval);

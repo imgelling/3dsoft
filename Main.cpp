@@ -118,14 +118,22 @@ public:
 		uint32_t texw = 0;
 		uint32_t texh = 0;
 		uint32_t* temp = (uint32_t*)imageloader.Load("content/colormap2.png", texw, texh, t);
-		model.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
-		if (sky.texture.data != nullptr)
+		if (temp == nullptr)
 		{
-			memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
+			std::cout << "Could not load texture \"" << "content/colormap2.png\" and default texture will be used!\n";
 		}
-		model.texture.size.width = texw;
-		model.texture.size.height = texh;
+		else
+		{
+			model.texture.data = (uint32_t*)_aligned_malloc((size_t)texw * texh * sizeof(uint32_t), 16); //new uint32_t[texw * texh];
+			if (model.texture.data != nullptr)
+			{
+				memcpy(model.texture.data, temp, (size_t)texw * texh * 4);
+			}
+			model.texture.size.width = texw;
+			model.texture.size.height = texh;
+		}
 		imageloader.UnLoad();
+		software3D.DeleteTexture(model.texture);
 
 		t = 0;
 		texw = 0;
@@ -448,20 +456,13 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
-
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 
-
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
