@@ -7,6 +7,108 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
+class Fire : public game::EmitterBase
+{
+public:
+	void InitializeParticles() noexcept
+	{
+		random.NewSeed();
+		for (game::ParticleBase& part : particles)
+		{
+			part.alive = true;
+			part.position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+			part.position.y = Position.y;
+			part.position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+
+			part.velocity.y = (random.RndRange(0, 200) / 400.0f);
+			part.velocity.y = part.velocity.y < 0.005f ? 0.005f : part.velocity.y;
+			part.velocity.x = (random.RndRange(0, 200) / 400.0f);
+			part.velocity.x = part.velocity.x > 0.15f ? 0.15f : part.velocity.x;
+
+
+			part.timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+			part.size.x = part.timeToLive * 0.025f;
+			part.size.y = part.timeToLive * 0.025f;
+			part.color = game::Colors::White;
+
+			part.rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+		}
+	}
+
+	void Update(const float_t msElapsed)
+	{
+		static float_t rotation = 0.0f;
+
+		float_t time = msElapsed / 1000.0f;
+		rotation = (2 * 3.14f / 10.0f) * (time);
+
+		uint32_t count = 0;
+		particlesAlive = 0;
+		uint64_t sizeOfParticles = particles.size();
+
+		if (sizeOfParticles)
+		{
+			for (uint32_t part = 0; part < sizeOfParticles; ++part)
+			{
+				particles[part].timeToLive -= time;
+				if (particles[part].timeToLive <= 0.0f)
+				{
+					particles[part].position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					particles[part].position.y = Position.y;
+					particles[part].position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+
+					particles[part].velocity.y = (random.RndRange(0, 200) / 400.0f);
+					particles[part].velocity.y = particles[part].velocity.y < 0.005f ? 0.005f : particles[part].velocity.y;
+					particles[part].velocity.x = (random.RndRange(0, 200) / 400.0f);
+					particles[part].velocity.x = particles[part].velocity.x > 0.15f ? 0.15f : particles[part].velocity.x;
+
+					particles[part].timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+					particles[part].size.x = particles[part].timeToLive * 0.025f;
+					particles[part].size.y = particles[part].timeToLive * 0.025f;
+					particles[part].color = game::Colors::White;
+
+					particles[part].rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+
+					// kills particle, wont be rendered
+					//particles[part].alive = false;
+				}
+				else
+				{
+					particles[part].position.y -= particles[part].velocity.y * (time);
+					particles[part].position.x -= particles[part].velocity.x * (time);
+
+					particles[part].rotation += rotation;
+
+					particles[part].size.x = min(particles[part].timeToLive, 1.0f) * 0.025f;
+					particles[part].size.y = min(particles[part].timeToLive, 1.0f) * 0.025f;
+
+					if (particles[part].timeToLive < 0.35)
+					{
+						particles[part].color.Set(1.0f, 0.25f, 0, 0.25f);
+					}
+					else if (particles[part].timeToLive < 0.5)
+					{
+						particles[part].color.Set(1.0f, 0.25f, 0, 0.75f);
+					}
+					else if (particles[part].timeToLive < 0.9)
+					{
+						particles[part].color = game::Colors::DarkOrange;
+					}
+					else if (particles[part].timeToLive < 1.0)
+					{
+						particles[part].color = game::Colors::Yellow;
+					}
+					else if (particles[part].timeToLive < 1.1)
+					{
+						particles[part].color = game::Colors::White;
+					}
+					particlesAlive++;
+				}
+			}
+		}
+	}
+};
+
 class Game : public game::Engine
 {
 
@@ -29,7 +131,8 @@ public:
 	game::Mesh sky;
 	//game::Mesh particle1;
 	//game::PointSprite sprite;
-	game::Emitter emitter;
+	//game::EmitterBase emitter;
+	Fire fire;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -117,7 +220,7 @@ public:
 		software3D.DeleteTexture(model.texture);
 		software3D.LoadTexture("content/sky.png", sky.texture);
 		software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/particle1.png", emitter.mesh.texture);
+		software3D.LoadTexture("content/particle1.png", fire.mesh.texture);
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -218,10 +321,8 @@ public:
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
 
-		emitter.Initialize(1000, { 0,0,0 });
-		game::Pointf s = { 0.025f,0.025f };
-		game::Vector3f p = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
-		emitter.InitializeParticles(s, p, 0, game::Colors::Red);
+		fire.Initialize(1000, { 0,0,0 });
+		fire.InitializeParticles();
 	}
 
 	void Shutdown()
@@ -230,7 +331,7 @@ public:
 		software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(model.texture);
 		software3D.DeleteTexture(alphaCube.texture);
-		software3D.DeleteTexture(emitter.mesh.texture);
+		software3D.DeleteTexture(fire.mesh.texture);
 	}
 
 	void Update(const float_t msElapsed)
@@ -333,6 +434,8 @@ public:
 		}
 	}	
 
+
+
 	void Render(const float_t msElapsed)
 	{
 		//static float_t rotation = 0.0f;
@@ -404,7 +507,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
@@ -415,11 +518,13 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-	
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
-		emitter.Update(msElapsed, camera);
-		software3D.RenderMesh(emitter.mesh, emitter.particlesAlive<<1, mvpMat, camera, clip);
+		fire.Update(msElapsed);
+		fire.GeneratePointSprite(camera);
+		fire.GenerateQuads();
+		software3D.RenderMesh(fire.mesh, fire.particlesAlive<<1, mvpMat, camera, clip);
 
 
 

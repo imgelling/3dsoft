@@ -111,7 +111,7 @@ namespace game
 			}
 		}
 
-		inline void UpdateQuad(Triangle& topLeftTri, Triangle& bottomRightTri, const Matrix4x4f & __restrict bill) 
+		inline void GenerateQuad(Triangle& topLeftTri, Triangle& bottomRightTri, const Matrix4x4f & __restrict bill) 
 		{
 			// tl
 			topLeftTri.vertices[0].x = -size.width; 
