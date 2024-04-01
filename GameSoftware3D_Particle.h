@@ -44,20 +44,20 @@ namespace game
 		std::vector<Particle> particles;
 		Vector3f Position;
 		Mesh mesh;
-		uint64_t partsAlive;
+		uint64_t particlesAlive;
 		game::Random random;
 		bool Enabled;
 
 		Emitter()
 		{
 			numberOfParticles = 0;
-			partsAlive = 0;
+			particlesAlive = 0;
 			Enabled = true;
 		}
 		void Initialize(const uint32_t numParticles, const Vector3f& position) noexcept
 		{
 			numberOfParticles = numParticles;
-			mesh.centerPoint = position;
+			mesh.centerPoint = position; // Probably not needed
 			Position = position;
 			
 			Triangle t1, t2;
@@ -100,7 +100,7 @@ namespace game
 		}
 
 
-
+		// needs to be custom
 		void Update(const float_t msElapsed, const Camera3D& camera)
 		{		
 			static float_t rotation = 0.0f;
@@ -109,7 +109,7 @@ namespace game
 			rotation = (2 * 3.14f / 10.0f) * (time);
 			
 			uint32_t count = 0;
-			partsAlive = 0;
+			particlesAlive = 0;
 			uint64_t sizeOfParticles = particles.size();
 			if (sizeOfParticles)
 			{
@@ -170,6 +170,7 @@ namespace game
 							particles[part].color = Colors::White;
 						}
 
+						// below NEEDS to be called, maybe generate
 						//if (part.alive)
 						{
 							particles[part].rotation += rotation;
@@ -179,7 +180,7 @@ namespace game
 
 							particles[part].UpdateQuad(mesh.tris[count], mesh.tris[(uint64_t)1 + count], pointSprite);
 							count += 2;
-							partsAlive++;
+							particlesAlive++;
 						}
 					}
 				}

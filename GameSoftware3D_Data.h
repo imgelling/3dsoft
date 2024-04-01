@@ -84,7 +84,7 @@ namespace game
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
-			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
+			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
@@ -92,7 +92,7 @@ namespace game
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
-			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;// / 2;
+			c = -(a * (v0.x + v1.x) + b * (v0.y + v1.y)) * 0.5f;
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
@@ -179,7 +179,6 @@ namespace game
 		Matrix4x4f rotation;
 		Matrix4x4f scale;
 		Vector3f centerPoint;
-		//Matrix4x4f billboard;
 		Vector3f position;
 		bool SetTexture(const Texture& inTexture) noexcept
 		{
@@ -207,14 +206,11 @@ namespace game
 			texture.data = target.colorBuffer;
 			texture.size.width = target.size.width;
 			texture.size.height = target.size.height;
-			//texture.oneOverSize.width = 1.0f / (float_t)target.size.width;
-			//texture.oneOverSize.height = 1.0f / (float_t)target.size.height;
 			return true;
 		}
 		inline void SetTranslation(const float_t x, const float_t y, const float_t z) noexcept
 		{
 			translate.SetTranslation(x, y, z);
-			//position = { x,y,z };
 		}
 		inline void SetScale(const float_t x, const float_t y, const float_t z) noexcept
 		{
@@ -255,9 +251,6 @@ namespace game
 		float_t b = 0.0f;
 		float_t c = 0.0f;
 		uint32_t first = 1;
-
-		//float_t axstep = 0.0f;
-		//float_t bystep = 0.0f;
 
 		ParameterEquation(
 			const float_t p0,

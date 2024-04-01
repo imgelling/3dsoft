@@ -114,6 +114,7 @@ public:
 
 
 		software3D.LoadTexture("content/colormap2.png", model.texture);
+		software3D.DeleteTexture(model.texture);
 		software3D.LoadTexture("content/sky.png", sky.texture);
 		software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", emitter.mesh.texture);
@@ -121,7 +122,7 @@ public:
 		game::Random rnd;
 		rnd.NewSeed();
 
-		float_t z = 0.0f;// 100.0f;
+		float_t z = 0.0f;
 		float_t size = 1.0f;
 		game::Triangle topLeftTri;
 		game::Triangle bottomRightTri;
@@ -403,6 +404,8 @@ public:
 
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 
@@ -415,7 +418,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
 		emitter.Update(msElapsed, camera);
-		software3D.RenderMesh(emitter.mesh, emitter.partsAlive<<1, mvpMat, camera, clip);
+		software3D.RenderMesh(emitter.mesh, emitter.particlesAlive<<1, mvpMat, camera, clip);
 
 
 
