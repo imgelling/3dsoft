@@ -832,39 +832,39 @@ namespace game
 					++colorBuffer;
 					++depthBufferPtr;
 
-					if (foundTriangle)
+					if (!foundTriangle)
 					{
-						break;
+						continue;
 					}
 					else
 					{
-						continue;
+						break;
 					}
 				}
 				if (triangle.edge1.test(e1))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
-					if (foundTriangle)
+					if (!foundTriangle)
 					{
-						break;
+						continue;
 					}
 					else
 					{
-						continue;
+						break;
 					}
 				}
 				if (triangle.edge2.test(e2))
 				{
 					++colorBuffer;
 					++depthBufferPtr;
-					if (foundTriangle)
+					if (!foundTriangle)
 					{
-						break;
+						continue;
 					}
 					else
 					{
-						continue;
+						break;
 					}
 				}
 
