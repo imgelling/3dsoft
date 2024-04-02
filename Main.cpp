@@ -51,28 +51,7 @@ public:
 			for (uint32_t part = 0; part < sizeOfParticles; ++part)
 			{
 				particles[part].timeToLive -= time;
-				if (particles[part].timeToLive <= 0.0f)
-				{
-					particles[part].position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
-					particles[part].position.y = Position.y;
-					particles[part].position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
-
-					particles[part].velocity.y = (random.RndRange(0, 200) / 400.0f);
-					particles[part].velocity.y = particles[part].velocity.y < 0.005f ? 0.005f : particles[part].velocity.y;
-					particles[part].velocity.x = (random.RndRange(0, 200) / 400.0f);
-					particles[part].velocity.x = particles[part].velocity.x > 0.15f ? 0.15f : particles[part].velocity.x;
-
-					particles[part].timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
-					particles[part].size.x = particles[part].timeToLive * 0.025f;
-					particles[part].size.y = particles[part].timeToLive * 0.025f;
-					particles[part].color = game::Colors::White;
-
-					particles[part].rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
-
-					// kills particle, wont be rendered
-					//particles[part].alive = false;
-				}
-				else
+				if (particles[part].timeToLive > 0.0f)
 				{
 					particles[part].position.y -= particles[part].velocity.y * (time);
 					particles[part].position.x -= particles[part].velocity.x * (time);
@@ -103,6 +82,27 @@ public:
 						particles[part].color = game::Colors::White;
 					}
 					particlesAlive++;
+				}
+				else
+				{
+					particles[part].position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					particles[part].position.y = Position.y;
+					particles[part].position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+
+					particles[part].velocity.y = (random.RndRange(0, 200) / 400.0f);
+					particles[part].velocity.y = particles[part].velocity.y < 0.005f ? 0.005f : particles[part].velocity.y;
+					particles[part].velocity.x = (random.RndRange(0, 200) / 400.0f);
+					particles[part].velocity.x = particles[part].velocity.x > 0.15f ? 0.15f : particles[part].velocity.x;
+
+					particles[part].timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+					particles[part].size.x = particles[part].timeToLive * 0.025f;
+					particles[part].size.y = particles[part].timeToLive * 0.025f;
+					particles[part].color = game::Colors::White;
+
+					particles[part].rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+
+					// kills particle, wont be rendered
+					//particles[part].alive = false;
 				}
 			}
 		}
@@ -507,7 +507,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
