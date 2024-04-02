@@ -129,9 +129,8 @@ public:
 	game::Mesh model;
 	game::Mesh torus;
 	game::Mesh sky;
-	//game::Mesh particle1;
-	//game::PointSprite sprite;
-	//game::EmitterBase emitter;
+
+	// Particle systems
 	Fire fire;
 
 
