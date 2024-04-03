@@ -108,6 +108,85 @@ public:
 		}
 	}
 };
+game::Pointi resolution = { 1280 , 720 };
+class StarField : public game::EmitterBase
+{
+public:
+	void InitializeParticles(game::Camera3D camera) noexcept
+	{
+		random.NewSeed();
+		for (game::ParticleBase& part : particles)
+		{
+			ResetParticle(part,camera);
+		}
+	}
+
+	void ResetParticle(game::ParticleBase &part, game::Camera3D camera)
+	{
+
+		part.position.x = (float_t)((random.RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
+		part.position.y = (float_t)((random.RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
+		if (part.alive) // not first interation
+		{
+			part.position.z = (10.0f);// +camera.position.z;
+		}
+		else
+		{
+			part.position.z = (float_t)((random.RndRange(0, 1000) * 2.0 / 1000.0f - 1.0f) * 25.0f);
+			part.size.x = 0.025f;// part.timeToLive * 0.025f;
+			part.size.y = 0.025f;// part.timeToLive * 0.025f;
+		}
+
+		float_t randColor = (float_t)(random.RndRange(0, 10000) / 10000.0f);
+		part.color = game::Colors::White;
+		if (randColor < 0.1f)
+			part.color = game::Colors::Yellow;
+		if (randColor < 0.05)
+			part.color = game::Colors::Red;
+		if (randColor < 0.005)
+			part.color = game::Colors::DarkOrange;
+		part.velocity.z = (float_t)(random.RndRange(0, 100)) / -100.0f;
+		if (part.velocity.z > -0.2) part.velocity.z = -0.2;
+		
+		part.rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+
+		part.alive = true;
+	}
+
+	void Update(const float_t msElapsed, game::Camera3D camera)
+	{
+		static float_t rotation = 0.0f;
+
+		float_t time = msElapsed / 1000.0f;
+		rotation = (2 * 3.14f / 20.0f) * (time);
+
+		uint32_t count = 0;
+		particlesAlive = 0;
+		uint64_t sizeOfParticles = particles.size();
+
+		if (sizeOfParticles)
+		{
+			for (uint32_t part = 0; part < sizeOfParticles; ++part)
+			{
+				particles[part].timeToLive -= time;
+				if (particles[part].position.z > -(25.0f))
+				{
+					//particles[part].position.y -= particles[part].velocity.y * (time);
+					//particles[part].position.x -= particles[part].velocity.x * (time);
+					//particles[part].position.z += particles[part].velocity.z * (time);
+
+					particles[part].rotation += rotation;
+
+					particlesAlive++;
+				}
+				else
+				{
+					ResetParticle(particles[part], camera);
+				}
+			}
+		}
+	}
+};
 
 class Game : public game::Engine
 {
@@ -132,6 +211,8 @@ public:
 
 	// Particle systems
 	Fire fire;
+	StarField starField;
+
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -143,7 +224,7 @@ public:
 
 
 	game::FillMode state = game::FillMode::Filled;
-	game::Pointi resolution = { 1280 , 720 };
+	//game::Pointi resolution = { 1280 , 720 };
 	bool showText;
 
 	game::Random random;
@@ -220,6 +301,7 @@ public:
 		software3D.LoadTexture("content/sky.png", sky.texture);
 		software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", fire.mesh.texture);
+		starField.mesh.texture = fire.mesh.texture;
 
 		game::Random rnd;
 		rnd.NewSeed();
@@ -319,9 +401,12 @@ public:
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
-
-		fire.Initialize(1000, { 0,0,0 });
+		 
+		fire.Initialize(5000, { 0,0,0 });
 		fire.InitializeParticles();
+
+		starField.Initialize(2000, { 0,0,0 });
+		starField.InitializeParticles(camera);
 	}
 
 	void Shutdown()
@@ -409,20 +494,24 @@ public:
 
 		// Mouse look
 		game::Pointi mouse = geMouse.GetPositionRelative();
+		float smoothedMouseDeltax = 0;
 		// Y rotation
 		if (mouse.x)
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camera.SetRotation(0.0f, mouse.x * (3.14159f / 180.0f), 0.0f);
+				smoothedMouseDeltax = mouse.x / 2560.0f * 400.0f;//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
+				camera.SetRotation(0.0f, smoothedMouseDeltax * (3.14159f / 180.0f), 0.0f);
 			}
 		}
 		// X rotation
+		float smoothedMouseDelta = 0;
 		if (mouse.y)
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				camera.SetRotation(-mouse.y * (3.14159f / 180.0f), 0.0f, 0.0f);
+				smoothedMouseDelta = mouse.y / 1440.0f * 400.0f;//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
+				camera.SetRotation(-smoothedMouseDelta * (3.14159f / 180.0f), 0.0f, 0.0f);
 			}
 		}
 
@@ -472,7 +561,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
@@ -509,24 +598,28 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
+		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
-		fire.Update(msElapsed);
-		fire.GeneratePointSprite(camera);
-		fire.GenerateQuads();
-		software3D.RenderMesh(fire.mesh, fire.particlesAlive<<1, mvpMat, camera, clip);
+		//fire.Update(msElapsed);
+		//fire.GeneratePointSprite(camera);
+		//fire.GenerateQuads();
+		//software3D.RenderMesh(fire.mesh, fire.particlesAlive<<1, mvpMat, camera, clip);
 
-
-
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		starField.Update(msElapsed,camera);
+		starField.GeneratePointSprite(camera);
+		starField.GenerateQuads();
+		software3D.RenderMesh(starField.mesh, starField.particlesAlive << 1, mvpMat, camera, clip);
 
 
 		// show depth buffer
