@@ -12,32 +12,31 @@ class Fire : public game::EmitterBase
 public:
 	void InitializeParticles() noexcept
 	{
-		random.NewSeed();
+		random->NewSeed();
 		for (game::ParticleBase& part : particles)
 		{
 			part.alive = true;
-			part.position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+			part.position.x = Position.x + (random->RndRange(0, 100) / 650.0f) - 0.07f;
 			part.position.y = Position.y;
-			part.position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+			part.position.z = Position.z + (random->RndRange(0, 100) / 650.0f) - 0.07f;
 
-			part.velocity.y = (random.RndRange(0, 200) / 400.0f);
+			part.velocity.y = (random->RndRange(0, 200) / 400.0f);
 			part.velocity.y = part.velocity.y < 0.005f ? 0.005f : part.velocity.y;
-			part.velocity.x = (random.RndRange(0, 200) / 400.0f);
+			part.velocity.x = (random->RndRange(0, 200) / 400.0f);
 			part.velocity.x = part.velocity.x > 0.15f ? 0.15f : part.velocity.x;
 
 
-			part.timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+			part.timeToLive = 0.85f + random->RndRange(0, 25) / 100.0f;
 			part.size.x = part.timeToLive * 0.025f;
 			part.size.y = part.timeToLive * 0.025f;
 			part.color = game::Colors::White;
 
-			part.rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+			part.rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
 		}
 	}
 
 	void Update(const float_t msElapsed)
 	{
-		static float_t rotation = 0.0f;
 
 		float_t time = msElapsed / 1000.0f;
 		rotation = (2 * 3.14f / 10.0f) * (time);
@@ -85,21 +84,21 @@ public:
 				}
 				else
 				{
-					particles[part].position.x = Position.x + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					particles[part].position.x = Position.x + (random->RndRange(0, 100) / 650.0f) - 0.07f;
 					particles[part].position.y = Position.y;
-					particles[part].position.z = Position.z + (random.RndRange(0, 100) / 650.0f) - 0.07f;
+					particles[part].position.z = Position.z + (random->RndRange(0, 100) / 650.0f) - 0.07f;
 
-					particles[part].velocity.y = (random.RndRange(0, 200) / 400.0f);
+					particles[part].velocity.y = (random->RndRange(0, 200) / 400.0f);
 					particles[part].velocity.y = particles[part].velocity.y < 0.005f ? 0.005f : particles[part].velocity.y;
-					particles[part].velocity.x = (random.RndRange(0, 200) / 400.0f);
+					particles[part].velocity.x = (random->RndRange(0, 200) / 400.0f);
 					particles[part].velocity.x = particles[part].velocity.x > 0.15f ? 0.15f : particles[part].velocity.x;
 
-					particles[part].timeToLive = 0.85f + random.RndRange(0, 25) / 100.0f;
+					particles[part].timeToLive = 0.85f + random->RndRange(0, 25) / 100.0f;
 					particles[part].size.x = particles[part].timeToLive * 0.025f;
 					particles[part].size.y = particles[part].timeToLive * 0.025f;
 					particles[part].color = game::Colors::White;
 
-					particles[part].rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+					particles[part].rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
 
 					// kills particle, wont be rendered
 					//particles[part].alive = false;
@@ -107,37 +106,39 @@ public:
 			}
 		}
 	}
+private:
+	float_t rotation = 0.0f;
 };
-game::Pointi resolution = { 1280 , 720 };
+
 class StarField : public game::EmitterBase
 {
 public:
 	void InitializeParticles(game::Camera3D camera) noexcept
 	{
-		random.NewSeed();
+		random->NewSeed();
 		for (game::ParticleBase& part : particles)
 		{
 			ResetParticle(part,camera);
 		}
 	}
 
-	void ResetParticle(game::ParticleBase &part, game::Camera3D camera)
+	void ResetParticle(game::ParticleBase &part, const game::Camera3D& camera)
 	{
 
-		part.position.x = (float_t)((random.RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
-		part.position.y = (float_t)((random.RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
+		part.position.x = (float_t)((random->RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
+		part.position.y = (float_t)((random->RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
 		if (part.alive) // not first interation
 		{
 			part.position.z = (10.0f);// +camera.position.z;
 		}
 		else
 		{
-			part.position.z = (float_t)((random.RndRange(0, 1000) * 2.0 / 1000.0f - 1.0f) * 25.0f);
+			part.position.z = (float_t)((random->RndRange(0, 1000) * 2.0 / 1000.0f - 1.0f) * 25.0f);
 			part.size.x = 0.025f;// part.timeToLive * 0.025f;
 			part.size.y = 0.025f;// part.timeToLive * 0.025f;
 		}
 
-		float_t randColor = (float_t)(random.RndRange(0, 10000) / 10000.0f);
+		float_t randColor = (float_t)(random->RndRange(0, 10000) / 10000.0f);
 		part.color = game::Colors::White;
 		if (randColor < 0.1f)
 			part.color = game::Colors::Yellow;
@@ -145,17 +146,16 @@ public:
 			part.color = game::Colors::Red;
 		if (randColor < 0.005)
 			part.color = game::Colors::DarkOrange;
-		part.velocity.z = (float_t)(random.RndRange(0, 100)) / -100.0f;
+		part.velocity.z = (float_t)(random->RndRange(0, 100)) / -100.0f;
 		if (part.velocity.z > -0.2) part.velocity.z = -0.2;
 		
-		part.rotation = (float_t)(random.RndRange(0, 359) * 3.14159f / 180.0f);
+		part.rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
 
 		part.alive = true;
 	}
 
-	void Update(const float_t msElapsed, game::Camera3D camera)
+	void Update(const float_t msElapsed, const game::Camera3D& camera)
 	{
-		static float_t rotation = 0.0f;
 
 		float_t time = msElapsed / 1000.0f;
 		rotation = (2 * 3.14f / 20.0f) * (time);
@@ -186,6 +186,8 @@ public:
 			}
 		}
 	}
+private:
+	float_t rotation = 0.0f;
 };
 
 class Game : public game::Engine
@@ -203,11 +205,11 @@ public:
 	game::Matrix4x4f mvpMat;
 
 	// Meshes for scenes
-	game::Mesh plane;
-	game::Mesh alphaCube;
-	game::Mesh model;
-	game::Mesh torus;
-	game::Mesh sky;
+	//game::Mesh plane;
+	//game::Mesh alphaCube;
+	//game::Mesh model;
+	//game::Mesh torus;
+	//game::Mesh sky;
 
 	// Particle systems
 	Fire fire;
@@ -216,7 +218,7 @@ public:
 
 
 	//std::vector<game::Triangle> trianglesToRender;
-	game::RenderTarget renderTarget;
+	//game::RenderTarget renderTarget;
 
 
 	game::Camera3D camera;
@@ -224,7 +226,7 @@ public:
 
 
 	game::FillMode state = game::FillMode::Filled;
-	//game::Pointi resolution = { 1280 , 720 };
+	game::Pointi resolution = { 1280 , 720 };
 	bool showText;
 
 	game::Random random;
@@ -262,7 +264,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode, 0))
+		if (!software3D.Initialize(pixelMode, -1))
 		{
 			geLogLastError();
 		}
@@ -270,20 +272,20 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
 		// cone +z, conex +x, coney +y
-		if (!LoadObj("Content/arena.obj", model))
-		{
-			std::cout << "Could not load model\n";
-		}
+		//if (!LoadObj("Content/arena.obj", model))
+		//{
+		//	std::cout << "Could not load model\n";
+		//}
 
-		if (!LoadObj("Content/torus2.obj", torus))
-		{
-			std::cout << "Could not load model\n";
-		}
+		//if (!LoadObj("Content/torus2.obj", torus))
+		//{
+		//	std::cout << "Could not load model\n";
+		//}
 
-		if (!LoadObj("Content/sky.obj", sky))
-		{
-			std::cout << "Could not load model\n";
-		}
+		//if (!LoadObj("Content/sky.obj", sky))
+		//{
+		//	std::cout << "Could not load model\n";
+		//}
 
 		//if (!LoadObj("Content/cubetest.obj", alphaCube))
 		//{
@@ -296,15 +298,15 @@ public:
 		//}
 
 
-		software3D.LoadTexture("content/colormap2.png", model.texture);
-		software3D.DeleteTexture(model.texture);
-		software3D.LoadTexture("content/sky.png", sky.texture);
-		software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
+		//software3D.LoadTexture("content/colormap2.png", model.texture);
+		//software3D.DeleteTexture(model.texture);
+		//software3D.LoadTexture("content/sky.png", sky.texture);
+		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", fire.mesh.texture);
 		starField.mesh.texture = fire.mesh.texture;
 
-		game::Random rnd;
-		rnd.NewSeed();
+		//game::Random rnd;
+		//rnd.NewSeed();
 
 		float_t z = 0.0f;
 		float_t size = 1.0f;
@@ -372,31 +374,31 @@ public:
 			bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
 		}
 
-		plane.tris.emplace_back(topLeftTri);
-		plane.tris.emplace_back(bottomRightTri);
+		//plane.tris.emplace_back(topLeftTri);
+		//plane.tris.emplace_back(bottomRightTri);
 
 
 		// Preset some world stuff
 		camera.position.z = -1.0f;
 		camera.position.y = -0.2f;
 
-		plane.SetRotation(-3.14159f / 2.0f, 0, 0);
-		plane.SetTranslation(0.0f, 0.1f, 0.0f);
-		plane.SetScale(60.0f, 60.0f, 60.0f);
+		//plane.SetRotation(-3.14159f / 2.0f, 0, 0);
+		//plane.SetTranslation(0.0f, 0.1f, 0.0f);
+		//plane.SetScale(60.0f, 60.0f, 60.0f);
 
-		alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
-		alphaCube.SetScale(0.5f, 0.5f, 0.5f);
+		//alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
+		//alphaCube.SetScale(0.5f, 0.5f, 0.5f);
 
-		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		model.SetScale(1.0f, 1.0f, 1.0f);
-		model.SetTranslation(0, 0.1f, 0);
+		////model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
+		//model.SetScale(1.0f, 1.0f, 1.0f);
+		//model.SetTranslation(0, 0.1f, 0);
 
 
-		sky.SetRotation(3.14159f / 2.0f, 0.0f, 0.0f);
-		sky.SetScale(50.0f, 50.0f, 50.0f);
-		sky.SetTranslation(camera.position.x, camera.position.y, camera.position.z);
+		//sky.SetRotation(3.14159f / 2.0f, 0.0f, 0.0f);
+		//sky.SetScale(50.0f, 50.0f, 50.0f);
+		//sky.SetTranslation(camera.position.x, camera.position.y, camera.position.z);
 
-		torus.SetTranslation(0.0f, -0.1f, 0.0f);
+		//torus.SetTranslation(0.0f, -0.1f, 0.0f);
 
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
@@ -405,16 +407,16 @@ public:
 		fire.Initialize(5000, { 0,0,0 });
 		fire.InitializeParticles();
 
-		starField.Initialize(2000, { 0,0,0 });
+		starField.Initialize(10000, { 0,0,0 });
 		starField.InitializeParticles(camera);
 	}
 
 	void Shutdown()
 	{
-		software3D.DeleteRenderTarget(renderTarget);
-		software3D.DeleteTexture(sky.texture);
-		software3D.DeleteTexture(model.texture);
-		software3D.DeleteTexture(alphaCube.texture);
+		//software3D.DeleteRenderTarget(renderTarget);
+		//software3D.DeleteTexture(sky.texture);
+		//software3D.DeleteTexture(model.texture);
+		//software3D.DeleteTexture(alphaCube.texture);
 		software3D.DeleteTexture(fire.mesh.texture);
 	}
 
@@ -593,15 +595,15 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
@@ -686,6 +688,8 @@ int32_t main()
 
 	testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 	testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+
+	std::cout << "Size of random : " << sizeof(game::Random) << "\n";
 
 	// Create the needed bits for the engine
 	if (!engine.geCreate())
