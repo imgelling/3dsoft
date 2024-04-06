@@ -229,8 +229,6 @@ public:
 	game::Pointi resolution = { 1280 , 720 };
 	bool showText;
 
-	game::Random random;
-
 	Game() : game::Engine()
 	{
 		maxFPS = 0;
