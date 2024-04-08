@@ -64,13 +64,14 @@ namespace game
 				mesh.tris.emplace_back(t1);
 				mesh.tris.emplace_back(t2);
 				particles.emplace_back(particle);
-			}			
+			}
 		}
 
 		void GenerateQuads()
 		{
 			uint32_t count = 0;
-			for (uint32_t part = 0; part < particlesAlive; ++part)
+
+			for (uint32_t part = 0; part < numberOfParticles; ++part)
 			{
 				if (particles[part].alive)
 				{
@@ -85,7 +86,7 @@ namespace game
 			}
 		}
 
-		void GeneratePointSprite(Camera3D& camera)
+		void GeneratePointSpriteMatrix(Camera3D& camera)
 		{
 			if (particlesAlive)
 			{

@@ -125,20 +125,20 @@ public:
 	void ResetParticle(game::ParticleBase &part, const game::Camera3D& camera)
 	{
 
-		part.position.x = (float_t)((random->RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
-		part.position.y = (float_t)((random->RndRange(0, 1000) * 2.0) / 1000.0f - 1.0f) * 10.0f;
+		part.position.x = (float_t)((random->Randf() * 2.0) - 1.0f) * 10.0f;
+		part.position.y = (float_t)((random->Randf() * 2.0) - 1.0f) * 10.0f;
 		if (part.alive) // not first interation
 		{
 			part.position.z = (10.0f);// +camera.position.z;
 		}
 		else
 		{
-			part.position.z = (float_t)((random->RndRange(0, 1000) * 2.0 / 1000.0f - 1.0f) * 25.0f);
+			part.position.z = ((random->Randf() * 2.0f) - 1.0f) * 25.0f;
 			part.size.x = 0.025f;// part.timeToLive * 0.025f;
 			part.size.y = 0.025f;// part.timeToLive * 0.025f;
 		}
 
-		float_t randColor = (float_t)(random->RndRange(0, 10000) / 10000.0f);
+		float_t randColor = random->Randf();
 		part.color = game::Colors::White;
 		if (randColor < 0.1f)
 			part.color = game::Colors::Yellow;
@@ -146,7 +146,7 @@ public:
 			part.color = game::Colors::Red;
 		if (randColor < 0.005)
 			part.color = game::Colors::DarkOrange;
-		part.velocity.z = (float_t)(random->RndRange(0, 100)) / -100.0f;
+		part.velocity.z = -random->Randf();
 		if (part.velocity.z > -0.2) part.velocity.z = -0.2;
 		
 		part.rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
@@ -164,26 +164,14 @@ public:
 		particlesAlive = 0;
 		uint64_t sizeOfParticles = particles.size();
 
-		if (sizeOfParticles)
+		for (uint32_t part = 0; part < sizeOfParticles; ++part)
 		{
-			for (uint32_t part = 0; part < sizeOfParticles; ++part)
-			{
-				particles[part].timeToLive -= time;
-				if (particles[part].position.z > -(25.0f))
-				{
-					//particles[part].position.y -= particles[part].velocity.y * (time);
-					//particles[part].position.x -= particles[part].velocity.x * (time);
-					//particles[part].position.z += particles[part].velocity.z * (time);
-
-					particles[part].rotation += rotation;
-
-					particlesAlive++;
-				}
-				else
-				{
-					ResetParticle(particles[part], camera);
-				}
-			}
+			//particles[part].alive = false;
+			// Is particle behind camera, skip it
+			//if ((particles[part].position - camera.position).z < 0) continue;
+			particles[part].rotation += rotation;
+			//particles[part].alive = true;
+			particlesAlive++;
 		}
 	}
 private:
@@ -207,7 +195,7 @@ public:
 	// Meshes for scenes
 	//game::Mesh plane;
 	//game::Mesh alphaCube;
-	//game::Mesh model;
+	game::Mesh model;
 	//game::Mesh torus;
 	//game::Mesh sky;
 
@@ -262,7 +250,7 @@ public:
 			geLogLastError();
 		}
 
-		if (!software3D.Initialize(pixelMode, -1))
+		if (!software3D.Initialize(pixelMode, 0))
 		{
 			geLogLastError();
 		}
@@ -413,7 +401,7 @@ public:
 	{
 		//software3D.DeleteRenderTarget(renderTarget);
 		//software3D.DeleteTexture(sky.texture);
-		//software3D.DeleteTexture(model.texture);
+		software3D.DeleteTexture(model.texture);
 		//software3D.DeleteTexture(alphaCube.texture);
 		software3D.DeleteTexture(fire.mesh.texture);
 	}
@@ -500,7 +488,7 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				smoothedMouseDeltax = mouse.x / 2560.0f * 400.0f;//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
+				smoothedMouseDeltax = (mouse.x / 2560.0f * 400.0f);//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
 				camera.SetRotation(0.0f, smoothedMouseDeltax * (3.14159f / 180.0f), 0.0f);
 			}
 		}
@@ -510,7 +498,8 @@ public:
 		{
 			if (geMouse.IsButtonHeld(geM_LEFT))
 			{
-				smoothedMouseDelta = mouse.y / 1440.0f * 400.0f;//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
+				
+				smoothedMouseDelta = (mouse.y / 1440.0f * 400.0f);//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
 				camera.SetRotation(-smoothedMouseDelta * (3.14159f / 180.0f), 0.0f, 0.0f);
 			}
 		}
@@ -593,11 +582,14 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
 
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 
@@ -617,7 +609,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		starField.Update(msElapsed,camera);
-		starField.GeneratePointSprite(camera);
+		starField.GeneratePointSpriteMatrix(camera);
 		starField.GenerateQuads();
 		software3D.RenderMesh(starField.mesh, starField.particlesAlive << 1, mvpMat, camera, clip);
 
@@ -686,8 +678,6 @@ int32_t main()
 
 	testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 	testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
-
-	std::cout << "Size of random : " << sizeof(game::Random) << "\n";
 
 	// Create the needed bits for the engine
 	if (!engine.geCreate())
