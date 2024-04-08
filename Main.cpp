@@ -7,176 +7,6 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
-class Fire : public game::EmitterBase
-{
-public:
-	void InitializeParticles() noexcept
-	{
-		random->NewSeed();
-		for (game::ParticleBase& part : particles)
-		{
-			part.alive = true;
-			part.position.x = Position.x + (random->RndRange(0, 100) / 650.0f) - 0.07f;
-			part.position.y = Position.y;
-			part.position.z = Position.z + (random->RndRange(0, 100) / 650.0f) - 0.07f;
-
-			part.velocity.y = (random->RndRange(0, 200) / 400.0f);
-			part.velocity.y = part.velocity.y < 0.005f ? 0.005f : part.velocity.y;
-			part.velocity.x = (random->RndRange(0, 200) / 400.0f);
-			part.velocity.x = part.velocity.x > 0.15f ? 0.15f : part.velocity.x;
-
-
-			part.timeToLive = 0.85f + random->RndRange(0, 25) / 100.0f;
-			part.size.x = part.timeToLive * 0.025f;
-			part.size.y = part.timeToLive * 0.025f;
-			part.color = game::Colors::White;
-
-			part.rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
-		}
-	}
-
-	void Update(const float_t msElapsed)
-	{
-
-		float_t time = msElapsed / 1000.0f;
-		rotation = (2 * 3.14f / 10.0f) * (time);
-
-		uint32_t count = 0;
-		particlesAlive = 0;
-		uint64_t sizeOfParticles = particles.size();
-
-		if (sizeOfParticles)
-		{
-			for (uint32_t part = 0; part < sizeOfParticles; ++part)
-			{
-				particles[part].timeToLive -= time;
-				if (particles[part].timeToLive > 0.0f)
-				{
-					particles[part].position.y -= particles[part].velocity.y * (time);
-					particles[part].position.x -= particles[part].velocity.x * (time);
-
-					particles[part].rotation += rotation;
-
-					particles[part].size.x = min(particles[part].timeToLive, 1.0f) * 0.025f;
-					particles[part].size.y = min(particles[part].timeToLive, 1.0f) * 0.025f;
-
-					if (particles[part].timeToLive < 0.35)
-					{
-						particles[part].color.Set(1.0f, 0.25f, 0, 0.25f);
-					}
-					else if (particles[part].timeToLive < 0.5)
-					{
-						particles[part].color.Set(1.0f, 0.25f, 0, 0.75f);
-					}
-					else if (particles[part].timeToLive < 0.9)
-					{
-						particles[part].color = game::Colors::DarkOrange;
-					}
-					else if (particles[part].timeToLive < 1.0)
-					{
-						particles[part].color = game::Colors::Yellow;
-					}
-					else if (particles[part].timeToLive < 1.1)
-					{
-						particles[part].color = game::Colors::White;
-					}
-					particlesAlive++;
-				}
-				else
-				{
-					particles[part].position.x = Position.x + (random->RndRange(0, 100) / 650.0f) - 0.07f;
-					particles[part].position.y = Position.y;
-					particles[part].position.z = Position.z + (random->RndRange(0, 100) / 650.0f) - 0.07f;
-
-					particles[part].velocity.y = (random->RndRange(0, 200) / 400.0f);
-					particles[part].velocity.y = particles[part].velocity.y < 0.005f ? 0.005f : particles[part].velocity.y;
-					particles[part].velocity.x = (random->RndRange(0, 200) / 400.0f);
-					particles[part].velocity.x = particles[part].velocity.x > 0.15f ? 0.15f : particles[part].velocity.x;
-
-					particles[part].timeToLive = 0.85f + random->RndRange(0, 25) / 100.0f;
-					particles[part].size.x = particles[part].timeToLive * 0.025f;
-					particles[part].size.y = particles[part].timeToLive * 0.025f;
-					particles[part].color = game::Colors::White;
-
-					particles[part].rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
-
-					// kills particle, wont be rendered
-					//particles[part].alive = false;
-				}
-			}
-		}
-	}
-private:
-	float_t rotation = 0.0f;
-};
-
-class StarField : public game::EmitterBase
-{
-public:
-	void InitializeParticles(game::Camera3D camera) noexcept
-	{
-		random->NewSeed();
-		for (game::ParticleBase& part : particles)
-		{
-			ResetParticle(part,camera);
-		}
-	}
-
-	void ResetParticle(game::ParticleBase &part, const game::Camera3D& camera)
-	{
-
-		part.position.x = (float_t)((random->Randf() * 2.0) - 1.0f) * 10.0f;
-		part.position.y = (float_t)((random->Randf() * 2.0) - 1.0f) * 10.0f;
-		if (part.alive) // not first interation
-		{
-			part.position.z = (10.0f);// +camera.position.z;
-		}
-		else
-		{
-			part.position.z = ((random->Randf() * 2.0f) - 1.0f) * 25.0f;
-			part.size.x = 0.025f;// part.timeToLive * 0.025f;
-			part.size.y = 0.025f;// part.timeToLive * 0.025f;
-		}
-
-		float_t randColor = random->Randf();
-		part.color = game::Colors::White;
-		if (randColor < 0.1f)
-			part.color = game::Colors::Yellow;
-		if (randColor < 0.05)
-			part.color = game::Colors::Red;
-		if (randColor < 0.005)
-			part.color = game::Colors::DarkOrange;
-		part.velocity.z = -random->Randf();
-		if (part.velocity.z > -0.2) part.velocity.z = -0.2;
-		
-		part.rotation = (float_t)(random->RndRange(0, 359) * 3.14159f / 180.0f);
-
-		part.alive = true;
-	}
-
-	void Update(const float_t msElapsed, const game::Camera3D& camera)
-	{
-
-		float_t time = msElapsed / 1000.0f;
-		rotation = (2 * 3.14f / 20.0f) * (time);
-
-		uint32_t count = 0;
-		particlesAlive = 0;
-		uint64_t sizeOfParticles = particles.size();
-
-		for (uint32_t part = 0; part < sizeOfParticles; ++part)
-		{
-			//particles[part].alive = false;
-			// Is particle behind camera, skip it
-			//if ((particles[part].position - camera.position).z < 0) continue;
-			particles[part].rotation += rotation;
-			//particles[part].alive = true;
-			particlesAlive++;
-		}
-	}
-private:
-	float_t rotation = 0.0f;
-};
 
 class Game : public game::Engine
 {
@@ -198,11 +28,6 @@ public:
 	game::Mesh model;
 	//game::Mesh torus;
 	//game::Mesh sky;
-
-	// Particle systems
-	Fire fire;
-	StarField starField;
-
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -257,11 +82,10 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		// cone +z, conex +x, coney +y
-		//if (!LoadObj("Content/arena.obj", model))
-		//{
-		//	std::cout << "Could not load model\n";
-		//}
+		if (!LoadObj("Content/arena.obj", model))
+		{
+			std::cout << "Could not load model\n";
+		}
 
 		//if (!LoadObj("Content/torus2.obj", torus))
 		//{
@@ -288,8 +112,6 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/particle1.png", fire.mesh.texture);
-		starField.mesh.texture = fire.mesh.texture;
 
 		//game::Random rnd;
 		//rnd.NewSeed();
@@ -388,13 +210,6 @@ public:
 
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
-
-		 
-		fire.Initialize(5000, { 0,0,0 });
-		fire.InitializeParticles();
-
-		starField.Initialize(10000, { 0,0,0 });
-		starField.InitializeParticles(camera);
 	}
 
 	void Shutdown()
@@ -403,7 +218,7 @@ public:
 		//software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(model.texture);
 		//software3D.DeleteTexture(alphaCube.texture);
-		software3D.DeleteTexture(fire.mesh.texture);
+		//software3D.DeleteTexture(fire.mesh.texture);
 	}
 
 	void Update(const float_t msElapsed)
@@ -416,6 +231,16 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_F11))
 		{
 			geToggleFullscreen();
+		}
+
+		if (geKeyboard.WasKeyReleased(geK_COMMA))
+		{
+			software3D.SetState(GAME_SOFTWARE3D_WIREFRAME_COLOR, (int)game::Colors::CornFlowerBlue.packedABGR);
+		}
+
+		if (geKeyboard.WasKeyReleased(geK_PERIOD))
+		{
+			software3D.SetState(GAME_SOFTWARE3D_WIREFRAME_COLOR, (int)game::Colors::White.packedABGR);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_F1))
@@ -545,74 +370,16 @@ public:
 		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
-		//software3D.RenderMesh(particle1, mvpMat, camera, clip);
-
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		//software3D.RenderMesh(plane,plane.tris.size(), mvpMat, camera, clip);
-
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//sky.GenerateModelMatrix();
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		//software3D.RenderMesh(sky, sky.tris.size(), mvpMat, camera, clip); 
-
-
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-		//software3D.RenderMesh(torus, torus.tris.size(), mvpMat, camera, clip); 
-
-		
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST_VALUE, 128);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		//software3D.RenderMesh(alphaCube, mvpMat, camera, clip);
-
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
-		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
-
-
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-
-		//fire.Update(msElapsed);
-		//fire.GeneratePointSprite(camera);
-		//fire.GenerateQuads();
-		//software3D.RenderMesh(fire.mesh, fire.particlesAlive<<1, mvpMat, camera, clip);
-
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		starField.Update(msElapsed,camera);
-		starField.GeneratePointSpriteMatrix(camera);
-		starField.GenerateQuads();
-		software3D.RenderMesh(starField.mesh, starField.particlesAlive << 1, mvpMat, camera, clip);
-
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
+		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))

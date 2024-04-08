@@ -25,6 +25,7 @@
 #define GAME_SOFTWARE3D_SORT 10
 #define GAME_SOFTWARE3D_ALPHA_BLEND 11
 #define GAME_SOFTWARE3D_COLOR_TINTING 12
+#define GAME_SOFTWARE3D_WIREFRAME_COLOR 13
 
  
 namespace game
@@ -37,6 +38,7 @@ namespace game
 		~Software3D();
 		bool Initialize(PixelMode& pixelMode, const int32_t threads);
 		int32_t SetState(const uint32_t state, const int32_t value) noexcept;
+		int32_t SetState(const uint32_t state, const float_t value) noexcept;
 		bool SetTexture(const Texture& texture) noexcept;
 		bool SetTexture(const RenderTarget& target) noexcept;
 		bool SetDefaultTexture() noexcept;
@@ -90,6 +92,8 @@ namespace game
 		bool _enableAlphaBlend;
 		PixelMode* _pixelMode;
 		uint32_t _totalBufferSize;
+		float_t _wireFrameThicknessSquared;
+		uint32_t _wireFrameColor;
 	};
 
 	Software3D::Software3D()
@@ -113,6 +117,8 @@ namespace game
 		_enableAlphaBlend = false;
 		_numbuffers = 5;
 		_enableColorTinting = false;
+		_wireFrameThicknessSquared = 1.0f;
+		_wireFrameColor = Colors::White.packedABGR;
 		for (uint32_t i = 0; i < 10; i++)
 			_clearDepthBuffer[i] = nullptr;
 		_fillMode = FillMode::WireFrameFilled;
@@ -380,6 +386,20 @@ namespace game
 		std::fill_n(_currentRenderTarget.colorBuffer, _currentRenderTarget.totalBufferSize, color.packedABGR);
 	}
 
+	inline int32_t Software3D::SetState(const uint32_t state, const float_t value) noexcept
+	{
+		switch (state)
+		{
+		case GAME_SOFTWARE3D_WIREFRAME_THICKNESS:
+		{
+			_wireFrameThicknessSquared = value * value;
+			return true;
+			break;
+		}
+		}
+		return false;
+	}
+
 	inline int32_t Software3D::SetState(const uint32_t state, const int32_t value) noexcept
 	{
 		switch (state)
@@ -475,6 +495,18 @@ namespace game
 		case GAME_SOFTWARE3D_COLOR_TINTING:
 		{
 			_enableColorTinting = value;
+			return true;
+			break;
+		}
+		case GAME_SOFTWARE3D_WIREFRAME_COLOR:
+		{
+			_wireFrameColor = value;
+			return true;
+			break;
+		}
+		case GAME_SOFTWARE3D_WIREFRAME_THICKNESS:
+		{
+			_wireFrameThicknessSquared = (float_t)(value * value);
 			return true;
 			break;
 		}
@@ -948,7 +980,7 @@ namespace game
 						d[dist] = distanceFromPointToLineSq(pixelOffset.x, pixelOffset.y, yy[dist], xx[dist], xy[dist], denominator[dist]);
 					}
 					minDistSq = d[0] < d[1] ? (d[0] < d[2] ? d[0] : d[2]) : (d[1] < d[2] ? d[1] : d[2]);
-					if (minDistSq < 1.0f)
+					if (minDistSq < _wireFrameThicknessSquared)
 					{
 						if (textured)
 						{
@@ -957,7 +989,7 @@ namespace game
 								*depthBufferPtr = oneOverDepthEval;
 							}
 						}
-						*colorBuffer = 0xFFFFFFFF;// game::Colors::White.packedARGB;
+						*colorBuffer = _wireFrameColor;// 0xFFFFFFFF;// game::Colors::White.packedARGB;
 
 						++colorBuffer;
 						++depthBufferPtr;
