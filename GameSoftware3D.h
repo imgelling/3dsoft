@@ -534,7 +534,7 @@ namespace game
 		
 		VertexProcessor(mesh, numberOfTris, projection, _trianglesToRender, camera);
 		SetTexture(mesh.texture);
-		uint64_t fenceCount = 0;
+		uint64_t fenceCount = {};
 
 		auto backToFront = [](const game::Triangle& a, const game::Triangle& b)
 			{
@@ -662,7 +662,7 @@ namespace game
 	template<bool renderWireFrame, bool filled, bool lighting, bool textured>
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& __restrict clip) noexcept
 	{
-		uint32_t foundTriangle(0);
+		uint32_t foundTriangle = {};
 		uint32_t videoBufferStride(_currentRenderTarget.size.width);
 
 		game::Vector2f pixelOffset;
@@ -684,11 +684,11 @@ namespace game
 		}
 
 		// Depth parameter 
-		float_t oneOverDepthEval(0.0f);
+		float_t oneOverDepthEval = {};
 		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Face normal light pre calc (directional light) can add ambient here
-		float_t luminance = 0.0f;
+		float_t luminance = {};
 		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
 		if (lighting)
 		{
@@ -758,56 +758,56 @@ namespace game
 
 		uint32_t* colorBuffer = _currentRenderTarget.colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
 		float_t* depthBufferPtr = _currentRenderTarget.depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
-		uint32_t xLoopCount = 0;
+		uint32_t xLoopCount = {};
 
 		// test
-		float_t dEval = 0.0f;
-		float_t uEval = 0.0f;
-		float_t vEval = 0.0f;
-		float_t rEval = 0.0f;
-		float_t gEval = 0.0f;
-		float_t bEval = 0.0f;
-		float_t aEval = 0.0f;
-		float_t nXEval = 0.0f;
-		float_t nYEval = 0.0f;
-		float_t nZEval = 0.0f;
+		float_t dEval = {};
+		float_t uEval = {};
+		float_t vEval = {};
+		float_t rEval = {};
+		float_t gEval = {};
+		float_t bEval = {};
+		float_t aEval = {};
+		float_t nXEval = {};
+		float_t nYEval = {};
+		float_t nZEval = {};
 
-		float_t  rSource = 0.0f;
-		float_t  gSource = 0.0f;
-		float_t  bSource = 0.0f;
-		float_t  aSource = 0.0f;
+		float_t  rSource = {};
+		float_t  gSource = {};
+		float_t  bSource = {};
+		float_t  aSource = {};
 
-		uint32_t tx = 0;
-		uint32_t ty = 0;
-		float_t upDiv = 0.0f;
-		float_t vpDiv = 0.0f;
+		uint32_t tx = {};
+		uint32_t ty = {};
+		float_t upDiv = {};
+		float_t vpDiv = {};
 
 		//uint32_t color = 0;
-		uint32_t rc = 0;
-		uint32_t gc = 0;
-		uint32_t bc = 0;
-		uint32_t ac = 0;
+		uint32_t rc = {};
+		uint32_t gc = {};
+		uint32_t bc = {};
+		uint32_t ac = {};
 
-		float_t rDest = 0;
-		float_t gDest = 0;
-		float_t bDest = 0;
-		float_t aDest = 0;
+		float_t rDest {};
+		float_t gDest {};
+		float_t bDest {};
+		float_t aDest {};
 		float_t aFinal = 1.0f;
 
-		uint32_t dest = 0;
+		uint32_t dest = {};
 
 		Vector3f vertexNormalEval;
 
-		float_t e0 = 0;
-		float_t e1 = 0;
-		float_t e2 = 0;
+		float_t e0 = {};
+		float_t e1 = {};
+		float_t e2 = {};
 		uint32_t firstTestOfLine = 1;
 
 		pixelOffset.y = (float_t)triangle.boundingBox.top - 0.5f;
 		
 		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
 		{
-			xLoopCount = 0;
+			xLoopCount = {};
 			pixelOffset.y += 1;
 			//if ((j % 2 == 0))  // cheap scanline effect
 			//{
@@ -815,7 +815,7 @@ namespace game
 			//	depthBufferPtr += videoBufferStride - xLoopCount;
 			//	continue;
 			//}
-			foundTriangle = 0;
+			foundTriangle = {};
 
 			firstTestOfLine = 1;
 			pixelOffset.x = (float_t)triangle.boundingBox.left - 0.5f;
@@ -834,7 +834,7 @@ namespace game
 					triangle.edge0.evaluate(pixelOffset.x, pixelOffset.y, e0);
 					triangle.edge1.evaluate(pixelOffset.x, pixelOffset.y, e1);
 					triangle.edge2.evaluate(pixelOffset.x, pixelOffset.y, e2);
-					firstTestOfLine = 0;
+					firstTestOfLine = {};
 				}
 
 				if (triangle.edge0.test(e0))
@@ -1536,14 +1536,14 @@ namespace game
 
 
 		game::Triangle newClippedTris[2];
-		uint32_t numberTrisGenerated = 0;
+		uint32_t numberTrisGenerated = {};
 		//int culled = 0;
-		uint32_t changeWinding = 0;
+		uint32_t changeWinding = {};
 
 		Vector3f cameraRay; 
 		for (uint32_t i = 0; i < numberOfTris; i++)
 		{
-			changeWinding = 0;
+			changeWinding = {};
 			workingTriangle = mesh.tris[i];
 
 			// Backface cull before clip, there ARE artifacts when scaling non uniformly or if scale is negative
