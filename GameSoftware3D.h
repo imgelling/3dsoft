@@ -604,16 +604,6 @@ namespace game
 			default: break;
 			}
 		}
-		else if (!_enableLighting && !_enableTexturing)
-		{
-			switch (_fillMode)
-			{
-			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			default: break;
-			}
-		}
 		else if (!_enableLighting && _enableTexturing)
 		{
 			switch (_fillMode)
@@ -634,7 +624,16 @@ namespace game
 			default: break;
 			}
 		}
-
+		else if (!_enableLighting && !_enableTexturing)
+		{
+			switch (_fillMode)
+			{
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			default: break;
+			}
+		}
 
 		uint64_t trisSize = tris.size();
 		for (uint32_t triangleCount = 0; triangleCount < trisSize; ++triangleCount)
@@ -724,7 +723,7 @@ namespace game
 
 		// Wireframe precalcs
 		float_t d[3] = {};
-		float_t minDistSq(0.0f);
+		float_t minDistSq = {};;
 		float_t yy[3] = {}; //y2 - y1;
 		float_t xx[3] = {}; //x2 - x1;
 		float_t xy[3] = {}; //x2 * y1 then xy - yx
@@ -792,7 +791,7 @@ namespace game
 		float_t gDest {};
 		float_t bDest {};
 		float_t aDest {};
-		float_t aFinal = 1.0f;
+		float_t aFinal(1.0f);
 
 		uint32_t dest = {};
 
@@ -801,7 +800,7 @@ namespace game
 		float_t e0 = {};
 		float_t e1 = {};
 		float_t e2 = {};
-		uint32_t firstTestOfLine = 1;
+		uint32_t firstTestOfLine(1);
 
 		pixelOffset.y = (float_t)triangle.boundingBox.top - 0.5f;
 		
