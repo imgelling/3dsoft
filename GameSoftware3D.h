@@ -220,14 +220,11 @@ namespace game
 	{
 		if (texture.data != nullptr)
 		{
-			//delete[] texture.data;
 			_aligned_free(texture.data);
 			texture.data = nullptr;
 		}
 		texture.size.width = 0;
 		texture.size.height = 0;
-		//texture.oneOverSize.width = 0;
-		//texture.oneOverSize.height = 0;		
 	}
 
 	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h)
@@ -266,9 +263,9 @@ namespace game
 			if (texture.data != nullptr)
 			{
 				memcpy(texture.data, temp, (size_t)texw * texh * 4);
+				texture.size.width = texw;
+				texture.size.height = texh;
 			}
-			texture.size.width = texw;
-			texture.size.height = texh;
 		}
 		return true;
 	}
@@ -322,7 +319,7 @@ namespace game
 	{
 		_usingRenderTarget = false;
 		_currentRenderTarget = _defaultRenderTarget;
-		_currentRenderTarget.colorBuffer = _pixelMode->videoBuffer;// = _defaultRenderTarget;
+		_currentRenderTarget.colorBuffer = _pixelMode->videoBuffer;
 		_currentRenderTarget.depthBuffer = _clearDepthBuffer[_currentDepth];
 		depthBuffer = _clearDepthBuffer[_currentDepth];
 	}
@@ -412,7 +409,6 @@ namespace game
 			}
 			_fillMode = (FillMode)value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_STATE_THREADED:
 		{
@@ -428,13 +424,11 @@ namespace game
 				_threadPool.Stop();
 			}
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_LIGHTING:
 		{
 			_enableLighting = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_LIGHTING_TYPE:
 		{
@@ -443,19 +437,16 @@ namespace game
 
 			_lightingType = (LightingType)value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_TEXTURE:
 		{
 			_enableTexturing = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_ALPHA_TEST:
 		{
 			_enableAlphaTest = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_ALPHA_TEST_VALUE:
 		{
@@ -463,19 +454,16 @@ namespace game
 			if (value > 255) return false;
 			_alphaTestValue = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_BACKFACECULL:
 		{
 			_enableBackFaceCulling = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_DEPTH_WRITE:
 		{
 			_enableDepthWrite = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_SORT:
 		{
@@ -484,36 +472,30 @@ namespace game
 
 			_sortType = (SortingType)value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_ALPHA_BLEND:
 		{
 			_enableAlphaBlend = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_COLOR_TINTING:
 		{
 			_enableColorTinting = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_WIREFRAME_COLOR:
 		{
 			_wireFrameColor = value;
 			return true;
-			break;
 		}
 		case GAME_SOFTWARE3D_WIREFRAME_THICKNESS:
 		{
 			_wireFrameThicknessSquared = (float_t)(value * value);
 			return true;
-			break;
 		}
 		default: 
 		{
 			return false;
-			break;
 		}
 		}
 	}
@@ -664,8 +646,6 @@ namespace game
 
 	inline void Software3D::TriangleBoundingBox(Triangle& tri) const noexcept
 	{
-		//Recti boundingBox;
-
 		float_t sx1 = (tri.vertices[0].x);
 		float_t sx2 = (tri.vertices[1].x);
 		float_t sx3 = (tri.vertices[2].x);
@@ -677,8 +657,6 @@ namespace game
 		tri.boundingBox.bottom = (int32_t)(sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3));
 		tri.boundingBox.left = (int32_t)(sx1 < sx2 ? (sx1 < sx3 ? sx1 : sx3) : (sx2 < sx3 ? sx2 : sx3));
 		tri.boundingBox.top = (int32_t)(sy1 < sy2 ? (sy1 < sy3 ? sy1 : sy3) : (sy2 < sy3 ? sy2 : sy3));
-
-		//return boundingBox;
 	}
 
 	template<bool renderWireFrame, bool filled, bool lighting, bool textured>
@@ -705,7 +683,7 @@ namespace game
 			aColorParam.Set(triangle.color[0].af * oneOverW.x, triangle.color[1].af * oneOverW.y, triangle.color[2].af * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		}
 
-		// Depth parameter
+		// Depth parameter 
 		float_t oneOverDepthEval(0.0f);
 		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
@@ -1072,10 +1050,10 @@ namespace game
 						{
 							dest = *colorBuffer;
 							// extract dest						
-							rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
-							gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
-							bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
-							aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							rDest = ((dest >> 0) & 0xFF) * (1.0f / 255.0f);
+							gDest = ((dest >> 8) & 0xFF) * (1.0f / 255.0f);
+							bDest = ((dest >> 16) & 0xFF) * (1.0f / 255.0f);
+							aDest = ((dest >> 24) & 0xFF) * (1.0f / 255.0f);
 							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
@@ -1154,10 +1132,10 @@ namespace game
 							}
 						}
 
-						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * colorAtPixel.oneOver255;
-						gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * colorAtPixel.oneOver255;
-						bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * colorAtPixel.oneOver255;
-						aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * colorAtPixel.oneOver255;
+						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * (1.0f / 255.0f);
+						gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * (1.0f / 255.0f);
+						bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * (1.0f / 255.0f);
+						aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * (1.0f / 255.0f);
 
 
 						if (_enableColorTinting)
@@ -1181,10 +1159,10 @@ namespace game
 						{
 							dest = *colorBuffer;
 							// extract dest
-							rDest = ((dest >> 0) & 0xFF) * colorAtPixel.oneOver255;
-							gDest = ((dest >> 8) & 0xFF) * colorAtPixel.oneOver255;
-							bDest = ((dest >> 16) & 0xFF) * colorAtPixel.oneOver255;
-							aDest = ((dest >> 24) & 0xFF) * colorAtPixel.oneOver255;
+							rDest = ((dest >> 0) & 0xFF) * (1.0f / 255.0f);
+							gDest = ((dest >> 8) & 0xFF) * (1.0f / 255.0f);
+							bDest = ((dest >> 16) & 0xFF) * (1.0f / 255.0f);
+							aDest = ((dest >> 24) & 0xFF) * (1.0f / 255.0f);
 
 							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
