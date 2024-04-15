@@ -48,7 +48,7 @@ namespace game
 				delete random;
 			}
 		}
-		void Initialize(const uint32_t numParticles, const Vector3f& position) noexcept
+		void Initialize(const uint32_t numParticles, const Vector3f& __restrict position) noexcept
 		{
 			numberOfParticles = numParticles;
 			mesh.centerPoint = position; // Probably not needed

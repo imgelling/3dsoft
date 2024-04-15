@@ -395,7 +395,7 @@ public:
 				depth += 1.0f;  // 1 added because z becomes < 1.0f near camera and makes depth > 1.0 making colors
 								// go all weird
 				depth = 1.0f/depth;
-				dColor.Set(1.0f * depth, 1.0f * depth, 1.0f * depth, 1.0f);
+				dColor.Set(depth, depth, depth, 1.0f);
 				*vbuffer = dColor.packedABGR;
 				vbuffer++;
 			}

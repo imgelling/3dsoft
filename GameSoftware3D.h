@@ -536,6 +536,7 @@ namespace game
 		SetTexture(mesh.texture);
 		uint64_t fenceCount = {};
 
+		// needs to sort length(cam.pos - vertex) 
 		auto backToFront = [](const game::Triangle& a, const game::Triangle& b)
 			{
 				float_t az = a.vertices[0].z + a.vertices[1].z + a.vertices[2].z;

@@ -80,7 +80,7 @@ namespace game
 		float_t c;
 		bool fillRule;
 		EdgeEquation() { a = (0.0f); b = (0.0f); c = (0.0f); fillRule = (false);}
-		EdgeEquation(const game::Vector3f& v0, const game::Vector3f& v1)
+		EdgeEquation(const game::Vector3f& __restrict v0, const game::Vector3f& __restrict v1)
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
@@ -88,7 +88,7 @@ namespace game
 			fillRule = a != 0 ? a > 0 : b > 0;
 		}
 
-		inline void Set(const game::Vector3f& v0, const game::Vector3f& v1)
+		inline void Set(const game::Vector3f& __restrict v0, const game::Vector3f& __restrict v1)
 		{
 			a = v0.y - v1.y;
 			b = v1.x - v0.x;
