@@ -259,7 +259,7 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 0);
-			clip.SetNumberOfClipsRects(16);
+			clip.SetNumberOfClipsRects(24);
 			clip.GenerateClips(resolution);
 		}
 

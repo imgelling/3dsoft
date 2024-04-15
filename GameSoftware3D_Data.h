@@ -102,7 +102,7 @@ namespace game
 			return a * x + b * y + c;
 		}
 
-		inline void evaluate(float_t x, float_t y, float &out) const noexcept
+		inline void evaluate(const float_t x, const float_t y, float &out) const noexcept
 		{
 			out = a * x + b * y + c;
 		}
