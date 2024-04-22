@@ -154,6 +154,7 @@ namespace game
 	{
 		uint32_t* data = nullptr;
 		Pointi size;
+		Pointf sizeMinusOne;
 	};
 #pragma pack(pop)
 

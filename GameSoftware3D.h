@@ -177,6 +177,8 @@ namespace game
 		temp.data = target.colorBuffer;
 		temp.size.width = target.size.width;
 		temp.size.height = target.size.height;
+		temp.sizeMinusOne.width = (float_t)temp.size.width - 1.05f;  // needs to match create texture
+		temp.sizeMinusOne.height = (float_t)temp.size.height - 1.05f;
 		//temp.oneOverSize.width = 1.0f / (float_t)target.size.width;
 		//temp.oneOverSize.height = 1.0f / (float_t)target.size.height;
 		_currentTexture = temp;
@@ -206,8 +208,8 @@ namespace game
 		}
 		texture.size.width = width;
 		texture.size.height = height;
-		//texture.oneOverSize.width = 1.0f / width;
-		//texture.oneOverSize.height = 1.0f / height;
+		texture.sizeMinusOne.width  = (float_t)width - 1.05f;
+		texture.sizeMinusOne.height = (float_t)height - 1.05f;
 		return true;
 	}
 
@@ -550,7 +552,8 @@ namespace game
 				return az < bz;
 			};
 
-		for (uint32_t c = 0; c < clip.numberOfClipRects; c++)
+		const uint32_t num = clip.numberOfClipRects;
+		for (uint32_t c = 0; c < num; c++)
 		{
 			ScreenClip(_trianglesToRender, clip, c);
 			if (!clip.clippedTris[c].size()) continue;
@@ -636,7 +639,7 @@ namespace game
 			}
 		}
 
-		uint64_t trisSize = tris.size();
+		const uint64_t trisSize = tris.size();
 		for (uint32_t triangleCount = 0; triangleCount < trisSize; ++triangleCount)
 		{
 				renderer(std::cref(tris[triangleCount]));
@@ -891,8 +894,7 @@ namespace game
 					depthParam.evaluate(pixelOffset.x, pixelOffset.y, dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
-				if (oneOverDepthEval-0.00001f < *depthBufferPtr)
-				//if (oneOverDepthEval < *depthBufferPtr)
+				if (oneOverDepthEval < *depthBufferPtr)
 				{
 					if (textured)
 					{
@@ -1087,14 +1089,22 @@ namespace game
 						// calculate texture lookup
 						upDiv = min(upDiv, 1.0f); //clamp
 						vpDiv = min(vpDiv, 1.0f); //clamp
-						upDiv = max(upDiv, 0.0f);  // something is causing a negative value
-						vpDiv = max(vpDiv, 0.0f);  // so these are here
-						tx = max((uint32_t)(upDiv * (_currentTexture.size.width - 1) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-						ty = max((uint32_t)(vpDiv * (_currentTexture.size.height - 1) + 0.5f), 0);
+
+						//upDiv = max(upDiv, 0.0f);  // something is causing a negative value
+						//vpDiv = max(vpDiv, 0.0f);  // so these are here
+
+						tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+						ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
 						colorAtPixel.packedABGR = _currentTexture.data[ty * _currentTexture.size.width + tx];
+
+						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * (1.0f / 255.0f);
+						gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * (1.0f / 255.0f);
+						bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * (1.0f / 255.0f);
+						aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * (1.0f / 255.0f);
+
 						if (_enableAlphaTest)
 						{							
-							if (((colorAtPixel.packedABGR >> 24) & 0xFF) < _alphaTestValue)
+							if (aSource * 255 < _alphaTestValue)
 							{
 								++colorBuffer;
 								++depthBufferPtr;
@@ -1130,22 +1140,17 @@ namespace game
 								bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
 								aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
 							}
-						}
-
-						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * (1.0f / 255.0f);
-						gSource = ((colorAtPixel.packedABGR >> 8) & 0xFF) * (1.0f / 255.0f);
-						bSource = ((colorAtPixel.packedABGR >> 16) & 0xFF) * (1.0f / 255.0f);
-						aSource = ((colorAtPixel.packedABGR >> 24) & 0xFF) * (1.0f / 255.0f);
-
-
-						if (_enableColorTinting)
-						{
 							// Apply color tint
 							rSource = ((rSource * min(rEval * oneOverDepthEval, 1.0f)));
 							gSource = ((gSource * min(gEval * oneOverDepthEval, 1.0f)));
 							bSource = ((bSource * min(bEval * oneOverDepthEval, 1.0f)));
 							aSource = ((aSource * min(aEval * oneOverDepthEval, 1.0f)));
 						}
+
+						//if (_enableColorTinting)
+						//{
+
+						//}
 
 						// texture lighting
 						if (lighting)
@@ -1210,7 +1215,7 @@ namespace game
 	{
 		clip.clippedTris[index].clear();
 		Triangle outTri;
-		uint64_t inSize = in.size();
+		const uint64_t inSize = in.size();
 		for (uint32_t tri = 0; tri < inSize; ++tri)
 		{
 			//Triangle outTri(in[tri]);
@@ -1299,7 +1304,7 @@ namespace game
 
 	void ConvertBlenderToThis(game::Mesh& mesh)
 	{
-		uint32_t meshSize = (uint32_t)mesh.tris.size();
+		const uint32_t meshSize = (uint32_t)mesh.tris.size();
 		for (uint32_t tri = 0; tri < meshSize; tri++)
 		{
 			std::swap(mesh.tris[tri].vertices[0].y, mesh.tris[tri].vertices[0].z);
