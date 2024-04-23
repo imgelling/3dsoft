@@ -7,6 +7,38 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
+class Lights : public game::EmitterBase
+{
+public:
+	void InitializeLights(const uint32_t numLights)
+	{
+		numberOfParticles = numLights;
+
+		Initialize(numLights, { 0,0,0 });
+		for (uint32_t light = 0; light < numberOfParticles; light++)
+		{
+			particles[light].size = { 1.0f, 1.0f };
+			particles[light].position = { 0.0f,0.0f,-2.0f };
+			particles[light].alive = true;
+		}
+	}
+	void Update()
+	{
+		particlesAlive = 0;
+		if (particles.size())
+		{
+			for (uint32_t light = 0; light < numberOfParticles; light++)
+			{
+				particles[light].size = { 1.0f, 1.0f };
+				particles[light].position = { 0.0f,0.0f, 0.9f };
+				particles[light].alive = true;
+				particles[light].color = game::Colors::White;
+				particlesAlive++;
+			}
+		}
+	}
+};
+
 
 class Game : public game::Engine
 {
@@ -26,6 +58,7 @@ public:
 	//game::Mesh plane;
 	//game::Mesh alphaCube;
 	game::Mesh model;
+	Lights lights;
 	//game::Mesh torus;
 	//game::Mesh sky;
 
@@ -65,7 +98,7 @@ public:
 		//GenerateClips(numclips, clip, resolution);
 		clip.SetNumberOfClipsRects(24);
 		clip.GenerateClips(resolution);
-
+		lights.InitializeLights(1);
 	}
 
 	void LoadContent()
@@ -86,7 +119,7 @@ public:
 		{
 			std::cout << "Could not load model\n";
 		}
-
+		
 		//if (!LoadObj("Content/torus2.obj", torus))
 		//{
 		//	std::cout << "Could not load model\n";
@@ -112,6 +145,7 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
+		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
 
 		//game::Random rnd;
 		//rnd.NewSeed();
@@ -217,6 +251,7 @@ public:
 		//software3D.DeleteRenderTarget(renderTarget);
 		//software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(model.texture);
+		software3D.DeleteTexture(lights.mesh.texture);
 		//software3D.DeleteTexture(alphaCube.texture);
 		//software3D.DeleteTexture(fire.mesh.texture);
 	}
@@ -379,7 +414,22 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
-		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);
+		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
+
+
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+
+		lights.Update();
+		lights.GeneratePointSpriteMatrix(camera);
+		lights.GenerateQuads();
+		software3D.RenderMesh(lights.mesh, lights.particlesAlive << 1, mvpMat, camera, clip);
 
 		// show depth buffer
 		if (geKeyboard.IsKeyHeld(geK_SPACE))

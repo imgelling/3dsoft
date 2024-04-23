@@ -267,6 +267,8 @@ namespace game
 				memcpy(texture.data, temp, (size_t)texw * texh * 4);
 				texture.size.width = texw;
 				texture.size.height = texh;
+				texture.sizeMinusOne.width = (float_t)texture.size.width - 1.05f;  // needs to match create texture
+				texture.sizeMinusOne.height = (float_t)texture.size.height - 1.05f;
 			}
 		}
 		return true;
