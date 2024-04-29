@@ -7,9 +7,11 @@
 #include "game.h"
 #include "GameSoftware3D.h"
 
+
 class Lights : public game::EmitterBase
 {
 public:
+	std::vector<game::Light> lights;
 	void InitializeLights(const uint32_t numLights)
 	{
 		numberOfParticles = numLights;
@@ -18,8 +20,14 @@ public:
 		for (uint32_t light = 0; light < numberOfParticles; light++)
 		{
 			particles[light].size = { 1.0f, 1.0f };
-			particles[light].position = { 0.0f,0.0f,-2.0f };
+			particles[light].position = { 0.0f,0.0f, 0.9f};
+			particles[light].position.w = 0;
 			particles[light].alive = true;
+			game::Light pointLight;
+			pointLight.diffuse = { 1.0f, 0.0f, 0.0f, 1.0f };
+			pointLight.position = particles[light].position; // needs to be in camera/view space
+			pointLight.specular = { 0.0f, 1.0f, 0.0f, 1.0f };
+			lights.emplace_back(pointLight);
 		}
 	}
 	void Update()
@@ -29,9 +37,9 @@ public:
 		{
 			for (uint32_t light = 0; light < numberOfParticles; light++)
 			{
-				particles[light].size = { 1.0f, 1.0f };
-				particles[light].position = { 0.0f,0.0f, 0.9f };
-				particles[light].alive = true;
+				//particles[light].size = { 1.0f, 1.0f };
+				//particles[light].position = { 0.0f,0.0f, 0.9f };
+				//particles[light].alive = true;
 				particles[light].color = game::Colors::White;
 				particlesAlive++;
 			}
@@ -423,7 +431,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 
 		lights.Update();

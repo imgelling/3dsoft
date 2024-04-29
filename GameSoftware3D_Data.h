@@ -18,6 +18,7 @@ namespace game
 	{
 		Face,
 		Vertex,
+		Point,
 		Depth
 	};
 
@@ -27,8 +28,6 @@ namespace game
 		BackToFront,
 		NoSort
 	};
-
-
 
 	static FillMode& operator++ (FillMode& rmode, int32_t)
 	{
@@ -56,6 +55,7 @@ namespace game
 		{
 		case LightingType::Face: return stream << "Face Lighting";
 		case LightingType::Vertex: return stream << "Vertex Lighting";
+		case LightingType::Point: return stream << "Point Lighting";
 		case LightingType::Depth: return stream << "Depth Lighting";
 		default: return stream << "Unknown lighting type";
 		}
@@ -70,6 +70,15 @@ namespace game
 		default: return stream << "Unknown lighting type";
 		}
 	}
+
+#pragma pack(push,16)
+	struct Light
+	{
+		Vector3f position;
+		Color diffuse;
+		Color specular;
+	};
+#pragma pack(pop)
 
 #pragma pack(push,16)
 	class EdgeEquation 
@@ -135,7 +144,6 @@ namespace game
 		Vector3f normals[3];
 		Vector2f uvs[3];
 
-		// Pre calc in clip
 		EdgeEquation edge0;
 		EdgeEquation edge1;
 		EdgeEquation edge2;
