@@ -761,8 +761,14 @@ namespace game
 			denominator[2] = 1.0f / (xx[2] * xx[2] + yy[2] * yy[2]);
 		}
 
-		uint32_t* colorBuffer = _currentRenderTarget.colorBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
-		float_t* depthBufferPtr = _currentRenderTarget.depthBuffer + (triangle.boundingBox.top * videoBufferStride + triangle.boundingBox.left);
+		const int32_t bbtop = triangle.boundingBox.top;
+		const int32_t bbbot = triangle.boundingBox.bottom;
+
+		const int32_t bbleft = triangle.boundingBox.left;
+		const int32_t bbright = triangle.boundingBox.right;
+
+		uint32_t* colorBuffer = _currentRenderTarget.colorBuffer + (bbtop * videoBufferStride + bbleft);
+		float_t* depthBufferPtr = _currentRenderTarget.depthBuffer + (bbtop * videoBufferStride + bbleft);
 		uint32_t xLoopCount = {};
 
 		// test
@@ -808,9 +814,10 @@ namespace game
 		float_t e2 = {};
 		uint32_t firstTestOfLine(1);
 
-		pixelOffset.y = (float_t)triangle.boundingBox.top - 0.5f;
-		
-		for (int32_t j = triangle.boundingBox.top; j <= triangle.boundingBox.bottom; ++j)
+
+
+		pixelOffset.y = (float_t)bbtop - 0.5f;
+		for (int32_t j = bbtop; j <= bbbot; ++j)
 		{
 			xLoopCount = {};
 			pixelOffset.y += 1;
@@ -823,8 +830,8 @@ namespace game
 			foundTriangle = {};
 
 			firstTestOfLine = 1;
-			pixelOffset.x = (float_t)triangle.boundingBox.left - 0.5f;
-			for (int32_t i = triangle.boundingBox.left; i <= triangle.boundingBox.right; ++i)
+			pixelOffset.x = (float_t)bbleft - 0.5f;
+			for (int32_t i = bbleft; i <= bbright; ++i)
 			{
 				++xLoopCount;
 				pixelOffset.x += 1;// = i + 0.5f;
@@ -1149,10 +1156,6 @@ namespace game
 							aSource = ((aSource * min(aEval * oneOverDepthEval, 1.0f)));
 						}
 
-						//if (_enableColorTinting)
-						//{
-
-						//}
 
 						// texture lighting
 						if (lighting)
