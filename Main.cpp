@@ -69,6 +69,7 @@ public:
 	Lights lights;
 	//game::Mesh torus;
 	//game::Mesh sky;
+	game::Mesh text;
 
 
 	//std::vector<game::Triangle> trianglesToRender;
@@ -252,6 +253,9 @@ public:
 
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
+
+		// Text stuff
+		geKeyboard.SetTextInputText("3D text");
 	}
 
 	void Shutdown()
@@ -306,46 +310,49 @@ public:
 			clip.GenerateClips(resolution);
 		}
 
-		float_t speed = 5.0f * msElapsed / 1000.0f;
-		if (geKeyboard.IsKeyHeld(geK_SHIFT))
+		if (!geKeyboard.IsTextInput())
 		{
-			speed = 0.1f * msElapsed / 1000.0f;
-		}
+			float_t speed = 5.0f * msElapsed / 1000.0f;
+			if (geKeyboard.IsKeyHeld(geK_SHIFT))
+			{
+				speed = 0.1f * msElapsed / 1000.0f;
+			}
 
-		// Move forward
-		if (geKeyboard.IsKeyHeld(geK_W))
-		{
-			camera.position += (camera.forward * speed);
-		}
+			// Move forward
+			if (geKeyboard.IsKeyHeld(geK_W))
+			{
+				camera.position += (camera.forward * speed);
+			}
 
-		// Move backward
-		if (geKeyboard.IsKeyHeld(geK_S))
-		{
-			camera.position -= (camera.forward * speed);
-		}
+			// Move backward
+			if (geKeyboard.IsKeyHeld(geK_S))
+			{
+				camera.position -= (camera.forward * speed);
+			}
 
-		// strafe left
-		if (geKeyboard.IsKeyHeld(geK_A))
-		{
-			camera.position -= camera.right * speed;
-		}
+			// strafe left
+			if (geKeyboard.IsKeyHeld(geK_A))
+			{
+				camera.position -= camera.right * speed;
+			}
 
-		// strafe right
-		if (geKeyboard.IsKeyHeld(geK_D))
-		{
-			camera.position += camera.right * speed;
-		}
+			// strafe right
+			if (geKeyboard.IsKeyHeld(geK_D))
+			{
+				camera.position += camera.right * speed;
+			}
 
-		// y is inverted because.... we are in Q4
-		if (geKeyboard.IsKeyHeld(geK_UP))
-		{
-			camera.position.y -= speed;
-		}
+			// y is inverted because.... we are in Q4
+			if (geKeyboard.IsKeyHeld(geK_UP))
+			{
+				camera.position.y -= speed;
+			}
 
-		// move actually down
-		if (geKeyboard.IsKeyHeld(geK_DOWN))
-		{
-			camera.position.y += speed;
+			// move actually down
+			if (geKeyboard.IsKeyHeld(geK_DOWN))
+			{
+				camera.position.y += speed;
+			}
 		}
 
 		// Mouse look
@@ -377,16 +384,118 @@ public:
 		{
 			showText = !showText;
 		}
+
+		if (geKeyboard.WasKeyPressed(geK_F8))
+		{
+			geKeyboard.TextInputMode(true);
+		}
+
+		if (geKeyboard.WasKeyPressed(geK_F9))
+		{
+			geKeyboard.TextInputMode(false);
+		}
 	}	
 
+	void GenerateTextMesh(game::Mesh& mesh, std::string text, const float_t depth)
+	{
+		float_t px = 0;// x;
+		float_t py = 0;// y;
+		int32_t ox = 0;
+		int32_t oy = 0;
+		mesh.tris.clear();
+		for (uint8_t letter : text)
+		{
+			ox = (letter - 32) % 16;
+			oy = (letter - 32) / 16;
+			for (int32_t i = 0; i < 8; i++)
+			{
+				for (int32_t j = 0; j < 8; j++)
+				{
+					if (pixelMode._fontROM[(j + oy * 8) * 128 + (i + ox * 8)] > 0)
+					{
+						//Pixel(px + i, py + j, color);
+						float_t z = 0.0f;
+						float_t size = 0.5f;
+						game::Triangle topLeftTri;
+						game::Triangle bottomRightTri;
+
+						// tl
+						topLeftTri.vertices[0].x = -size + px + i;
+						topLeftTri.vertices[0].y = -size + py + j;
+						topLeftTri.vertices[0].z = z;
+						topLeftTri.color[0] = game::Colors::Red;
+						topLeftTri.uvs[0].u = 0.0f;
+						topLeftTri.uvs[0].v = 0.0f;
+						topLeftTri.faceNormal.x = 0.0f;
+						topLeftTri.faceNormal.y = 0.0f;
+						topLeftTri.faceNormal.z = -1.0f;
+
+
+						// tr
+						topLeftTri.vertices[1].x = size + px + i;
+						topLeftTri.vertices[1].y = -size + py + j;
+						topLeftTri.vertices[1].z = z;
+						topLeftTri.uvs[1].u = 1.0f;
+						topLeftTri.uvs[1].v = 0.0f;
+						topLeftTri.color[1] = game::Colors::Green;
+
+						// bl
+						topLeftTri.vertices[2].x = -size + px + i;
+						topLeftTri.vertices[2].y = size + py + j;
+						topLeftTri.vertices[2].z = z;
+						topLeftTri.uvs[2].u = 0.0f;
+						topLeftTri.uvs[2].v = 1.0f;
+						topLeftTri.color[2] = game::Colors::Blue;
+
+						// tr
+						bottomRightTri.vertices[0].x = size + px + i;
+						bottomRightTri.vertices[0].y = -size + py + j;
+						bottomRightTri.vertices[0].z = z;
+						bottomRightTri.color[0] = game::Colors::Green;
+						bottomRightTri.uvs[0].u = 1.0f;
+						bottomRightTri.uvs[0].v = 0.0f;
+						bottomRightTri.faceNormal.x = 0.0f;
+						bottomRightTri.faceNormal.y = 0.0f;
+						bottomRightTri.faceNormal.z = -1.0f;
+
+						// br
+						bottomRightTri.vertices[1].x = size + px + i;
+						bottomRightTri.vertices[1].y = size + py + j;
+						bottomRightTri.vertices[1].z = z;
+						bottomRightTri.uvs[1].u = 1.0f;
+						bottomRightTri.uvs[1].v = 1.0f;
+						bottomRightTri.color[1] = game::Colors::White;
+
+						// bl
+						bottomRightTri.vertices[2].x = -size + px + i;
+						bottomRightTri.vertices[2].y = size + py + j;
+						bottomRightTri.vertices[2].z = z;
+						bottomRightTri.uvs[2].u = 0.0f;
+						bottomRightTri.uvs[2].v = 1.0f;
+						bottomRightTri.color[2] = game::Colors::Blue;
+
+						for (uint32_t i = 0; i < 3; i++)
+						{
+							topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
+							bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
+						}
+						mesh.tris.emplace_back(topLeftTri);
+						mesh.tris.emplace_back(bottomRightTri);
+					}
+				}
+			}
+			px += 8;
+		}
+	}
 
 
 	void Render(const float_t msElapsed)
 	{
-		//static float_t rotation = 0.0f;
+		static float_t rotation = 0.0f;
 		//static float_t pos = 0.0f;
 
-		//rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+
 		//pos += 0.5f * (msElapsed / 1000.0f);
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
@@ -413,16 +522,22 @@ public:
 		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
 		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
-		software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), 1.0f);
+		text.SetScale(0.05f, 0.05f, 0.05f);
+		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
+		//text.SetRotation(0, rotation - 3.14159f, rotation);
+
+		software3D.RenderMesh(text, text.tris.size(), mvpMat, camera, clip);
 
 
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
@@ -434,13 +549,13 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 
-		lights.Update();
-		lights.GeneratePointSpriteMatrix(camera);
-		lights.GenerateQuads();
-		software3D.RenderMesh(lights.mesh, lights.particlesAlive << 1, mvpMat, camera, clip);
+		//lights.Update();
+		//lights.GeneratePointSpriteMatrix(camera);
+		//lights.GenerateQuads();
+		//software3D.RenderMesh(lights.mesh, lights.particlesAlive << 1, mvpMat, camera, clip);
 
 		// show depth buffer
-		if (geKeyboard.IsKeyHeld(geK_SPACE))
+		if (!geKeyboard.IsTextInput() && geKeyboard.IsKeyHeld(geK_SPACE))
 		{
 			game::Color dColor;
 			float_t depth = 0.0f;
@@ -479,6 +594,14 @@ public:
 			ss << "Fill Mode: " << state;
 			pixelMode.Text(ss.str(), 0, 20, game::Colors::Magenta, 1);
 			pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Magenta, 1);
+			if (geKeyboard.IsTextInput())
+			{
+				pixelMode.Text("Text Input Mode: True", 0, 50, game::Colors::Magenta, 2);
+			}
+			else
+			{
+				pixelMode.Text("Text Input Mode: False", 0, 50, game::Colors::Magenta, 2);
+			}
 		}
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))
