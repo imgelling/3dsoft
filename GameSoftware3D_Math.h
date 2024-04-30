@@ -218,7 +218,7 @@ namespace game
 	// From OLC PGE, https://github.com/OneLoneCoder/olcPixelGameEngine
 	inline uint32_t ClipAgainstNearZ(Triangle& __restrict in_tri, Triangle& out_tri1, Triangle& out_tri2) noexcept
 	{
-		game::Vector3f planePoint(0.0f, 0.0f, 0.0f);
+		game::Vector3f planePoint(0.0f, 0.0f, -0.1f); // was changed from 0.0f
 		game::Vector3f planeNormal(0.0f, 0.0f, 1.0f);
 		float_t planeNormalDotPoint = planeNormal.Dot(planePoint);
 

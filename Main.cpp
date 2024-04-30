@@ -231,7 +231,7 @@ public:
 
 		// Preset some world stuff
 		camera.position.z = -1.0f;
-		camera.position.y = -0.2f;
+		camera.position.y = 0;
 
 		//plane.SetRotation(-3.14159f / 2.0f, 0, 0);
 		//plane.SetTranslation(0.0f, 0.1f, 0.0f);
@@ -396,79 +396,87 @@ public:
 		}
 	}	
 
-	void GenerateTextMesh(game::Mesh& mesh, std::string text, const float_t depth)
+	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const float_t depth, const game::Pointf& __restrict pos, const bool centerX, const bool centerY, float_t value)
 	{
-		float_t px = 0;// x;
-		float_t py = 0;// y;
+		//static std::string oldText;
+		//if (oldText == text) return;
+		//oldText = text;
+		float_t px = pos.x; 
+		float_t py = pos.y;
+		if (centerX)
+		{
+			px -= (float_t)(text.length() << 2);
+		}
+		if (centerY)
+		{
+			py -= 4.0f;
+		}
 		int32_t ox = 0;
 		int32_t oy = 0;
+		const float_t z = 0.0f;
+		const float_t size = 0.5f;
+		const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
 		mesh.tris.clear();
 		for (uint8_t letter : text)
 		{
 			ox = (letter - 32) % 16;
-			oy = (letter - 32) / 16;
+			oy = (letter - 32) >> 4;
 			for (int32_t i = 0; i < 8; i++)
 			{
 				for (int32_t j = 0; j < 8; j++)
 				{
-					if (pixelMode._fontROM[(j + oy * 8) * 128 + (i + ox * 8)] > 0)
+					if (pixelMode._fontROM[((j + (oy << 3)) << 7) + (i + (ox << 3))] > 0)
 					{
-						//Pixel(px + i, py + j, color);
-						float_t z = 0.0f;
-						float_t size = 0.5f;
 						game::Triangle topLeftTri;
 						game::Triangle bottomRightTri;
+						const float_t pxi = px + i;
+						const float_t pyj = py + j;
 
 						// tl
-						topLeftTri.vertices[0].x = -size + px + i;
-						topLeftTri.vertices[0].y = -size + py + j;
+						topLeftTri.vertices[0].x = -size + pxi;
+						topLeftTri.vertices[0].y = -size + pyj;
 						topLeftTri.vertices[0].z = z;
 						topLeftTri.color[0] = game::Colors::Red;
 						topLeftTri.uvs[0].u = 0.0f;
 						topLeftTri.uvs[0].v = 0.0f;
-						topLeftTri.faceNormal.x = 0.0f;
-						topLeftTri.faceNormal.y = 0.0f;
-						topLeftTri.faceNormal.z = -1.0f;
-
+						topLeftTri.faceNormal = normal;
 
 						// tr
-						topLeftTri.vertices[1].x = size + px + i;
-						topLeftTri.vertices[1].y = -size + py + j;
+						topLeftTri.vertices[1].x = size + pxi;
+						topLeftTri.vertices[1].y = -size + pyj;
 						topLeftTri.vertices[1].z = z;
 						topLeftTri.uvs[1].u = 1.0f;
 						topLeftTri.uvs[1].v = 0.0f;
 						topLeftTri.color[1] = game::Colors::Green;
 
 						// bl
-						topLeftTri.vertices[2].x = -size + px + i;
-						topLeftTri.vertices[2].y = size + py + j;
+						topLeftTri.vertices[2].x = -size + pxi;
+						topLeftTri.vertices[2].y = size + pyj;
 						topLeftTri.vertices[2].z = z;
 						topLeftTri.uvs[2].u = 0.0f;
 						topLeftTri.uvs[2].v = 1.0f;
 						topLeftTri.color[2] = game::Colors::Blue;
 
 						// tr
-						bottomRightTri.vertices[0].x = size + px + i;
-						bottomRightTri.vertices[0].y = -size + py + j;
+						bottomRightTri.vertices[0].x = size + pxi;
+						bottomRightTri.vertices[0].y = -size + pyj;
 						bottomRightTri.vertices[0].z = z;
 						bottomRightTri.color[0] = game::Colors::Green;
 						bottomRightTri.uvs[0].u = 1.0f;
 						bottomRightTri.uvs[0].v = 0.0f;
-						bottomRightTri.faceNormal.x = 0.0f;
-						bottomRightTri.faceNormal.y = 0.0f;
-						bottomRightTri.faceNormal.z = -1.0f;
+						bottomRightTri.faceNormal = normal;
 
 						// br
-						bottomRightTri.vertices[1].x = size + px + i;
-						bottomRightTri.vertices[1].y = size + py + j;
+						bottomRightTri.vertices[1].x = size + pxi;
+						bottomRightTri.vertices[1].y = size + pyj;
 						bottomRightTri.vertices[1].z = z;
 						bottomRightTri.uvs[1].u = 1.0f;
 						bottomRightTri.uvs[1].v = 1.0f;
 						bottomRightTri.color[1] = game::Colors::White;
 
 						// bl
-						bottomRightTri.vertices[2].x = -size + px + i;
-						bottomRightTri.vertices[2].y = size + py + j;
+						bottomRightTri.vertices[2].x = -size + pxi;
+						bottomRightTri.vertices[2].y = size + pyj;
 						bottomRightTri.vertices[2].z = z;
 						bottomRightTri.uvs[2].u = 0.0f;
 						bottomRightTri.uvs[2].v = 1.0f;
@@ -476,9 +484,27 @@ public:
 
 						for (uint32_t i = 0; i < 3; i++)
 						{
-							topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
-							bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
+							topLeftTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
+							bottomRightTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
+							//topLeftTri.vertices[i] -= {px + i, py + j, 0};
+							//topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value);
+							//topLeftTri.vertices[i] += {px + i , py + j, 0};
+							//bottomRightTri.vertices[i] -= {px + i, py + j, 0};
+							//bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value);
+							//bottomRightTri.vertices[i] += {px + i, py + j, 0};
 						}
+						//for (uint32_t i = 0; i < 3; i++)
+						//{
+						//	topLeftTri.vertices[i] -= {px + i, py + j, 0};
+						//	bottomRightTri.vertices[i] -= {px + i, py + j, 0};
+						//}
+						//topLeftTri = game::RotateZ(topLeftTri, value);
+						//bottomRightTri = game::RotateZ(bottomRightTri, value);
+						//for (uint32_t i = 0; i < 3; i++)
+						//{
+						//	topLeftTri.vertices[i] += {px + i, py + j, 0};
+						//	bottomRightTri.vertices[i] += {px + i, py + j, 0};
+						//}
 						mesh.tris.emplace_back(topLeftTri);
 						mesh.tris.emplace_back(bottomRightTri);
 					}
@@ -492,11 +518,11 @@ public:
 	void Render(const float_t msElapsed)
 	{
 		static float_t rotation = 0.0f;
-		//static float_t pos = 0.0f;
+		static float_t pos = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 100.0f) * (msElapsed / 1000.0f);
 
-		//pos += 0.5f * (msElapsed / 1000.0f);
+		pos += 1.5f * (msElapsed / 1000.0f);
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
@@ -530,9 +556,9 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), 1.0f);
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), 1.0f, { 0,0 }, true, true, rotation);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
 		//text.SetRotation(0, rotation - 3.14159f, rotation);

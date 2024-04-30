@@ -1592,9 +1592,9 @@ namespace game
 			Vector3MultMatrix4x4(mesh.tris[i].normals[1], mesh.rotation, workingTriangle.normals[1]);
 			Vector3MultMatrix4x4(mesh.tris[i].normals[2], mesh.rotation, workingTriangle.normals[2]);
 
-			if ((workingTriangle.vertices[0].z < 0.0) ||
-				(workingTriangle.vertices[1].z < 0.0) ||
-				(workingTriangle.vertices[2].z < 0.0))
+			if ((workingTriangle.vertices[0].z < 0.1) ||
+				(workingTriangle.vertices[1].z < 0.1) ||
+				(workingTriangle.vertices[2].z < 0.1))
 			{
 				numberTrisGenerated = ClipAgainstNearZ(workingTriangle, newClippedTris[0], newClippedTris[1]);
 				for (uint32_t tri = 0; tri < numberTrisGenerated; ++tri)
