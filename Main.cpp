@@ -396,11 +396,8 @@ public:
 		}
 	}	
 
-	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const float_t depth, const game::Pointf& __restrict pos, const bool centerX, const bool centerY, float_t value)
+	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const float_t depth, const game::Pointf& __restrict pos, const bool centerX, const bool centerY, float_t value) const noexcept
 	{
-		//static std::string oldText;
-		//if (oldText == text) return;
-		//oldText = text;
 		float_t px = pos.x; 
 		float_t py = pos.y;
 		if (centerX)
