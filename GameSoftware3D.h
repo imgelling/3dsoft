@@ -1099,8 +1099,8 @@ namespace game
 						upDiv = min(upDiv, 1.0f); //clamp
 						vpDiv = min(vpDiv, 1.0f); //clamp
 
-						//upDiv = max(upDiv, 0.0f);  // something is causing a negative value
-						//vpDiv = max(vpDiv, 0.0f);  // so these are here
+						upDiv = max(upDiv, 0.0f);  // something is causing a negative value
+						vpDiv = max(vpDiv, 0.0f);  // so these are here
 
 						tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
 						ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);

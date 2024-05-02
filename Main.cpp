@@ -155,7 +155,7 @@ public:
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
-
+		text.texture = lights.mesh.texture;
 		//game::Random rnd;
 		//rnd.NewSeed();
 
@@ -397,11 +397,13 @@ public:
 	}	
 
 
-
+	// Generate plane, sphere, cubes
+	// Needs a data structure
+	
 	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const float_t depth, const game::Pointf& __restrict pos, const bool centerX, const bool centerY, float_t value) const noexcept
 	{
-		const float_t z = 0.0f;
-		const float_t size = 1.5f;
+		const float_t z = depth;
+		const float_t size = 0.5f;
 		const float_t sizeX2 = size * 2.0f;
 		const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
 		float_t px = pos.x; 
@@ -418,18 +420,20 @@ public:
 		int32_t oy = 0;
 
 		mesh.tris.clear();
+
+		game::Triangle topLeftTri;
+		game::Triangle bottomRightTri;
 		for (uint8_t letter : text)
 		{
 			ox = (letter - 32) % 16;
 			oy = (letter - 32) >> 4;
-			for (int32_t i = 0; i < 8; i++)
+			for (uint32_t i = 0; i < 8; i++)
 			{
-				for (int32_t j = 0; j < 8; j++)
+				for (uint32_t j = 0; j < 8; j++)
 				{
 					if (pixelMode._fontROM[((j + (oy << 3)) << 7) + (i + (ox << 3))] > 0)
 					{
-						game::Triangle topLeftTri;
-						game::Triangle bottomRightTri;
+
 						const float_t pxi = px + (i * sizeX2);
 						const float_t pyj = py + (j * sizeX2);
 
@@ -487,12 +491,16 @@ public:
 						{
 							topLeftTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
 							bottomRightTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
-							//topLeftTri.vertices[i] -= {px + i, py + j, 0};
-							//topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value);
-							//topLeftTri.vertices[i] += {px + i , py + j, 0};
-							//bottomRightTri.vertices[i] -= {px + i, py + j, 0};
-							//bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value);
-							//bottomRightTri.vertices[i] += {px + i, py + j, 0};
+							topLeftTri.vertices[i] -= {pxi, pyj, 0};
+							topLeftTri.vertices[i] = game::RotateX(topLeftTri.vertices[i], value);
+							topLeftTri.vertices[i] = game::RotateY(topLeftTri.vertices[i], -value);
+							topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value - 3.14159f);
+							topLeftTri.vertices[i] += {pxi , pyj, 0};
+							bottomRightTri.vertices[i] -= {pxi, pyj, 0};
+							bottomRightTri.vertices[i] = game::RotateX(bottomRightTri.vertices[i], value);
+							bottomRightTri.vertices[i] = game::RotateY(bottomRightTri.vertices[i], -value);
+							bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value - 3.14159f);
+							bottomRightTri.vertices[i] += {pxi, pyj, 0};
 						}
 						//for (uint32_t i = 0; i < 3; i++)
 						//{
@@ -521,7 +529,7 @@ public:
 		static float_t rotation = 0.0f;
 		static float_t pos = 0.0f;
 
-		rotation += (2 * 3.14f / 100.0f) * (msElapsed / 1000.0f);
+		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
 
 		pos += 1.5f * (msElapsed / 1000.0f);
 
@@ -552,14 +560,14 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
-		GenerateTextMesh(text, "FPS : " + std::to_string(geGetFramesPerSecond()), 1.0f, {0,0}, true, true, rotation);
+		GenerateTextMesh(text, "TEXT", 0.0f, {0,0}, true, true, rotation);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
 		//text.SetRotation(0, rotation - 3.14159f, rotation);
