@@ -396,23 +396,27 @@ public:
 		}
 	}	
 
+
+
 	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const float_t depth, const game::Pointf& __restrict pos, const bool centerX, const bool centerY, float_t value) const noexcept
 	{
+		const float_t z = 0.0f;
+		const float_t size = 1.5f;
+		const float_t sizeX2 = size * 2.0f;
+		const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
 		float_t px = pos.x; 
 		float_t py = pos.y;
 		if (centerX)
 		{
-			px -= (float_t)(text.length() << 2);
+			px -= (float_t)(text.length() << 2) * sizeX2;
 		}
 		if (centerY)
 		{
-			py -= 4.0f;
+			py -= 4.0f * sizeX2;
 		}
 		int32_t ox = 0;
 		int32_t oy = 0;
-		const float_t z = 0.0f;
-		const float_t size = 0.5f;
-		const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
+
 		mesh.tris.clear();
 		for (uint8_t letter : text)
 		{
@@ -426,8 +430,8 @@ public:
 					{
 						game::Triangle topLeftTri;
 						game::Triangle bottomRightTri;
-						const float_t pxi = px + i;
-						const float_t pyj = py + j;
+						const float_t pxi = px + (i * sizeX2);
+						const float_t pyj = py + (j * sizeX2);
 
 						// tl
 						topLeftTri.vertices[0].x = -size + pxi;
@@ -507,7 +511,7 @@ public:
 					}
 				}
 			}
-			px += 8;
+			px += 8 * sizeX2;
 		}
 	}
 
@@ -553,9 +557,9 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), 1.0f, { 0,0 }, true, true, rotation);
+		GenerateTextMesh(text, "FPS : " + std::to_string(geGetFramesPerSecond()), 1.0f, {0,0}, true, true, rotation);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
 		//text.SetRotation(0, rotation - 3.14159f, rotation);
