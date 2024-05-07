@@ -401,19 +401,17 @@ public:
 	// Needs a data structure
 
 
-	//const int stacks = 20; // Number of elevation divisions
-	//const int slices = 40; // Number of azimuth divisions
-
-	inline game::Vector3f GenerateFaceNormals(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
+	inline game::Vector3f GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
 	{
-		game::Vector3f AC = C - A; // Vector from A to B
-		game::Vector3f AB = B - A; // Vector from A to C
+		game::Vector3f AC = C - A; // Vector from A to C
+		game::Vector3f AB = B - A; // Vector from A to B
 		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
+		N.Normalize();
 		return N;
 	}
 
 	// Function to create a UV sphere
-	// Needs vertex normals (are the generated coords for vertices
+	// Needs vertex normals (are the generated coords for vertices -done
 	// needs uvs
 	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos) 
 	{
@@ -443,19 +441,19 @@ public:
 
 				// Calculate vertex positions for each quad				
 				v1.x = sinTheta1 * cosPhi1;
-				v1.z = sinTheta1 * sin(phi1);
+				v1.z = sinTheta1 * sinPhi1;
 				v1.y = cosTheta1;
 
-				v2.x = sinTheta1 * cos(phi2);
-				v2.z = sinTheta1 * sin(phi2);
+				v2.x = sinTheta1 * cosPhi2;
+				v2.z = sinTheta1 * sinPhi2;
 				v2.y = cosTheta1;
 
 				v3.x = sinTheta2 * cosPhi1;
-				v3.z = sinTheta2 * sin(phi1);
+				v3.z = sinTheta2 * sinPhi1;
 				v3.y = cosTheta2;
 
-				v4.x = sinTheta2 * cos(phi2);
-				v4.z = sinTheta2 * sin(phi2);
+				v4.x = sinTheta2 * cosPhi2;
+				v4.z = sinTheta2 * sinPhi2;
 				v4.y = cosTheta2;
 
 				game::Triangle tri;
@@ -474,8 +472,7 @@ public:
 				tri.normals[2] = v2;
 				tri.color[2] = game::Colors::White;
 
-				tri.faceNormal = GenerateFaceNormals(v1, v3, v2);
-				tri.faceNormal.Normalize();
+				tri.faceNormal = GenerateFaceNormal(v1, v3, v2);
 
 				mesh.tris.emplace_back(tri);
 
@@ -489,8 +486,7 @@ public:
 				tri.vertices[2] = v4 + pos;
 				tri.normals[2] = v4;
 
-				tri.faceNormal = GenerateFaceNormals(v2, v3, v4);
-				tri.faceNormal.Normalize();
+				tri.faceNormal = GenerateFaceNormal(v2, v3, v4);
 
 				mesh.tris.emplace_back(tri);
 
