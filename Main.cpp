@@ -409,7 +409,6 @@ public:
 		game::Vector3f AC = C - A; // Vector from A to B
 		game::Vector3f AB = B - A; // Vector from A to C
 		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
-		//N = N * -1.0f;
 		return N;
 	}
 
@@ -419,73 +418,80 @@ public:
 	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos) 
 	{
 		mesh.tris.clear();
-		float_t theta1 = 0;
-		float_t theta2 = 0;
-		float_t phi1 = 0;
-		float_t phi2 = 0;
 		game::Vector3f v1, v2, v3, v4;
+		const float_t invStacks = 1.0f / (float_t)stacks * 3.14159f;
+		const float_t invSlice = 1.0f / (float_t)slices * 2.0f * 3.14159f;
 
 		for (uint32_t t = 0; t < stacks; ++t) 
 		{
-			theta1 = static_cast<float>(t) / stacks * 3.14159f;
-			theta2 = static_cast<float>(t + 1) / stacks * 3.14159f;
+			const float_t theta1 = static_cast<float>(t) * invStacks;
+			const float_t theta2 = static_cast<float>(t + 1) * invStacks;
+			const float_t cosTheta1 = cos(theta1);
+			const float_t sinTheta1 = sin(theta1);
+			const float_t cosTheta2 = cos(theta2);
+			const float_t sinTheta2 = sin(theta2);
 
 			for (uint32_t p = 0; p < slices; ++p) 
 			{
-				phi1 = static_cast<float>(p) / slices * 2 * 3.14159f;
-				phi2 = static_cast<float>(p + 1) / slices * 2 * 3.14159f;
+				const float_t phi1 = static_cast<float>(p) * invSlice;
+				const float_t phi2 = static_cast<float>(p + 1) * invSlice;
+				const float_t cosPhi1 = cos(phi1);
+				const float_t sinPhi1 = sin(phi1);
+				const float_t cosPhi2 = cos(phi2);
+				const float_t sinPhi2 = sin(phi2);
 
-				// Calculate vertex positions (x, y, z) for each triangle
-				
-				v1.x = std::sin(theta1) * std::cos(phi1);
-				v1.z = std::sin(theta1) * std::sin(phi1);
-				v1.y = std::cos(theta1);
 
-				v2.x = std::sin(theta1) * std::cos(phi2);
-				v2.z = std::sin(theta1) * std::sin(phi2);
-				v2.y = std::cos(theta1);
+				// Calculate vertex positions for each quad				
+				v1.x = sinTheta1 * cosPhi1;
+				v1.z = sinTheta1 * sin(phi1);
+				v1.y = cosTheta1;
 
-				v3.x = std::sin(theta2) * std::cos(phi1);
-				v3.z = std::sin(theta2) * std::sin(phi1);
-				v3.y = std::cos(theta2);
+				v2.x = sinTheta1 * cos(phi2);
+				v2.z = sinTheta1 * sin(phi2);
+				v2.y = cosTheta1;
 
-				v4.x = std::sin(theta2) * std::cos(phi2);
-				v4.z = std::sin(theta2) * std::sin(phi2);
-				v4.y = std::cos(theta2);
+				v3.x = sinTheta2 * cosPhi1;
+				v3.z = sinTheta2 * sin(phi1);
+				v3.y = cosTheta2;
+
+				v4.x = sinTheta2 * cos(phi2);
+				v4.z = sinTheta2 * sin(phi2);
+				v4.y = cosTheta2;
 
 				game::Triangle tri;
-				//if (p % 2 == 1)
-				{
-					tri.vertices[0] = v1 + pos;
-					tri.color[0] = game::Colors::White;
 
-					tri.vertices[1] = v3 + pos;
-					tri.color[1] = game::Colors::White;
+				// First triangle of quad
 
-					tri.vertices[2] = v2 + pos;
-					tri.color[2] = game::Colors::White;
-				}
-				
-				tri.faceNormal = { 0,0,-1.0f };
+				tri.vertices[0] = v1 + pos;
+				tri.normals[0] = v1;
+				tri.color[0] = game::Colors::White;
+
+				tri.vertices[1] = v3 + pos;
+				tri.normals[1] = v3;
+				tri.color[1] = game::Colors::White;
+
+				tri.vertices[2] = v2 + pos;
+				tri.normals[2] = v2;
+				tri.color[2] = game::Colors::White;
+
 				tri.faceNormal = GenerateFaceNormals(v1, v3, v2);
 				tri.faceNormal.Normalize();
 
 				mesh.tris.emplace_back(tri);
 
-				{
-					tri.vertices[0] = v2 + pos;
-					//tri.color[0] = game::Colors::White;
+				// Second triangle of quad
+				tri.vertices[0] = v2 + pos;
+				tri.normals[0] = v2;
 
-					tri.vertices[1] = v3 + pos;
-					//tri.color[1] = game::Colors::White;
+				tri.vertices[1] = v3 + pos;
+				tri.normals[1] = v3;
 
-					tri.vertices[2] = v4 + pos;
-					//tri.color[2] = game::Colors::White;
-					tri.faceNormal = GenerateFaceNormals(v2, v3, v4);
-					tri.faceNormal.Normalize();
-				}
+				tri.vertices[2] = v4 + pos;
+				tri.normals[2] = v4;
 
-				//tri.faceNormal = { 0,0,-1.0f };
+				tri.faceNormal = GenerateFaceNormals(v2, v3, v4);
+				tri.faceNormal.Normalize();
+
 				mesh.tris.emplace_back(tri);
 
 			}
@@ -676,8 +682,8 @@ public:
 						const float_t pxi = px + (i * sizeX2);
 						const float_t pyj = py + (j * sizeX2);
 						const game::Vector3f p = { pxi, pyj, 0 };
-						GenerateCube(cube, size, p);
-						//GenerateUVSphere(cube, 10, 20,p);
+						//GenerateCube(cube, size, p);
+						GenerateUVSphere(cube, 5, 10,p);
 						for (int i = 0; i < cube.tris.size(); i++)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
@@ -803,7 +809,7 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
@@ -814,10 +820,11 @@ public:
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
 		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0,0, 0}, true, true, rotation);
+		//GenerateUVSphere(text, 10, 10, { 0,0,0 });
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
-		//text.SetRotation(0, rotation, 0);
+		text.SetRotation(0, rotation, 0);
 		//GenerateCube(text, 0.5f, { 0,0,0 });
 		//GenerateUVSphere(text, 20, 40);
 		software3D.RenderMesh(text, text.tris.size(), mvpMat, camera, clip);

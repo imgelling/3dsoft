@@ -698,7 +698,7 @@ namespace game
 		if (lighting)
 		{
 			//Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
-			lightNormal.Normalize();
+			//lightNormal.Normalize();
 			//faceNormal.Normalize();
 			if (_lightingType == LightingType::Face)
 			{
@@ -932,6 +932,7 @@ namespace game
 							{
 								vnx.stepX(nXEval);
 								vny.stepX(nYEval);
+								vnz.stepX(nZEval);
 							}
 						}
 						if (!textured || _enableColorTinting)
@@ -1010,7 +1011,8 @@ namespace game
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
 
 							luminance = -vertexNormalEval.Dot(lightNormal);
-							luminance = max(0.0f, luminance + 0.25f);// < 0.0f ? 0.0f : lum;
+							luminance += 0.25f; //ambient
+							luminance = max(0.25f, luminance);// < 0.0f ? 0.0f : lum;
 
 							luminance = min(luminance, 1.0f);
 						}
