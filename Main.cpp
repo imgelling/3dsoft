@@ -419,6 +419,12 @@ public:
 		game::Vector3f v1, v2, v3, v4;
 		const float_t invStacks = 1.0f / (float_t)stacks * 3.14159f;
 		const float_t invSlice = 1.0f / (float_t)slices * 2.0f * 3.14159f;
+		game::Triangle tri;
+
+		tri.color[0] = game::Colors::White;
+		tri.color[1] = game::Colors::White;
+		tri.color[2] = game::Colors::White;
+
 
 		for (uint32_t t = 0; t < stacks; ++t) 
 		{
@@ -456,21 +462,16 @@ public:
 				v4.z = sinTheta2 * sinPhi2;
 				v4.y = cosTheta2;
 
-				game::Triangle tri;
-
 				// First triangle of quad
 
 				tri.vertices[0] = v1 + pos;
 				tri.normals[0] = v1;
-				tri.color[0] = game::Colors::White;
 
 				tri.vertices[1] = v3 + pos;
 				tri.normals[1] = v3;
-				tri.color[1] = game::Colors::White;
 
 				tri.vertices[2] = v2 + pos;
 				tri.normals[2] = v2;
-				tri.color[2] = game::Colors::White;
 
 				tri.faceNormal = GenerateFaceNormal(v1, v3, v2);
 
