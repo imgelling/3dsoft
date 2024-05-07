@@ -81,6 +81,13 @@ namespace game
 #pragma pack(pop)
 
 #pragma pack(push,16)
+	struct GenerateTextDesc
+	{
+
+	};
+#pragma pack(pop)
+
+#pragma pack(push,16)
 	class EdgeEquation 
 	{
 	public:

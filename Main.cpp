@@ -155,7 +155,7 @@ public:
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
-		text.texture = lights.mesh.texture;
+		//text.texture = lights.mesh.texture;
 		//game::Random rnd;
 		//rnd.NewSeed();
 
@@ -397,12 +397,249 @@ public:
 	}	
 
 
-	// Generate plane, sphere, cubes
+	// Generate plane, sphere, cubes, points (particles/etc)
 	// Needs a data structure
-	
-	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const float_t depth, const game::Pointf& __restrict pos, const bool centerX, const bool centerY, float_t value) const noexcept
+
+
+	//const int stacks = 20; // Number of elevation divisions
+	//const int slices = 40; // Number of azimuth divisions
+
+	inline game::Vector3f GenerateFaceNormals(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
 	{
-		const float_t z = depth;
+		game::Vector3f AC = C - A; // Vector from A to B
+		game::Vector3f AB = B - A; // Vector from A to C
+		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
+		//N = N * -1.0f;
+		return N;
+	}
+
+	// Function to create a UV sphere
+	// Needs vertex normals (are the generated coords for vertices
+	// needs uvs
+	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos) 
+	{
+		mesh.tris.clear();
+		float_t theta1 = 0;
+		float_t theta2 = 0;
+		float_t phi1 = 0;
+		float_t phi2 = 0;
+		game::Vector3f v1, v2, v3, v4;
+
+		for (uint32_t t = 0; t < stacks; ++t) 
+		{
+			theta1 = static_cast<float>(t) / stacks * 3.14159f;
+			theta2 = static_cast<float>(t + 1) / stacks * 3.14159f;
+
+			for (uint32_t p = 0; p < slices; ++p) 
+			{
+				phi1 = static_cast<float>(p) / slices * 2 * 3.14159f;
+				phi2 = static_cast<float>(p + 1) / slices * 2 * 3.14159f;
+
+				// Calculate vertex positions (x, y, z) for each triangle
+				
+				v1.x = std::sin(theta1) * std::cos(phi1);
+				v1.z = std::sin(theta1) * std::sin(phi1);
+				v1.y = std::cos(theta1);
+
+				v2.x = std::sin(theta1) * std::cos(phi2);
+				v2.z = std::sin(theta1) * std::sin(phi2);
+				v2.y = std::cos(theta1);
+
+				v3.x = std::sin(theta2) * std::cos(phi1);
+				v3.z = std::sin(theta2) * std::sin(phi1);
+				v3.y = std::cos(theta2);
+
+				v4.x = std::sin(theta2) * std::cos(phi2);
+				v4.z = std::sin(theta2) * std::sin(phi2);
+				v4.y = std::cos(theta2);
+
+				game::Triangle tri;
+				//if (p % 2 == 1)
+				{
+					tri.vertices[0] = v1 + pos;
+					tri.color[0] = game::Colors::White;
+
+					tri.vertices[1] = v3 + pos;
+					tri.color[1] = game::Colors::White;
+
+					tri.vertices[2] = v2 + pos;
+					tri.color[2] = game::Colors::White;
+				}
+				
+				tri.faceNormal = { 0,0,-1.0f };
+				tri.faceNormal = GenerateFaceNormals(v1, v3, v2);
+				tri.faceNormal.Normalize();
+
+				mesh.tris.emplace_back(tri);
+
+				{
+					tri.vertices[0] = v2 + pos;
+					//tri.color[0] = game::Colors::White;
+
+					tri.vertices[1] = v3 + pos;
+					//tri.color[1] = game::Colors::White;
+
+					tri.vertices[2] = v4 + pos;
+					//tri.color[2] = game::Colors::White;
+					tri.faceNormal = GenerateFaceNormals(v2, v3, v4);
+					tri.faceNormal.Normalize();
+				}
+
+				//tri.faceNormal = { 0,0,-1.0f };
+				mesh.tris.emplace_back(tri);
+
+			}
+		}
+	}
+
+	// Needs vertex normals
+	// needs uvs
+	void GenerateCube(game::Mesh& mesh, const float_t size, const game::Vector3f& __restrict pos)  noexcept
+	{
+		mesh.tris.clear();
+		game::Vector3f ftl;
+		game::Vector3f ftr;
+		game::Vector3f fbl;
+		game::Vector3f fbr;
+
+		game::Vector3f btl;
+		game::Vector3f btr;
+		game::Vector3f bbl;
+		game::Vector3f bbr;
+
+		// Front
+		ftl.x = -size;
+		ftl.y = -size;
+		ftl.z = -size;
+		ftl += pos;
+
+		ftr.x = size;
+		ftr.y = -size;
+		ftr.z = -size;
+		ftr += pos;
+
+		fbl.x = -size;
+		fbl.y = size;
+		fbl.z = -size;
+		fbl += pos;
+
+		fbr.x = size;
+		fbr.y = size;
+		fbr.z = -size;
+		fbr += pos;
+
+		// Back
+		btl.x = -size;
+		btl.y = -size;
+		btl.z = size;
+		btl += pos;
+
+		btr.x = size;
+		btr.y = -size;
+		btr.z = size;
+		btr += pos;
+
+		bbl.x = -size;
+		bbl.y = size;
+		bbl.z = size;
+		bbl += pos;
+
+		bbr.x = size;
+		bbr.y = size;
+		bbr.z = size;
+		bbr += pos;
+
+		game::Triangle f;
+		f.color[0] = game::Colors::White;
+		f.color[1] = game::Colors::White;
+		f.color[2] = game::Colors::White;
+
+
+		// Front
+		f.vertices[0] = ftl;
+		f.vertices[1] = ftr;
+		f.vertices[2] = fbl;
+		f.faceNormal = { 0.0f,0.0f,-1.0f };
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftr;
+		f.vertices[1] = fbr;
+		f.vertices[2] = fbl;
+		f.faceNormal = { 0.0f,0.0f,-1.0f };
+		mesh.tris.emplace_back(f);
+
+		// Back
+		f.vertices[0] = btr;
+		f.vertices[1] = btl;
+		f.vertices[2] = bbl;
+		f.faceNormal = { 0.0f,0.0f,1.0f };
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = bbr;
+		f.vertices[1] = btr;
+		f.vertices[2] = bbl;
+		f.faceNormal = { 0.0f,0.0f,1.0f };
+		mesh.tris.emplace_back(f);
+
+		// Left
+		f.vertices[0] = btl;
+		f.vertices[1] = ftl;
+		f.vertices[2] = bbl;
+		f.faceNormal = { -1.0f,0.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftl;
+		f.vertices[1] = fbl;
+		f.vertices[2] = bbl;
+		f.faceNormal = { -1.0f,0.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		// Right
+		f.vertices[0] = ftr;
+		f.vertices[1] = btr;
+		f.vertices[2] = bbr;
+		f.faceNormal = { 1.0f,0.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftr;
+		f.vertices[1] = bbr;
+		f.vertices[2] = fbr;
+		f.faceNormal = { 1.0f,0.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		// Top
+		f.vertices[0] = ftl;
+		f.vertices[1] = btl;
+		f.vertices[2] = btr;
+		f.faceNormal = { 0.0f,-1.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftr;
+		f.vertices[1] = ftl;
+		f.vertices[2] = btr;
+		f.faceNormal = { 0.0f,-1.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		// Bottom
+		f.vertices[0] = fbl;
+		f.vertices[1] = fbr;
+		f.vertices[2] = bbl;
+		f.faceNormal = { 0.0f,1.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = fbr;
+		f.vertices[1] = bbr;
+		f.vertices[2] = bbl;
+		f.faceNormal = { 0.0f,1.0f,0.0f };
+		mesh.tris.emplace_back(f);
+	}
+	
+	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value)  noexcept
+	{
+		static std::string old;
+		if (text == old) return;
+		old = text;
+		float_t z = pos.z;
 		const float_t size = 0.5f;
 		const float_t sizeX2 = size * 2.0f;
 		const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
@@ -423,6 +660,8 @@ public:
 
 		game::Triangle topLeftTri;
 		game::Triangle bottomRightTri;
+
+		game::Mesh cube;
 		for (uint8_t letter : text)
 		{
 			ox = (letter - 32) % 16;
@@ -433,89 +672,95 @@ public:
 				{
 					if (pixelMode._fontROM[((j + (oy << 3)) << 7) + (i + (ox << 3))] > 0)
 					{
-
+						
 						const float_t pxi = px + (i * sizeX2);
 						const float_t pyj = py + (j * sizeX2);
-
-						// tl
-						topLeftTri.vertices[0].x = -size + pxi;
-						topLeftTri.vertices[0].y = -size + pyj;
-						topLeftTri.vertices[0].z = z;
-						topLeftTri.color[0] = game::Colors::Red;
-						topLeftTri.uvs[0].u = 0.0f;
-						topLeftTri.uvs[0].v = 0.0f;
-						topLeftTri.faceNormal = normal;
-
-						// tr
-						topLeftTri.vertices[1].x = size + pxi;
-						topLeftTri.vertices[1].y = -size + pyj;
-						topLeftTri.vertices[1].z = z;
-						topLeftTri.uvs[1].u = 1.0f;
-						topLeftTri.uvs[1].v = 0.0f;
-						topLeftTri.color[1] = game::Colors::Green;
-
-						// bl
-						topLeftTri.vertices[2].x = -size + pxi;
-						topLeftTri.vertices[2].y = size + pyj;
-						topLeftTri.vertices[2].z = z;
-						topLeftTri.uvs[2].u = 0.0f;
-						topLeftTri.uvs[2].v = 1.0f;
-						topLeftTri.color[2] = game::Colors::Blue;
-
-						// tr
-						bottomRightTri.vertices[0].x = size + pxi;
-						bottomRightTri.vertices[0].y = -size + pyj;
-						bottomRightTri.vertices[0].z = z;
-						bottomRightTri.color[0] = game::Colors::Green;
-						bottomRightTri.uvs[0].u = 1.0f;
-						bottomRightTri.uvs[0].v = 0.0f;
-						bottomRightTri.faceNormal = normal;
-
-						// br
-						bottomRightTri.vertices[1].x = size + pxi;
-						bottomRightTri.vertices[1].y = size + pyj;
-						bottomRightTri.vertices[1].z = z;
-						bottomRightTri.uvs[1].u = 1.0f;
-						bottomRightTri.uvs[1].v = 1.0f;
-						bottomRightTri.color[1] = game::Colors::White;
-
-						// bl
-						bottomRightTri.vertices[2].x = -size + pxi;
-						bottomRightTri.vertices[2].y = size + pyj;
-						bottomRightTri.vertices[2].z = z;
-						bottomRightTri.uvs[2].u = 0.0f;
-						bottomRightTri.uvs[2].v = 1.0f;
-						bottomRightTri.color[2] = game::Colors::Blue;
-
-						for (uint32_t i = 0; i < 3; i++)
+						const game::Vector3f p = { pxi, pyj, 0 };
+						GenerateCube(cube, size, p);
+						//GenerateUVSphere(cube, 10, 20,p);
+						for (int i = 0; i < cube.tris.size(); i++)
 						{
-							topLeftTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
-							bottomRightTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
-							topLeftTri.vertices[i] -= {pxi, pyj, 0};
-							topLeftTri.vertices[i] = game::RotateX(topLeftTri.vertices[i], value);
-							topLeftTri.vertices[i] = game::RotateY(topLeftTri.vertices[i], -value);
-							topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value - 3.14159f);
-							topLeftTri.vertices[i] += {pxi , pyj, 0};
-							bottomRightTri.vertices[i] -= {pxi, pyj, 0};
-							bottomRightTri.vertices[i] = game::RotateX(bottomRightTri.vertices[i], value);
-							bottomRightTri.vertices[i] = game::RotateY(bottomRightTri.vertices[i], -value);
-							bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value - 3.14159f);
-							bottomRightTri.vertices[i] += {pxi, pyj, 0};
+							mesh.tris.emplace_back(cube.tris[i]);
 						}
+						// tl
+						//topLeftTri.vertices[0].x = -size + pxi;
+						//topLeftTri.vertices[0].y = -size + pyj;
+						//topLeftTri.vertices[0].z = z;
+						//topLeftTri.color[0] = game::Colors::Red;
+						//topLeftTri.uvs[0].u = 0.0f;
+						//topLeftTri.uvs[0].v = 0.0f;
+						//topLeftTri.faceNormal = normal;
+
+						//// tr
+						//topLeftTri.vertices[1].x = size + pxi;
+						//topLeftTri.vertices[1].y = -size + pyj;
+						//topLeftTri.vertices[1].z = z;
+						//topLeftTri.uvs[1].u = 1.0f;
+						//topLeftTri.uvs[1].v = 0.0f;
+						//topLeftTri.color[1] = game::Colors::Green;
+
+						//// bl
+						//topLeftTri.vertices[2].x = -size + pxi;
+						//topLeftTri.vertices[2].y = size + pyj;
+						//topLeftTri.vertices[2].z = z;
+						//topLeftTri.uvs[2].u = 0.0f;
+						//topLeftTri.uvs[2].v = 1.0f;
+						//topLeftTri.color[2] = game::Colors::Blue;
+
+						//// tr
+						//bottomRightTri.vertices[0].x = size + pxi;
+						//bottomRightTri.vertices[0].y = -size + pyj;
+						//bottomRightTri.vertices[0].z = z;
+						//bottomRightTri.color[0] = game::Colors::Green;
+						//bottomRightTri.uvs[0].u = 1.0f;
+						//bottomRightTri.uvs[0].v = 0.0f;
+						//bottomRightTri.faceNormal = normal;
+
+						//// br
+						//bottomRightTri.vertices[1].x = size + pxi;
+						//bottomRightTri.vertices[1].y = size + pyj;
+						//bottomRightTri.vertices[1].z = z;
+						//bottomRightTri.uvs[1].u = 1.0f;
+						//bottomRightTri.uvs[1].v = 1.0f;
+						//bottomRightTri.color[1] = game::Colors::White;
+
+						//// bl
+						//bottomRightTri.vertices[2].x = -size + pxi;
+						//bottomRightTri.vertices[2].y = size + pyj;
+						//bottomRightTri.vertices[2].z = z;
+						//bottomRightTri.uvs[2].u = 0.0f;
+						//bottomRightTri.uvs[2].v = 1.0f;
+						//bottomRightTri.color[2] = game::Colors::Blue;
+
 						//for (uint32_t i = 0; i < 3; i++)
 						//{
-						//	topLeftTri.vertices[i] -= {px + i, py + j, 0};
-						//	bottomRightTri.vertices[i] -= {px + i, py + j, 0};
+						//	topLeftTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
+						//	bottomRightTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
+						//	//topLeftTri.vertices[i] -= {pxi, pyj, z};
+						//	//topLeftTri.vertices[i] = game::RotateX(topLeftTri.vertices[i], value);
+						//	//topLeftTri.vertices[i] = game::RotateY(topLeftTri.vertices[i], -value);
+						//	//topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value - 3.14159f);
+						//	//topLeftTri.vertices[i] += {pxi , pyj, z};
+						//	//bottomRightTri.vertices[i] -= {pxi, pyj, z};
+						//	//bottomRightTri.vertices[i] = game::RotateX(bottomRightTri.vertices[i], value);
+						//	//bottomRightTri.vertices[i] = game::RotateY(bottomRightTri.vertices[i], -value);
+						//	//bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value - 3.14159f);
+						//	//bottomRightTri.vertices[i] += {pxi, pyj, z};
 						//}
-						//topLeftTri = game::RotateZ(topLeftTri, value);
-						//bottomRightTri = game::RotateZ(bottomRightTri, value);
-						//for (uint32_t i = 0; i < 3; i++)
-						//{
-						//	topLeftTri.vertices[i] += {px + i, py + j, 0};
-						//	bottomRightTri.vertices[i] += {px + i, py + j, 0};
-						//}
-						mesh.tris.emplace_back(topLeftTri);
-						mesh.tris.emplace_back(bottomRightTri);
+						////for (uint32_t i = 0; i < 3; i++)
+						////{
+						////	topLeftTri.vertices[i] -= {px + i, py + j, 0};
+						////	bottomRightTri.vertices[i] -= {px + i, py + j, 0};
+						////}
+						////topLeftTri = game::RotateZ(topLeftTri, value);
+						////bottomRightTri = game::RotateZ(bottomRightTri, value);
+						////for (uint32_t i = 0; i < 3; i++)
+						////{
+						////	topLeftTri.vertices[i] += {px + i, py + j, 0};
+						////	bottomRightTri.vertices[i] += {px + i, py + j, 0};
+						////}
+						//mesh.tris.emplace_back(topLeftTri);
+						//mesh.tris.emplace_back(bottomRightTri);
 					}
 				}
 			}
@@ -557,32 +802,35 @@ public:
 		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
-		GenerateTextMesh(text, "TEXT", 0.0f, {0,0}, true, true, rotation);
+		
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0,0, 0}, true, true, rotation);
 		text.SetScale(0.05f, 0.05f, 0.05f);
+		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
-		//text.SetRotation(0, rotation - 3.14159f, rotation);
-
+		//text.SetRotation(0, rotation, 0);
+		//GenerateCube(text, 0.5f, { 0,0,0 });
+		//GenerateUVSphere(text, 20, 40);
 		software3D.RenderMesh(text, text.tris.size(), mvpMat, camera, clip);
 
 
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		////software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 
 		//lights.Update();
 		//lights.GeneratePointSpriteMatrix(camera);

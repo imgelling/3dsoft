@@ -698,7 +698,7 @@ namespace game
 		if (lighting)
 		{
 			//Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
-			//lightNormal.Normalize();
+			lightNormal.Normalize();
 			//faceNormal.Normalize();
 			if (_lightingType == LightingType::Face)
 			{
