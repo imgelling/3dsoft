@@ -398,9 +398,10 @@ public:
 
 
 	// Generate plane, sphere, cubes, points (particles/etc)
+	// Cone, cylindar, torus 
 	// Needs a data structure
 
-
+	// Insert vertices in the order of your triangle
 	inline game::Vector3f GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
 	{
 		game::Vector3f AC = C - A; // Vector from A to C
@@ -410,6 +411,7 @@ public:
 		return N;
 	}
 
+	// Insert vertices in the order of your triangle
 	inline void GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C, game::Vector3f& __restrict out)
 	{
 		game::Vector3f AC = C - A; // Vector from A to C
@@ -911,7 +913,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 10, 10, { 0,0,0 });
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
