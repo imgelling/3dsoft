@@ -154,8 +154,8 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
-		//text.texture = lights.mesh.texture;
+		software3D.LoadTexture("content/test.png", lights.mesh.texture);
+		text.texture = lights.mesh.texture;
 		//game::Random rnd;
 		//rnd.NewSeed();
 
@@ -413,7 +413,7 @@ public:
 	// Function to create a UV sphere
 	// Needs vertex normals (are the generated coords for vertices -done
 	// needs uvs
-	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos) 
+	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos, const game::Color color) 
 	{
 		mesh.tris.clear();
 		game::Vector3f v1, v2, v3, v4;
@@ -421,9 +421,9 @@ public:
 		const float_t invSlice = 1.0f / (float_t)slices * 2.0f * 3.14159f;
 		game::Triangle tri;
 
-		tri.color[0] = game::Colors::White;
-		tri.color[1] = game::Colors::White;
-		tri.color[2] = game::Colors::White;
+		tri.color[0] = color;
+		tri.color[1] = color;
+		tri.color[2] = color;
 
 
 		for (uint32_t t = 0; t < stacks; ++t) 
@@ -497,7 +497,7 @@ public:
 
 	// Needs vertex normals
 	// needs uvs
-	void GenerateCube(game::Mesh& mesh, const float_t size, const game::Vector3f& __restrict pos)  noexcept
+	void GenerateCube(game::Mesh& mesh, const float_t size, const game::Vector3f& __restrict pos, const game::Color& color)  noexcept
 	{
 		mesh.tris.clear();
 		game::Vector3f ftl;
@@ -553,91 +553,181 @@ public:
 		bbr += pos;
 
 		game::Triangle f;
-		f.color[0] = game::Colors::White;
-		f.color[1] = game::Colors::White;
-		f.color[2] = game::Colors::White;
+		f.color[0] = color;
+		f.color[1] = color;
+		f.color[2] = color;
 
 
 		// Front
 		f.vertices[0] = ftl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = ftr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = fbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
 		f.faceNormal = { 0.0f,0.0f,-1.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
 		mesh.tris.emplace_back(f);
 
 		f.vertices[0] = ftr;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = fbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
 		f.vertices[2] = fbl;
-		f.faceNormal = { 0.0f,0.0f,-1.0f };
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 0.0f,0.0f,-1.0f };
 		mesh.tris.emplace_back(f);
 
 		// Back
 		f.vertices[0] = btr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = btl;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = bbl;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 1.0f;
 		f.faceNormal = { 0.0f,0.0f,1.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
 		mesh.tris.emplace_back(f);
 
 		f.vertices[0] = bbr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 1.0f;
 		f.vertices[1] = btr;
+		f.uvs[1].u = 0.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = bbl;
-		f.faceNormal = { 0.0f,0.0f,1.0f };
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 0.0f,0.0f,1.0f };
 		mesh.tris.emplace_back(f);
 
 		// Left
 		f.vertices[0] = btl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = ftl;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = bbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
 		f.faceNormal = { -1.0f,0.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
 		mesh.tris.emplace_back(f);
 
 		f.vertices[0] = ftl;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = fbl;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
 		f.vertices[2] = bbl;
-		f.faceNormal = { -1.0f,0.0f,0.0f };
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { -1.0f,0.0f,0.0f };
 		mesh.tris.emplace_back(f);
 
 		// Right
 		f.vertices[0] = ftr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = btr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = bbr;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 1.0f;
 		f.faceNormal = { 1.0f,0.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
 		mesh.tris.emplace_back(f);
 
 		f.vertices[0] = ftr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = bbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
 		f.vertices[2] = fbr;
-		f.faceNormal = { 1.0f,0.0f,0.0f };
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 1.0f,0.0f,0.0f };
 		mesh.tris.emplace_back(f);
 
 		// Top
 		f.vertices[0] = ftl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 1.0f;
 		f.vertices[1] = btl;
+		f.uvs[1].u = 0.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = btr;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 0.0f;
 		f.faceNormal = { 0.0f,-1.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
 		mesh.tris.emplace_back(f);
 
 		f.vertices[0] = ftr;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 1.0f;
 		f.vertices[1] = ftl;
+		f.uvs[1].u = 0.0f;
+		f.uvs[1].v = 1.0f;
 		f.vertices[2] = btr;
-		f.faceNormal = { 0.0f,-1.0f,0.0f };
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 0.0f;
+		//f.faceNormal = { 0.0f,-1.0f,0.0f };
 		mesh.tris.emplace_back(f);
 
 		// Bottom
 		f.vertices[0] = fbl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = fbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
 		f.vertices[2] = bbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
 		f.faceNormal = { 0.0f,1.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
 		mesh.tris.emplace_back(f);
 
 		f.vertices[0] = fbr;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 0.0f;
 		f.vertices[1] = bbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
 		f.vertices[2] = bbl;
-		f.faceNormal = { 0.0f,1.0f,0.0f };
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 0.0f,1.0f,0.0f };
 		mesh.tris.emplace_back(f);
 	}
 	
-	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value)  noexcept
+	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color)  noexcept
 	{
 		static std::string old;
 		if (text == old) return;
@@ -679,8 +769,8 @@ public:
 						const float_t pxi = px + (i * sizeX2);
 						const float_t pyj = py + (j * sizeX2);
 						const game::Vector3f p = { pxi, pyj, 0 };
-						//GenerateCube(cube, size, p);
-						GenerateUVSphere(cube, 5, 10,p);
+						GenerateCube(cube, size, p, color);
+						//GenerateUVSphere(cube, 5, 5, p, color);
 						for (int i = 0; i < cube.tris.size(); i++)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
@@ -806,22 +896,22 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0,0, 0}, true, true, rotation);
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 10, 10, { 0,0,0 });
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
-		text.SetRotation(0, rotation, 0);
+		//text.SetRotation(0, rotation, 0);
 		//GenerateCube(text, 0.5f, { 0,0,0 });
 		//GenerateUVSphere(text, 20, 40);
 		software3D.RenderMesh(text, text.tris.size(), mvpMat, camera, clip);
