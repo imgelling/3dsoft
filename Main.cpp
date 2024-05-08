@@ -154,7 +154,7 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/test.png", lights.mesh.texture);
+		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
 		text.texture = lights.mesh.texture;
 		//game::Random rnd;
 		//rnd.NewSeed();
@@ -410,8 +410,15 @@ public:
 		return N;
 	}
 
+	inline void GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C, game::Vector3f& __restrict out)
+	{
+		game::Vector3f AC = C - A; // Vector from A to C
+		game::Vector3f AB = B - A; // Vector from A to B
+		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
+		N.Normalize();
+	}
+
 	// Function to create a UV sphere
-	// Needs vertex normals (are the generated coords for vertices -done
 	// needs uvs
 	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos, const game::Color color) 
 	{
@@ -473,7 +480,7 @@ public:
 				tri.vertices[2] = v2 + pos;
 				tri.normals[2] = v2;
 
-				tri.faceNormal = GenerateFaceNormal(v1, v3, v2);
+				GenerateFaceNormal(v1, v3, v2, tri.faceNormal);
 
 				mesh.tris.emplace_back(tri);
 
@@ -487,7 +494,7 @@ public:
 				tri.vertices[2] = v4 + pos;
 				tri.normals[2] = v4;
 
-				tri.faceNormal = GenerateFaceNormal(v2, v3, v4);
+				GenerateFaceNormal(v2, v3, v4, tri.faceNormal);
 
 				mesh.tris.emplace_back(tri);
 
@@ -495,8 +502,6 @@ public:
 		}
 	}
 
-	// Needs vertex normals
-	// needs uvs
 	void GenerateCube(game::Mesh& mesh, const float_t size, const game::Vector3f& __restrict pos, const game::Color& color)  noexcept
 	{
 		mesh.tris.clear();
@@ -899,7 +904,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
