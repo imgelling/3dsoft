@@ -401,6 +401,7 @@ public:
 	// Cone, cylindar, torus 
 	// Needs a data structure
 
+
 	// Insert vertices in the order of your triangle
 	inline game::Vector3f GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
 	{
@@ -416,8 +417,8 @@ public:
 	{
 		game::Vector3f AC = C - A; // Vector from A to C
 		game::Vector3f AB = B - A; // Vector from A to B
-		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
-		N.Normalize();
+		out = AC.Cross(AB); // Cross product of AB and AC
+		out.Normalize();
 	}
 
 	// Function to create a UV sphere
@@ -776,8 +777,8 @@ public:
 						const float_t pxi = px + (i * sizeX2);
 						const float_t pyj = py + (j * sizeX2);
 						const game::Vector3f p = { pxi, pyj, 0 };
-						GenerateCube(cube, size, p, color);
-						//GenerateUVSphere(cube, 5, 5, p, color);
+						//GenerateCube(cube, size, p, color);
+						GenerateUVSphere(cube, 5, 5, p, color);
 						for (int i = 0; i < cube.tris.size(); i++)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
@@ -904,7 +905,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
