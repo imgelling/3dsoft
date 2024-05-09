@@ -472,6 +472,9 @@ public:
 				v4.z = sinTheta2 * sinPhi2;
 				v4.y = cosTheta2;
 
+				// UV mapping equation from
+				// https://en.wikipedia.org/wiki/UV_mapping
+
 				// First triangle of quad
 				tri.vertices[0] = v1 + pos; //bl
 				tri.normals[0] = v1;
@@ -915,7 +918,7 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
