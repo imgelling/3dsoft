@@ -154,7 +154,7 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
+		software3D.LoadTexture("content/sky.png", lights.mesh.texture);
 		text.texture = lights.mesh.texture;
 		//game::Random rnd;
 		//rnd.NewSeed();
@@ -473,15 +473,20 @@ public:
 				v4.y = cosTheta2;
 
 				// First triangle of quad
-
-				tri.vertices[0] = v1 + pos;
+				tri.vertices[0] = v1 + pos; //bl
 				tri.normals[0] = v1;
+				tri.uvs[0].u = atan2f(v1.z, v1.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[0].v = asin(v1.y) / 3.14159f + 0.5f;
 
-				tri.vertices[1] = v3 + pos;
+				tri.vertices[1] = v3 + pos; // tl
 				tri.normals[1] = v3;
+				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
 
-				tri.vertices[2] = v2 + pos;
+				tri.vertices[2] = v2 + pos; //br
 				tri.normals[2] = v2;
+				tri.uvs[2].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[2].v = asin(v2.y) / 3.14159f + 0.5f;
 
 				GenerateFaceNormal(v1, v3, v2, tri.faceNormal);
 
@@ -490,12 +495,18 @@ public:
 				// Second triangle of quad
 				tri.vertices[0] = v2 + pos;
 				tri.normals[0] = v2;
+				tri.uvs[0].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[0].v = asin(v2.y) / 3.14159f + 0.5f;
 
 				tri.vertices[1] = v3 + pos;
 				tri.normals[1] = v3;
+				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
 
 				tri.vertices[2] = v4 + pos;
 				tri.normals[2] = v4;
+				tri.uvs[2].u = atan2f(v4.z, v4.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[2].v = asin(v4.y) / 3.14159f + 0.5f;
 
 				GenerateFaceNormal(v2, v3, v4, tri.faceNormal);
 
@@ -881,7 +892,7 @@ public:
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		pixelMode.Clear(game::Colors::Black);
+		pixelMode.Clear(game::Colors::CornFlowerBlue);
 		software3D.ClearDepth(100.0f);
 
 		//torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
@@ -905,7 +916,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
@@ -914,12 +925,12 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
-		//GenerateUVSphere(text, 10, 10, { 0,0,0 });
+		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		GenerateUVSphere(text, 10, 20, { 0,0,0 },game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
-		//text.SetRotation(0, rotation, 0);
+		text.SetRotation(0, rotation, 0);
 		//GenerateCube(text, 0.5f, { 0,0,0 });
 		//GenerateUVSphere(text, 20, 40);
 		software3D.RenderMesh(text, text.tris.size(), mvpMat, camera, clip);
