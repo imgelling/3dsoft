@@ -422,7 +422,7 @@ public:
 	}
 
 	// Function to create a UV sphere
-	// needs uvs
+	// Slices needs to be even number for uvs to map correctly
 	void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos, const game::Color color) 
 	{
 		mesh.tris.clear();
@@ -962,11 +962,11 @@ public:
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
 		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
-		GenerateUVSphere(text, 4, 8, { 0,0,0 },game::Colors::White);
+		GenerateUVSphere(text, 5, 6, { 0,0,0 },game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
-		text.SetRotation(0, 4.8f, 0); // 4.8
+		text.SetRotation(0, rotation, 0); // 4.8
 		
 		//GenerateCube(text, 0.5f, { 0,0,0 });
 		//GenerateUVSphere(text, 20, 40);
