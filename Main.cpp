@@ -475,41 +475,74 @@ public:
 				// UV mapping equation from
 				// https://en.wikipedia.org/wiki/UV_mapping
 
+				game::Color color;
+
 				// First triangle of quad
 				tri.vertices[0] = v1 + pos; //bl
 				tri.normals[0] = v1;
-				tri.uvs[0].u = atan2f(v1.z, v1.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[0].u = atan2f(v1.z, v1.x) / (2.0f * 3.14159f) +0.5f;
 				tri.uvs[0].v = asin(v1.y) / 3.14159f + 0.5f;
+				color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+				tri.color[0] = color;
 
 				tri.vertices[1] = v3 + pos; // tl
 				tri.normals[1] = v3;
-				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) +0.5f;
 				tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
+				color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+				tri.color[1] = color;
 
 				tri.vertices[2] = v2 + pos; //br
 				tri.normals[2] = v2;
-				tri.uvs[2].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[2].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) +0.5f;
 				tri.uvs[2].v = asin(v2.y) / 3.14159f + 0.5f;
+				color.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 255);
+				tri.color[2] = color;
+
+				// This may be cutting off part of texture??
+				if (tri.uvs[0].u == 1.0f)
+				{
+					tri.uvs[0].u = 0.0f;
+					color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+					tri.color[0] = color;
+					tri.uvs[1].u = 0.0f;
+					color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+					tri.color[1] = color;
+				}
 
 				GenerateFaceNormal(v1, v3, v2, tri.faceNormal);
 
 				mesh.tris.emplace_back(tri);
 
 				// Second triangle of quad
-				tri.vertices[0] = v2 + pos;
+				tri.vertices[0] = v2 + pos; //br
 				tri.normals[0] = v2;
 				tri.uvs[0].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
 				tri.uvs[0].v = asin(v2.y) / 3.14159f + 0.5f;
+				color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+				tri.color[0] = color;
 
-				tri.vertices[1] = v3 + pos;
+				tri.vertices[1] = v3 + pos; // tl
 				tri.normals[1] = v3;
 				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
 				tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
+				color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+				tri.color[1] = color;
 
-				tri.vertices[2] = v4 + pos;
+				tri.vertices[2] = v4 + pos; //tr
 				tri.normals[2] = v4;
 				tri.uvs[2].u = atan2f(v4.z, v4.x) / (2.0f * 3.14159f) + 0.5f;
 				tri.uvs[2].v = asin(v4.y) / 3.14159f + 0.5f;
+				color.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 255);
+				tri.color[2] = color;
+
+
+				if (tri.uvs[1].u > tri.uvs[2].u)
+				{
+					tri.uvs[1].u = 0.0f;
+					color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+					tri.color[1] = color;
+				}
 
 				GenerateFaceNormal(v2, v3, v4, tri.faceNormal);
 
@@ -929,11 +962,12 @@ public:
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
 		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
-		GenerateUVSphere(text, 10, 20, { 0,0,0 },game::Colors::White);
+		GenerateUVSphere(text, 4, 8, { 0,0,0 },game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
-		text.SetRotation(0, rotation, 0);
+		text.SetRotation(0, 4.8f, 0); // 4.8
+		
 		//GenerateCube(text, 0.5f, { 0,0,0 });
 		//GenerateUVSphere(text, 20, 40);
 		software3D.RenderMesh(text, text.tris.size(), mvpMat, camera, clip);
