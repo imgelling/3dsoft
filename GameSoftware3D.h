@@ -1640,6 +1640,390 @@ namespace game
 		}
 		//std::cout << culled << "\n";
 	}
+
+
+	// Insert vertices in the order of your triangle
+	inline game::Vector3f GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
+	{
+		game::Vector3f AC = C - A; // Vector from A to C
+		game::Vector3f AB = B - A; // Vector from A to B
+		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
+		N.Normalize();
+		return N;
+	}
+
+	// Insert vertices in the order of your triangle
+	inline void GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C, game::Vector3f& __restrict out)
+	{
+		game::Vector3f AC = C - A; // Vector from A to C
+		game::Vector3f AB = B - A; // Vector from A to B
+		out = AC.Cross(AB); // Cross product of AB and AC
+		out.Normalize();
+	}
+
+	// Function to create a UV sphere
+	// Slices needs to be even number for uvs to map correctly
+	inline void GenerateUVSphere(game::Mesh& mesh, const uint32_t stacks, const uint32_t slices, const game::Vector3f& __restrict pos, const game::Color color)
+	{
+		mesh.tris.clear();
+		game::Vector3f v1, v2, v3, v4;
+		const float_t invStacks = 1.0f / (float_t)stacks * 3.14159f;
+		const float_t invSlice = 1.0f / (float_t)slices * 2.0f * 3.14159f;
+		game::Triangle tri;
+
+		tri.color[0] = color;
+		tri.color[1] = color;
+		tri.color[2] = color;
+
+
+		for (uint32_t t = 0; t < stacks; ++t)
+		{
+			const float_t theta1 = static_cast<float>(t) * invStacks;
+			const float_t theta2 = static_cast<float>(t + 1) * invStacks;
+			const float_t cosTheta1 = cos(theta1);
+			const float_t sinTheta1 = sin(theta1);
+			const float_t cosTheta2 = cos(theta2);
+			const float_t sinTheta2 = sin(theta2);
+
+			for (uint32_t p = 0; p < slices; ++p)
+			{
+				const float_t phi1 = static_cast<float>(p) * invSlice;
+				const float_t phi2 = static_cast<float>(p + 1) * invSlice;
+				const float_t cosPhi1 = cos(phi1);
+				const float_t sinPhi1 = sin(phi1);
+				const float_t cosPhi2 = cos(phi2);
+				const float_t sinPhi2 = sin(phi2);
+
+
+				// Calculate vertex positions for each quad				
+				v1.x = sinTheta1 * cosPhi1;
+				v1.z = sinTheta1 * sinPhi1;
+				v1.y = cosTheta1;
+
+				v2.x = sinTheta1 * cosPhi2;
+				v2.z = sinTheta1 * sinPhi2;
+				v2.y = cosTheta1;
+
+				v3.x = sinTheta2 * cosPhi1;
+				v3.z = sinTheta2 * sinPhi1;
+				v3.y = cosTheta2;
+
+				v4.x = sinTheta2 * cosPhi2;
+				v4.z = sinTheta2 * sinPhi2;
+				v4.y = cosTheta2;
+
+				// UV mapping equation from
+				// https://en.wikipedia.org/wiki/UV_mapping
+
+				game::Color color;
+
+				// First triangle of quad
+				tri.vertices[0] = v1 + pos; //bl
+				tri.normals[0] = v1;
+				tri.uvs[0].u = atan2f(v1.z, v1.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[0].v = asin(v1.y) / 3.14159f + 0.5f;
+				//color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+				//tri.color[0] = color;
+
+				tri.vertices[1] = v3 + pos; // tl
+				tri.normals[1] = v3;
+				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
+				//color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+				//tri.color[1] = color;
+
+				tri.vertices[2] = v2 + pos; //br
+				tri.normals[2] = v2;
+				tri.uvs[2].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[2].v = asin(v2.y) / 3.14159f + 0.5f;
+				//color.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 255);
+				//tri.color[2] = color;
+
+				// This may be cutting off part of texture??
+				if (tri.uvs[0].u == 1.0f)
+				{
+					tri.uvs[0].u = 0.0f;
+					//color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+					//tri.color[0] = color;
+					tri.uvs[1].u = 0.0f;
+					//color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+					//tri.color[1] = color;
+				}
+
+				GenerateFaceNormal(v1, v3, v2, tri.faceNormal);
+
+				mesh.tris.emplace_back(tri);
+				if ((t != stacks - 1) || (t == 0))
+				{
+					// Second triangle of quad
+					tri.vertices[0] = v2 + pos; //br
+					tri.normals[0] = v2;
+					tri.uvs[0].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
+					tri.uvs[0].v = asin(v2.y) / 3.14159f + 0.5f;
+					//color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+					//tri.color[0] = color;
+
+					tri.vertices[1] = v3 + pos; // tl
+					tri.normals[1] = v3;
+					tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
+					tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
+					//color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+					//tri.color[1] = color;
+
+					tri.vertices[2] = v4 + pos; //tr
+					tri.normals[2] = v4;
+					tri.uvs[2].u = atan2f(v4.z, v4.x) / (2.0f * 3.14159f) + 0.5f;
+					tri.uvs[2].v = asin(v4.y) / 3.14159f + 0.5f;
+					//color.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 255);
+					//tri.color[2] = color;
+
+
+					if (tri.uvs[1].u > tri.uvs[2].u)
+					{
+						tri.uvs[1].u = 0.0f;
+						//color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+						//tri.color[1] = color;
+					}
+
+					GenerateFaceNormal(v2, v3, v4, tri.faceNormal);
+
+					mesh.tris.emplace_back(tri);
+				}
+
+			}
+		}
+	}
+
+	inline void GenerateCube(game::Mesh& mesh, const float_t size, const game::Vector3f& __restrict pos, const game::Color& color)  noexcept
+	{
+		mesh.tris.clear();
+		game::Vector3f ftl;
+		game::Vector3f ftr;
+		game::Vector3f fbl;
+		game::Vector3f fbr;
+
+		game::Vector3f btl;
+		game::Vector3f btr;
+		game::Vector3f bbl;
+		game::Vector3f bbr;
+
+		// Front
+		ftl.x = -size;
+		ftl.y = -size;
+		ftl.z = -size;
+		ftl += pos;
+
+		ftr.x = size;
+		ftr.y = -size;
+		ftr.z = -size;
+		ftr += pos;
+
+		fbl.x = -size;
+		fbl.y = size;
+		fbl.z = -size;
+		fbl += pos;
+
+		fbr.x = size;
+		fbr.y = size;
+		fbr.z = -size;
+		fbr += pos;
+
+		// Back
+		btl.x = -size;
+		btl.y = -size;
+		btl.z = size;
+		btl += pos;
+
+		btr.x = size;
+		btr.y = -size;
+		btr.z = size;
+		btr += pos;
+
+		bbl.x = -size;
+		bbl.y = size;
+		bbl.z = size;
+		bbl += pos;
+
+		bbr.x = size;
+		bbr.y = size;
+		bbr.z = size;
+		bbr += pos;
+
+		game::Triangle f;
+		f.color[0] = color;
+		f.color[1] = color;
+		f.color[2] = color;
+
+
+		// Front
+		f.vertices[0] = ftl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = ftr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = fbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		f.faceNormal = { 0.0f,0.0f,-1.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftr;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = fbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
+		f.vertices[2] = fbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 0.0f,0.0f,-1.0f };
+		mesh.tris.emplace_back(f);
+
+		// Back
+		f.vertices[0] = btr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = btl;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = bbl;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 1.0f;
+		f.faceNormal = { 0.0f,0.0f,1.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = bbr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 1.0f;
+		f.vertices[1] = btr;
+		f.uvs[1].u = 0.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = bbl;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 0.0f,0.0f,1.0f };
+		mesh.tris.emplace_back(f);
+
+		// Left
+		f.vertices[0] = btl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = ftl;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = bbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		f.faceNormal = { -1.0f,0.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftl;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = fbl;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
+		f.vertices[2] = bbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { -1.0f,0.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		// Right
+		f.vertices[0] = ftr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = btr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = bbr;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 1.0f;
+		f.faceNormal = { 1.0f,0.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftr;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = bbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
+		f.vertices[2] = fbr;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 1.0f,0.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		// Top
+		f.vertices[0] = ftl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 1.0f;
+		f.vertices[1] = btl;
+		f.uvs[1].u = 0.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = btr;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 0.0f;
+		f.faceNormal = { 0.0f,-1.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = ftr;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 1.0f;
+		f.vertices[1] = ftl;
+		f.uvs[1].u = 0.0f;
+		f.uvs[1].v = 1.0f;
+		f.vertices[2] = btr;
+		f.uvs[2].u = 1.0f;
+		f.uvs[2].v = 0.0f;
+		//f.faceNormal = { 0.0f,-1.0f,0.0f };
+		mesh.tris.emplace_back(f);
+
+		// Bottom
+		f.vertices[0] = fbl;
+		f.uvs[0].u = 0.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = fbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 0.0f;
+		f.vertices[2] = bbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		f.faceNormal = { 0.0f,1.0f,0.0f };
+		f.normals[0] = f.faceNormal;
+		f.normals[1] = f.faceNormal;
+		f.normals[2] = f.faceNormal;
+		mesh.tris.emplace_back(f);
+
+		f.vertices[0] = fbr;
+		f.uvs[0].u = 1.0f;
+		f.uvs[0].v = 0.0f;
+		f.vertices[1] = bbr;
+		f.uvs[1].u = 1.0f;
+		f.uvs[1].v = 1.0f;
+		f.vertices[2] = bbl;
+		f.uvs[2].u = 0.0f;
+		f.uvs[2].v = 1.0f;
+		//f.faceNormal = { 0.0f,1.0f,0.0f };
+		mesh.tris.emplace_back(f);
+	}
+
 }
 
 static void testmy_PerspectiveFOV(const float_t fov, const float_t aspect, const float_t nearz, const float_t farz)
