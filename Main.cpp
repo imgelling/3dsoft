@@ -513,40 +513,42 @@ public:
 				GenerateFaceNormal(v1, v3, v2, tri.faceNormal);
 
 				mesh.tris.emplace_back(tri);
-
-				// Second triangle of quad
-				tri.vertices[0] = v2 + pos; //br
-				tri.normals[0] = v2;
-				tri.uvs[0].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
-				tri.uvs[0].v = asin(v2.y) / 3.14159f + 0.5f;
-				color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
-				tri.color[0] = color;
-
-				tri.vertices[1] = v3 + pos; // tl
-				tri.normals[1] = v3;
-				tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
-				tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
-				color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
-				tri.color[1] = color;
-
-				tri.vertices[2] = v4 + pos; //tr
-				tri.normals[2] = v4;
-				tri.uvs[2].u = atan2f(v4.z, v4.x) / (2.0f * 3.14159f) + 0.5f;
-				tri.uvs[2].v = asin(v4.y) / 3.14159f + 0.5f;
-				color.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 255);
-				tri.color[2] = color;
-
-
-				if (tri.uvs[1].u > tri.uvs[2].u)
+				if ((t != stacks - 1) || (t == 0))//504
 				{
-					tri.uvs[1].u = 0.0f;
+					// Second triangle of quad
+					tri.vertices[0] = v2 + pos; //br
+					tri.normals[0] = v2;
+					tri.uvs[0].u = atan2f(v2.z, v2.x) / (2.0f * 3.14159f) + 0.5f;
+					tri.uvs[0].v = asin(v2.y) / 3.14159f + 0.5f;
+					color.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 255);
+					tri.color[0] = color;
+
+					tri.vertices[1] = v3 + pos; // tl
+					tri.normals[1] = v3;
+					tri.uvs[1].u = atan2f(v3.z, v3.x) / (2.0f * 3.14159f) + 0.5f;
+					tri.uvs[1].v = asin(v3.y) / 3.14159f + 0.5f;
 					color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
 					tri.color[1] = color;
+
+					tri.vertices[2] = v4 + pos; //tr
+					tri.normals[2] = v4;
+					tri.uvs[2].u = atan2f(v4.z, v4.x) / (2.0f * 3.14159f) + 0.5f;
+					tri.uvs[2].v = asin(v4.y) / 3.14159f + 0.5f;
+					color.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 255);
+					tri.color[2] = color;
+
+
+					if (tri.uvs[1].u > tri.uvs[2].u)
+					{
+						tri.uvs[1].u = 0.0f;
+						color.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 255);
+						tri.color[1] = color;
+					}
+
+					GenerateFaceNormal(v2, v3, v4, tri.faceNormal);
+
+					mesh.tris.emplace_back(tri);
 				}
-
-				GenerateFaceNormal(v2, v3, v4, tri.faceNormal);
-
-				mesh.tris.emplace_back(tri);
 
 			}
 		}
@@ -825,7 +827,7 @@ public:
 						const float_t pyj = py + (j * sizeX2);
 						const game::Vector3f p = { pxi, pyj, 0 };
 						//GenerateCube(cube, size, p, color);
-						GenerateUVSphere(cube, 5, 5, p, color);
+						GenerateUVSphere(cube, 20, 40, p, color);
 						for (int i = 0; i < cube.tris.size(); i++)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
@@ -961,8 +963,8 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
-		GenerateUVSphere(text, 5, 6, { 0,0,0 },game::Colors::White);
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		//GenerateUVSphere(text, 5, 6, { 0,0,0 },game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
