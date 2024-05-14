@@ -1794,9 +1794,10 @@ namespace game
 		}
 	}
 
-	inline void GenerateCube(game::Mesh& mesh, const float_t size, const game::Vector3f& __restrict pos, const game::Color& color)  noexcept
+	inline void GenerateCube(game::Mesh& mesh, const game::Vector3f& __restrict pos, const game::Color& color)  noexcept
 	{
 		mesh.tris.clear();
+		const float_t size = 0.5f;
 		game::Vector3f ftl;
 		game::Vector3f ftr;
 		game::Vector3f fbl;

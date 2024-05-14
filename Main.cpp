@@ -124,7 +124,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
 
-		if (!LoadObj("Content/arena.obj", model))
+		if (!LoadObj("Content/coney.obj", model))
 		{
 			std::cout << "Could not load model\n";
 		}
@@ -154,8 +154,10 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/sky.png", lights.mesh.texture);
-		text.texture = lights.mesh.texture;
+		software3D.LoadTexture("content/test.png", lights.mesh.texture);
+		//text.texture = lights.mesh.texture;
+		//model.texture = lights.mesh.texture;
+		
 		//game::Random rnd;
 		//rnd.NewSeed();
 
@@ -394,13 +396,182 @@ public:
 		{
 			geKeyboard.TextInputMode(false);
 		}
-	}	
+	}
+
+	// Needs 
+	// bottom, tops
+	// cleaned up
+	void GenerateCylinder(game::Mesh& mesh, const float_t topRadius, const float_t bottomRadius, const uint32_t segments, const float_t height, const game::Vector3f& __restrict pos, const game::Color color)
+	{
+		mesh.tris.clear();
+		// Generate cone
+		game::Triangle tri;
+		tri.color[0] = color;
+		tri.color[1] = color;
+		tri.color[2] = color;
+
+		const float invSeg = 1.0f / segments;
+		const game::Vector3f center = pos;
+		const game::Vector3f up = { 0,-height,0 };// * height;
+		game::Vector3f dir;
+		game::Color c;
+		float_t uSum = 0.0f;
+		//float_t topRadius = 2.0f;// 0.0f;
+		for (uint32_t seg = 0; seg < segments; ++seg)
+		{
+			if (bottomRadius > 0.0f)
+			{
+				// bl
+				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[0].y = height;
+				//tri.vertices[0] += pos;
+
+				// tr
+				tri.vertices[1].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[1].y = -height;
+				tri.vertices[1].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				//tri.vertices[1] += pos;
+
+				// br
+				tri.vertices[2].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[2].z = bottomRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[2].y = height;
+				//tri.vertices[2] += pos;
+
+
+				// Calculate UVs
+
+				for (uint32_t count = 0; count < 3; count++)
+				{
+					tri.uvs[count].u = atan2(tri.vertices[count].z, tri.vertices[count].x) / (2.0f * 3.14159f) + 0.5f;
+					c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
+					tri.color[count] = c;
+				}
+				tri.vertices[0] += pos;
+				tri.vertices[1] += pos;
+				tri.vertices[2] += pos;
+				//tri.uvs[1].u = atan2f(tri.vertices[1].z, tri.vertices[1].x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[0].v = 1;
+				tri.uvs[2].v = 1;
+				tri.uvs[1].v = 0;
+				//std::cout << tri.uvs[0].u << "," << tri.uvs[1].u << "," << tri.uvs[2].u << "\n";
+				if (tri.uvs[2].u - tri.uvs[0].u < 0)
+				{
+					//std::cout << tri.uvs[0].u << "," << tri.uvs[1].u << "," << tri.uvs[2].u << "\n";
+					tri.uvs[0].u = 0.0f;
+					//tri.uvs[1].u = tri.uvs[2].u * 0.5f;
+					c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
+					tri.color[0] = c;
+					c.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 1.0f);
+					tri.color[2] = c;
+
+					//std::cout << "1.0f at seg " << seg << "\n";
+				}
+
+
+				game::GenerateFaceNormal(tri.vertices[0], tri.vertices[1], tri.vertices[2], tri.faceNormal);
+
+				// Calculate vertex normals			
+				dir = tri.vertices[0] - center;
+				dir.Normalize();
+				tri.normals[0] = dir + up;
+				tri.normals[0].Normalize();
+
+				dir = tri.vertices[1] - center;
+				tri.normals[1] = dir + up;
+				tri.normals[1].Normalize();
+
+				dir = tri.vertices[2] - center;
+				tri.normals[2] = dir + up;
+				tri.normals[2].Normalize();
+
+
+				mesh.tris.emplace_back(tri);
+			}
+			if (topRadius > 0.0f)
+			{
+				// bl
+				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[0].y = height;
+				//tri.vertices[0] += pos;
+
+				// tl
+				tri.vertices[1].x = topRadius * cos(((seg)*invSeg) * (2.0f * 3.14159f));
+				tri.vertices[1].z = topRadius * sin(((seg)*invSeg) * (2.0f * 3.14159f));
+				tri.vertices[1].y = -height;
+				//tri.vertices[1] += pos;
+
+
+				// tr
+				tri.vertices[2].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[2].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[2].y = -height;
+				//tri.vertices[2] += pos;
+
+				// Calculate UVs
+				for (uint32_t count = 0; count < 3; count++)
+				{
+					tri.uvs[count].u = atan2f(tri.vertices[count].z, tri.vertices[count].x) / (2.0f * 3.14159f) + 0.5f;
+					c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
+					tri.color[count] = c;
+				}
+				tri.vertices[0] += pos;
+				tri.vertices[1] += pos;
+				tri.vertices[2] += pos;
+				//tri.uvs[1].u = atan2f(tri.vertices[1].z, tri.vertices[1].x) / (2.0f * 3.14159f) + 0.5f;
+				tri.uvs[0].v = 1;
+				tri.uvs[1].v = 0;
+				tri.uvs[2].v = 0;
+				//std::cout << tri.uvs[1].u << "\n";
+				if (tri.uvs[1].u == 1)
+				{
+					if (bottomRadius > 0.0f)
+					{
+						tri.uvs[0].u = 0.0f;
+					}
+					tri.uvs[1].u = 0.0f;
+					////std::cout << tri.uvs[0].u << "\n";
+					//tri.uvs[1].u = 0.0f;
+					//tri.uvs[2].u = 0.0f;// mesh.tris[0].uvs[2].u;// 0.0f;
+					c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
+					tri.color[0] = c;
+					c.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 1.0f);
+					tri.color[1] = c;
+
+					//std::cout << "1.0f at seg bottom " << seg << "\n";
+				}
+
+
+				game::GenerateFaceNormal(tri.vertices[0], tri.vertices[1], tri.vertices[2], tri.faceNormal);
+
+				// Calculate vertex normals			
+				dir = tri.vertices[0] - center;
+				dir.Normalize();
+				tri.normals[0] = dir + up;
+				tri.normals[0].Normalize();
+
+				dir = tri.vertices[1] - center;
+				tri.normals[1] = dir + up;
+				tri.normals[1].Normalize();
+
+				dir = tri.vertices[2] - center;
+				tri.normals[2] = dir + up;
+				tri.normals[2].Normalize();
+
+
+				mesh.tris.emplace_back(tri);
+			}
+		}
+
+	}
 
 
 	// Generate plane, sphere, cubes, points (particles/etc)
 	// Cone, cylindar, torus 
 	// Needs a data structure
-	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color)  const noexcept
+	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color)  noexcept
 	{
 		static std::string old;
 		if (text == old) return;
@@ -442,8 +613,9 @@ public:
 						const float_t pxi = px + (i * sizeX2);
 						const float_t pyj = py + (j * sizeX2);
 						const game::Vector3f p = { pxi, pyj, 0 };
-						//game::GenerateCube(cube, size, p, color);
-						game::GenerateUVSphere(cube, 2, 5, p, color);
+						//game::GenerateCube(cube, p, color);
+						//game::GenerateUVSphere(cube, 2, 5, p, color);
+						GenerateCylinder(cube, size, size, 20, 0.5f, p, color);
 						for (int i = 0; i < cube.tris.size(); i++)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
@@ -580,11 +752,13 @@ public:
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
 		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
-		//GenerateUVSphere(text, 30, 50, { 0,0,0 },game::Colors::White);
+		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
+		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
 		text.SetRotation(0, rotation, 0); // 4.8
+		
 		
 		//GenerateCube(text, 0.5f, { 0,0,0 });
 		//GenerateUVSphere(text, 20, 40);
