@@ -401,6 +401,7 @@ public:
 	// Needs 
 	// bottom, tops
 	// cleaned up
+	// Segments need to be even for uv seam fix to work
 	void GenerateCylinder(game::Mesh& mesh, const float_t topRadius, const float_t bottomRadius, const uint32_t segments, const float_t height, const game::Vector3f& __restrict pos, const game::Color color)
 	{
 		mesh.tris.clear();
@@ -415,60 +416,53 @@ public:
 		const game::Vector3f up = { 0,-height,0 };// * height;
 		game::Vector3f dir;
 		game::Color c;
-		float_t uSum = 0.0f;
-		//float_t topRadius = 2.0f;// 0.0f;
+
 		for (uint32_t seg = 0; seg < segments; ++seg)
 		{
 			if (bottomRadius > 0.0f)
 			{
+				// Generate Vertices
 				// bl
 				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[0].y = height;
-				//tri.vertices[0] += pos;
 
 				// tr
 				tri.vertices[1].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[1].y = -height;
 				tri.vertices[1].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				//tri.vertices[1] += pos;
 
 				// br
 				tri.vertices[2].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[2].z = bottomRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[2].y = height;
-				//tri.vertices[2] += pos;
-
 
 				// Calculate UVs
-
+				// U
 				for (uint32_t count = 0; count < 3; count++)
 				{
 					tri.uvs[count].u = atan2(tri.vertices[count].z, tri.vertices[count].x) / (2.0f * 3.14159f) + 0.5f;
-					c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
-					tri.color[count] = c;
+					// was for testing u wrapping
+					//c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
+					//tri.color[count] = c;
 				}
-				tri.vertices[0] += pos;
-				tri.vertices[1] += pos;
-				tri.vertices[2] += pos;
-				//tri.uvs[1].u = atan2f(tri.vertices[1].z, tri.vertices[1].x) / (2.0f * 3.14159f) + 0.5f;
+				// Seam fix
+				if (tri.uvs[2].u - tri.uvs[0].u < 0)
+				{
+					tri.uvs[0].u = 0.0f;
+					// was for testing u wrapping
+					//c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
+					//tri.color[0] = c;
+				}
+				// V
 				tri.uvs[0].v = 1;
 				tri.uvs[2].v = 1;
 				tri.uvs[1].v = 0;
-				//std::cout << tri.uvs[0].u << "," << tri.uvs[1].u << "," << tri.uvs[2].u << "\n";
-				if (tri.uvs[2].u - tri.uvs[0].u < 0)
-				{
-					//std::cout << tri.uvs[0].u << "," << tri.uvs[1].u << "," << tri.uvs[2].u << "\n";
-					tri.uvs[0].u = 0.0f;
-					//tri.uvs[1].u = tri.uvs[2].u * 0.5f;
-					c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
-					tri.color[0] = c;
-					c.Set(tri.uvs[2].u, tri.uvs[2].u, tri.uvs[2].u, 1.0f);
-					tri.color[2] = c;
 
-					//std::cout << "1.0f at seg " << seg << "\n";
-				}
-
+				// Changing the position before uv gen will mess it up
+				tri.vertices[0] += pos;
+				tri.vertices[1] += pos;
+				tri.vertices[2] += pos;
 
 				game::GenerateFaceNormal(tri.vertices[0], tri.vertices[1], tri.vertices[2], tri.faceNormal);
 
@@ -489,60 +483,58 @@ public:
 
 				mesh.tris.emplace_back(tri);
 			}
+
 			if (topRadius > 0.0f)
 			{
+				// Generate Vertices
 				// bl
 				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[0].y = height;
-				//tri.vertices[0] += pos;
 
 				// tl
 				tri.vertices[1].x = topRadius * cos(((seg)*invSeg) * (2.0f * 3.14159f));
 				tri.vertices[1].z = topRadius * sin(((seg)*invSeg) * (2.0f * 3.14159f));
 				tri.vertices[1].y = -height;
-				//tri.vertices[1] += pos;
-
 
 				// tr
 				tri.vertices[2].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[2].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[2].y = -height;
-				//tri.vertices[2] += pos;
 
 				// Calculate UVs
+				// U
 				for (uint32_t count = 0; count < 3; count++)
 				{
 					tri.uvs[count].u = atan2f(tri.vertices[count].z, tri.vertices[count].x) / (2.0f * 3.14159f) + 0.5f;
-					c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
-					tri.color[count] = c;
+					// was for testing u wrapping
+					//c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
+					//tri.color[count] = c;
 				}
-				tri.vertices[0] += pos;
-				tri.vertices[1] += pos;
-				tri.vertices[2] += pos;
-				//tri.uvs[1].u = atan2f(tri.vertices[1].z, tri.vertices[1].x) / (2.0f * 3.14159f) + 0.5f;
-				tri.uvs[0].v = 1;
-				tri.uvs[1].v = 0;
-				tri.uvs[2].v = 0;
-				//std::cout << tri.uvs[1].u << "\n";
+				// Seam fix
 				if (tri.uvs[1].u == 1)
 				{
 					if (bottomRadius > 0.0f)
 					{
 						tri.uvs[0].u = 0.0f;
+						// was for testing u wrapping
+						//c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
+						//tri.color[0] = c;
 					}
 					tri.uvs[1].u = 0.0f;
-					////std::cout << tri.uvs[0].u << "\n";
-					//tri.uvs[1].u = 0.0f;
-					//tri.uvs[2].u = 0.0f;// mesh.tris[0].uvs[2].u;// 0.0f;
-					c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
-					tri.color[0] = c;
-					c.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 1.0f);
-					tri.color[1] = c;
-
-					//std::cout << "1.0f at seg bottom " << seg << "\n";
+					// was for testing u wrapping
+					//c.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 1.0f);
+					//tri.color[1] = c;
 				}
+				// V
+				tri.uvs[0].v = 1;
+				tri.uvs[1].v = 0;
+				tri.uvs[2].v = 0;
 
+				// Changing the position before uv gen will mess it up
+				tri.vertices[0] += pos;
+				tri.vertices[1] += pos;
+				tri.vertices[2] += pos;
 
 				game::GenerateFaceNormal(tri.vertices[0], tri.vertices[1], tri.vertices[2], tri.faceNormal);
 
@@ -568,8 +560,8 @@ public:
 	}
 
 
-	// Generate plane, sphere, cubes, points (particles/etc)
-	// Cone, cylindar, torus 
+	// Generate plane, points (particles/etc)
+	// torus 
 	// Needs a data structure
 	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color)  noexcept
 	{
@@ -579,7 +571,7 @@ public:
 		float_t z = pos.z;
 		const float_t size = 0.5f;
 		const float_t sizeX2 = size * 2.0f;
-		const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
+		//const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
 		float_t px = pos.x; 
 		float_t py = pos.y;
 		if (centerX)
@@ -615,7 +607,7 @@ public:
 						const game::Vector3f p = { pxi, pyj, 0 };
 						//game::GenerateCube(cube, p, color);
 						//game::GenerateUVSphere(cube, 2, 5, p, color);
-						GenerateCylinder(cube, size, size, 20, 0.5f, p, color);
+						GenerateCylinder(cube, size, size, 10, 0.5f, p, color);
 						for (int i = 0; i < cube.tris.size(); i++)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
