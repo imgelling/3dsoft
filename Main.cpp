@@ -417,6 +417,8 @@ public:
 		game::Vector3f dir;
 		game::Color c;
 
+		game::Vector3f topCenter = up;
+		game::Vector3f botCenter = { 0,height,0 };
 		for (uint32_t seg = 0; seg < segments; ++seg)
 		{
 			if (bottomRadius > 0.0f)
@@ -482,6 +484,18 @@ public:
 
 
 				mesh.tris.emplace_back(tri);
+
+
+				tri.vertices[1] = botCenter + pos;
+				tri.faceNormal = { 0,1,0 };
+				tri.normals[0] = tri.faceNormal;
+				tri.normals[1] = tri.faceNormal;
+				tri.normals[2] = tri.faceNormal;
+
+
+
+				mesh.tris.emplace_back(tri);
+
 			}
 
 			if (topRadius > 0.0f)
@@ -554,6 +568,16 @@ public:
 
 
 				mesh.tris.emplace_back(tri);
+
+				tri.vertices[0] = topCenter + pos;
+				tri.faceNormal = { 0,-1,0 };
+				tri.normals[0] = tri.faceNormal;
+				tri.normals[0] = tri.faceNormal;
+				tri.normals[0] = tri.faceNormal;
+
+
+
+				mesh.tris.emplace_back(tri);
 			}
 		}
 
@@ -571,7 +595,6 @@ public:
 		float_t z = pos.z;
 		const float_t size = 0.5f;
 		const float_t sizeX2 = size * 2.0f;
-		//const game::Vector3f normal = { 0.0f,0.0f,-1.0f };
 		float_t px = pos.x; 
 		float_t py = pos.y;
 		if (centerX)
@@ -743,9 +766,9 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
-		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
+		GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
