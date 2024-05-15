@@ -485,7 +485,7 @@ public:
 				// tr
 				tri.vertices[2].x = 0;// *cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[2].z = 0;// *sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].y = botCenter.y;
+				tri.vertices[2].y = botCenter.y;
 
 				// br
 				tri.vertices[1].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
@@ -505,6 +505,9 @@ public:
 				tri.normals[1] = tri.faceNormal;
 				tri.normals[2] = tri.faceNormal;
 
+				tri.vertices[0] += pos;
+				tri.vertices[1] += pos;
+				tri.vertices[2] += pos;
 
 
 				mesh.tris.emplace_back(tri);
@@ -805,19 +808,19 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
-		GenerateCylinder(text, 1.25f, 3.0f, 30, 0.5f, {0,0,0}, game::Colors::White);
+		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
