@@ -154,8 +154,8 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/test.png", lights.mesh.texture);
-		//text.texture = lights.mesh.texture;
+		software3D.LoadTexture("content/sky.png", lights.mesh.texture);
+		text.texture = lights.mesh.texture;
 		//model.texture = lights.mesh.texture;
 		
 		//game::Random rnd;
@@ -440,30 +440,12 @@ public:
 				tri.vertices[2].y = height;
 
 
-				//// Calculate UVs
-				//// U
-				////for (uint32_t count = 0; count < 3; count++)
-				////{
-				////	tri.uvs[count].u = atan2(tri.vertices[count].z, tri.vertices[count].x) / (2.0f * 3.14159f) + 0.5f;
-				////	// was for testing u wrapping
-				////	//c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
-				////	//tri.color[count] = c;
-				////}
-				////// Seam fix
-				////if (tri.uvs[2].u - tri.uvs[0].u < 0)
-				////{
-				////	tri.uvs[0].u = 0.0f;
-				////	// was for testing u wrapping
-				////	//c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
-				////	//tri.color[0] = c;
-				////}
+				//Calculate UVs
+				// U
+				tri.uvs[0].u = (seg * invSeg);
+				tri.uvs[1].u = ((seg + 1) * invSeg);
+				tri.uvs[2].u = ((seg + 1) * invSeg);
 
-
-				//if (tri.uvs[1].u < 0)
-				//{
-				//	tri.uvs[1].u = 0;// 1.0 - tri.uvs[1].u;
-				//}
-				
 				// V
 				tri.uvs[0].v = 1;
 				tri.uvs[2].v = 1;
@@ -501,16 +483,22 @@ public:
 				tri.vertices[0].y = height;
 
 				// tr
-				tri.vertices[1].x = 0;// *cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].z = 0;// *sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[2].x = 0;// *cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[2].z = 0;// *sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[1].y = botCenter.y;
 
 				// br
-				tri.vertices[2].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].z = bottomRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].y = height;
+				tri.vertices[1].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[1].z = bottomRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
+				tri.vertices[1].y = height;
 
 				//std::swap(tri.uvs[2], tri.uvs[1]);
+				for (uint32_t i = 0; i < 3; i++)
+				{
+					tri.uvs[i].u = (tri.vertices[i].x) / bottomRadius * 0.5f + 0.5f;
+					tri.uvs[i].v = (tri.vertices[i].z) / bottomRadius * 0.5f + 0.5f;
+
+				}
 
 				tri.faceNormal = { 0,1,0 };
 				tri.normals[0] = tri.faceNormal;
@@ -541,34 +529,15 @@ public:
 				tri.vertices[2].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[2].y = -height;
 
-				//// Calculate UVs
-				//// U
-				//for (uint32_t count = 0; count < 3; count++)
-				//{
-				//	tri.uvs[count].u = atan2f(tri.vertices[count].z, tri.vertices[count].x) / (2.0f * 3.14159f) + 0.5f;
-				//	// was for testing u wrapping
-				//	//c.Set(tri.uvs[count].u, tri.uvs[count].u, tri.uvs[count].u, 1.0f);
-				//	//tri.color[count] = c;
-				//}
-				//// Seam fix
-				//if (tri.uvs[1].u == 1)
-				//{
-				//	if (bottomRadius > 0.0f)
-				//	{
-				//		tri.uvs[0].u = 0.0f;
-				//		// was for testing u wrapping
-				//		//c.Set(tri.uvs[0].u, tri.uvs[0].u, tri.uvs[0].u, 1.0f);
-				//		//tri.color[0] = c;
-				//	}
-				//	tri.uvs[1].u = 0.0f;
-				//	// was for testing u wrapping
-				//	//c.Set(tri.uvs[1].u, tri.uvs[1].u, tri.uvs[1].u, 1.0f);
-				//	//tri.color[1] = c;
-				//}
-				//// V
-				//tri.uvs[0].v = 1;
-				//tri.uvs[1].v = 0;
-				//tri.uvs[2].v = 0;
+				// Calculate UVs
+				// U
+				tri.uvs[0].u = (seg * invSeg);
+				tri.uvs[1].u = (seg * invSeg);
+				tri.uvs[2].u = ((seg + 1) * invSeg);
+				// V
+				tri.uvs[0].v = 1;
+				tri.uvs[1].v = 0;
+				tri.uvs[2].v = 0;
 
 				// Changing the position before uv gen will mess it up
 				tri.vertices[0] += pos;
@@ -608,7 +577,11 @@ public:
 				tri.vertices[1].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
 				tri.vertices[1].y = -height;
 
-				std::swap(tri.uvs[2],tri.uvs[1]);
+				for (uint32_t i = 0; i < 3; i++)
+				{
+					tri.uvs[i].u = (tri.vertices[i].x) / topRadius * 0.5f + 0.5f;
+					tri.uvs[i].v = (tri.vertices[i].z) / topRadius * 0.5f + 0.5f;
+				}
 
 				tri.faceNormal = { 0, -1, 0 };
 				tri.normals[0] = tri.faceNormal;
@@ -623,34 +596,36 @@ public:
 			}
 		}
 
-		// UV mapping from https://stackoverflow.com/questions/35141677/opengl-c-generating-uv-coordinates
-		float_t min_X = (float)INFINITE;
-		float_t 	max_X = (float)INFINITE * -1;
-		float_t 	min_Y = (float)INFINITE;
-		float_t 	max_Y = (float)INFINITE * -1;
-
-
-
-		for (game::Triangle& vertex : mesh.tris)
+		// For cones only
+		if ((topRadius == 0) || (bottomRadius == 0))
 		{
-			for (int i = 0; i < 3; i++)
+			// UV mapping from https://stackoverflow.com/questions/35141677/opengl-c-generating-uv-coordinates
+			float_t min_X = (float)INFINITE;
+			float_t max_X = (float)INFINITE * -1;
+			float_t min_Y = (float)INFINITE;
+			float_t max_Y = (float)INFINITE * -1;
+
+			for (game::Triangle& vertex : mesh.tris)
 			{
-				min_X = min(min_X, vertex.vertices[i].x);
-				min_Y = min(min_Y, vertex.vertices[i].z);
-				max_X = max(max_X, vertex.vertices[i].x);
-				max_Y = max(max_Y, vertex.vertices[i].z);
+				for (int i = 0; i < 3; i++)
+				{
+					min_X = min(min_X, vertex.vertices[i].x);
+					min_Y = min(min_Y, vertex.vertices[i].z);
+					max_X = max(max_X, vertex.vertices[i].x);
+					max_Y = max(max_Y, vertex.vertices[i].z);
+				}
 			}
-		}
 
-		float k_X = 1.0f / (max_X - min_X);
-		float k_Y = 1.0f / (max_Y - min_Y);
+			float_t k_X = 1.0f / (max_X - min_X);
+			float_t k_Y = 1.0f / (max_Y - min_Y);
 
-		for (game::Triangle& vertex : mesh.tris)
-		{
-			for (int i = 0; i < 3; i++)
+			for (game::Triangle& vertex : mesh.tris)
 			{
-				vertex.uvs[i].u = (vertex.vertices[i].x - min_X) * k_X;
-				vertex.uvs[i].v = (vertex.vertices[i].z - min_Y) * k_Y;
+				for (int i = 0; i < 3; i++)
+				{
+					vertex.uvs[i].u = (vertex.vertices[i].x - min_X) * k_X;
+					vertex.uvs[i].v = (vertex.vertices[i].z - min_Y) * k_Y;
+				}
 			}
 		}
 
@@ -842,7 +817,7 @@ public:
 		
 		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
-		GenerateCylinder(text, 0.5f, 0, 30, 0.5f, {0,0,0}, game::Colors::White);
+		GenerateCylinder(text, 1.25f, 3.0f, 30, 0.5f, {0,0,0}, game::Colors::White);
 		text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
