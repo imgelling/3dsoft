@@ -398,242 +398,7 @@ public:
 		}
 	}
 
-	// Needs 
-	// bottom, tops
-	// cleaned up
-	// Segments need to be even for uv seam fix to work
-	void GenerateCylinder(game::Mesh& mesh, const float_t topRadius, const float_t bottomRadius, const uint32_t segments, const float_t height, const game::Vector3f& __restrict pos, const game::Color color)
-	{
-		mesh.tris.clear();
-		// Generate cone
-		game::Triangle tri;
-		tri.color[0] = color;
-		tri.color[1] = color;
-		tri.color[2] = color;
-
-		const float invSeg = 1.0f / segments;
-		const game::Vector3f center = pos;
-		const game::Vector3f up = { 0,-height,0 };// * height;
-		game::Vector3f dir;
-		game::Color c;
-
-		game::Vector3f topCenter = up;
-		game::Vector3f botCenter = { 0,height,0 };
-		for (uint32_t seg = 0; seg < segments; ++seg)
-		{
-			if (bottomRadius > 0.0f)
-			{
-				// Generate Vertices
-				// bl
-				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].y = height;
-
-				// tr
-				tri.vertices[1].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].y = -height;
-				tri.vertices[1].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-
-				// br
-				tri.vertices[2].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].z = bottomRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].y = height;
-
-
-				//Calculate UVs
-				// U
-				tri.uvs[0].u = (seg * invSeg);
-				tri.uvs[1].u = ((seg + 1) * invSeg);
-				tri.uvs[2].u = ((seg + 1) * invSeg);
-
-				// V
-				tri.uvs[0].v = 1;
-				tri.uvs[2].v = 1;
-				tri.uvs[1].v = 0;
-
-				// Changing the position before uv gen will mess it up
-				tri.vertices[0] += pos;
-				tri.vertices[1] += pos;
-				tri.vertices[2] += pos;
-
-				game::GenerateFaceNormal(tri.vertices[0], tri.vertices[1], tri.vertices[2], tri.faceNormal);
-
-				// Calculate vertex normals			
-				dir = tri.vertices[0] - center;
-				dir.Normalize();
-				tri.normals[0] = dir + up;
-				tri.normals[0].Normalize();
-
-				dir = tri.vertices[1] - center;
-				tri.normals[1] = dir + up;
-				tri.normals[1].Normalize();
-
-				dir = tri.vertices[2] - center;
-				tri.normals[2] = dir + up;
-				tri.normals[2].Normalize();
-
-
-				mesh.tris.emplace_back(tri);
-
-
-				// Generate bottom circle
-				// bl
-				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].y = height;
-
-				// tr
-				tri.vertices[2].x = 0;// *cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].z = 0;// *sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].y = botCenter.y;
-
-				// br
-				tri.vertices[1].x = bottomRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].z = bottomRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].y = height;
-
-				//std::swap(tri.uvs[2], tri.uvs[1]);
-				for (uint32_t i = 0; i < 3; i++)
-				{
-					tri.uvs[i].u = (tri.vertices[i].x) / bottomRadius * 0.5f + 0.5f;
-					tri.uvs[i].v = (tri.vertices[i].z) / bottomRadius * 0.5f + 0.5f;
-
-				}
-
-				tri.faceNormal = { 0,1,0 };
-				tri.normals[0] = tri.faceNormal;
-				tri.normals[1] = tri.faceNormal;
-				tri.normals[2] = tri.faceNormal;
-
-				tri.vertices[0] += pos;
-				tri.vertices[1] += pos;
-				tri.vertices[2] += pos;
-
-
-				mesh.tris.emplace_back(tri);
-
-			}
-
-			if (topRadius > 0.0f)
-			{
-				// Generate Vertices
-				// bl
-				tri.vertices[0].x = bottomRadius * cos((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].z = bottomRadius * sin((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].y = height;
-
-				// tl
-				tri.vertices[1].x = topRadius * cos(((seg)*invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].z = topRadius * sin(((seg)*invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].y = -height;
-
-				// tr
-				tri.vertices[2].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].y = -height;
-
-				// Calculate UVs
-				// U
-				tri.uvs[0].u = (seg * invSeg);
-				tri.uvs[1].u = (seg * invSeg);
-				tri.uvs[2].u = ((seg + 1) * invSeg);
-				// V
-				tri.uvs[0].v = 1;
-				tri.uvs[1].v = 0;
-				tri.uvs[2].v = 0;
-
-				// Changing the position before uv gen will mess it up
-				tri.vertices[0] += pos;
-				tri.vertices[1] += pos;
-				tri.vertices[2] += pos;
-
-				game::GenerateFaceNormal(tri.vertices[0], tri.vertices[1], tri.vertices[2], tri.faceNormal);
-
-				// Calculate vertex normals			
-				dir = tri.vertices[0] - center;
-				dir.Normalize();
-				tri.normals[0] = dir + up;
-				tri.normals[0].Normalize();
-
-				dir = tri.vertices[1] - center;
-				tri.normals[1] = dir + up;
-				tri.normals[1].Normalize();
-
-				dir = tri.vertices[2] - center;
-				tri.normals[2] = dir + up;
-				tri.normals[2].Normalize();
-
-
-				mesh.tris.emplace_back(tri);
-
-				// Generate top circle
-				tri.vertices[0].x = 0 * cos((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].z = 0 * sin((seg * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[0].y = topCenter.y;// +pos;
-				// tl // had to flip 2 and 1
-				tri.vertices[2].x = topRadius * cos(((seg)*invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].z = topRadius * sin(((seg)*invSeg) * (2.0f * 3.14159f));
-				tri.vertices[2].y = -height;
-
-				// tr
-				tri.vertices[1].x = topRadius * cos(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].z = topRadius * sin(((seg + 1) * invSeg) * (2.0f * 3.14159f));
-				tri.vertices[1].y = -height;
-
-				for (uint32_t i = 0; i < 3; i++)
-				{
-					tri.uvs[i].u = (tri.vertices[i].x) / topRadius * 0.5f + 0.5f;
-					tri.uvs[i].v = (tri.vertices[i].z) / topRadius * 0.5f + 0.5f;
-				}
-
-				tri.faceNormal = { 0, -1, 0 };
-				tri.normals[0] = tri.faceNormal;
-				tri.normals[1] = tri.faceNormal;
-				tri.normals[2] = tri.faceNormal;
-
-				tri.vertices[0] += pos;
-				tri.vertices[1] += pos;
-				tri.vertices[2] += pos;
-
-				mesh.tris.emplace_back(tri);
-			}
-		}
-
-		// For cones only
-		if ((topRadius == 0) || (bottomRadius == 0))
-		{
-			// UV mapping from https://stackoverflow.com/questions/35141677/opengl-c-generating-uv-coordinates
-			float_t min_X = (float)INFINITE;
-			float_t max_X = (float)INFINITE * -1;
-			float_t min_Y = (float)INFINITE;
-			float_t max_Y = (float)INFINITE * -1;
-
-			for (game::Triangle& vertex : mesh.tris)
-			{
-				for (int i = 0; i < 3; i++)
-				{
-					min_X = min(min_X, vertex.vertices[i].x);
-					min_Y = min(min_Y, vertex.vertices[i].z);
-					max_X = max(max_X, vertex.vertices[i].x);
-					max_Y = max(max_Y, vertex.vertices[i].z);
-				}
-			}
-
-			float_t k_X = 1.0f / (max_X - min_X);
-			float_t k_Y = 1.0f / (max_Y - min_Y);
-
-			for (game::Triangle& vertex : mesh.tris)
-			{
-				for (int i = 0; i < 3; i++)
-				{
-					vertex.uvs[i].u = (vertex.vertices[i].x - min_X) * k_X;
-					vertex.uvs[i].v = (vertex.vertices[i].z - min_Y) * k_Y;
-				}
-			}
-		}
-
-
-	}
+	
 
 
 	// Generate plane, points (particles/etc)
@@ -662,8 +427,8 @@ public:
 
 		mesh.tris.clear();
 
-		game::Triangle topLeftTri;
-		game::Triangle bottomRightTri;
+		//game::Triangle topLeftTri;
+		//game::Triangle bottomRightTri;
 
 		game::Mesh cube;
 		for (uint8_t letter : text)
@@ -809,7 +574,7 @@ public:
 
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true); // button controlled
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
@@ -895,6 +660,99 @@ public:
 				pixelMode.Text("Text Input Mode: False", 0, 50, game::Colors::Magenta, 2);
 			}
 		}
+
+		// --- Begin button
+		// draw button
+
+		// or a Point2i
+		uint32_t buttonPosX = 1100;
+		uint32_t buttonPosY = 20;
+
+		uint32_t buttonLength = 100;
+		uint32_t textScale = 1;
+		bool outline = true;
+		static bool enabled = true;
+		bool mouseHover = false;
+		bool pressed = false;
+
+		game::Color textColor = game::Colors::Black;
+		game::Color enabledColor = game::Colors::Green;
+		game::Color disabledColor = game::Colors::Red;// DarkGray;
+		game::Color hoveredColor = game::Colors::LightGray;  //maybe xor the colors
+		game::Color pressedColor = game::Colors::DarkGray;
+		game::Color outlineColor = game::Colors::Magenta;
+		std::string t = "Texture";
+
+		uint32_t textHeight = 8;
+		uint32_t textScaled = textHeight * textScale;
+		uint32_t halfTextHeight = textScaled >> 1;
+		uint32_t buttonRadius = halfTextHeight + 2;
+		uint32_t centerPillX = buttonPosX - buttonRadius + (buttonLength >> 1);
+		
+		uint32_t textPosX = centerPillX - ((uint32_t)t.length() * halfTextHeight);
+		uint32_t textPosY = buttonPosY - halfTextHeight + 1 ;
+
+		// mouse detection  
+		// Bug - held, then move mouse onto button, release and still toggles
+		// Todo - make rect contains point
+		game::Pointi mouse = pixelMode.GetScaledMousePosition();
+		if (mouse.x < (int32_t)(buttonPosX + buttonLength))
+		{
+			if (mouse.x > (int32_t)(buttonPosX - buttonRadius))
+			{
+				if (mouse.y < (int32_t)(buttonPosY + buttonRadius))
+				{
+					if (mouse.y > (int32_t)(buttonPosY - buttonRadius))
+					{
+						mouseHover = true;
+						// if WasButtonePressed(left)
+						//  means was pressed on object,
+						// pressedonobject = true
+						if (geMouse.WasButtonReleased(geM_LEFT))
+						{
+							// if pressedonobject do
+							enabled = !enabled;
+							software3D.SetState(GAME_SOFTWARE3D_TEXTURE, enabled);
+							// and pressedonobject = false
+							// else ignore
+						}
+						if (geMouse.IsButtonHeld(geM_LEFT))
+						{
+							pressed = true;
+						}
+
+					}
+
+				}
+			}
+		}
+
+		if (outline)
+		{
+			pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength+2, buttonRadius + 1, outlineColor);
+		}
+
+		// just change colors
+		if (enabled)
+		{
+			pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, enabledColor);
+		}
+		else
+		{
+			pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, disabledColor);
+		}
+		if (mouseHover)
+		{
+			pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, hoveredColor);
+		}
+		if (pressed)
+		{
+			pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, pressedColor);
+		}
+
+		pixelMode.TextClip(t, textPosX, textPosY, textColor, textScale);
+
+		// --- END button
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))
 		{
