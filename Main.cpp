@@ -662,21 +662,32 @@ public:
 		}
 
 		// --- Begin Check box
-		uint32_t checkBoxPosX = 1100;
+		uint32_t checkBoxPosX = 800;
 		uint32_t checkBoxPosY = 30;
 		std::string cblabel = "Wire Frame";
 		game::Color cbLabelColor = game::Colors::Black;
 		game::Color cbXColor = game::Colors::DarkRed;
 		game::Color cbBoxColor = game::Colors::Yellow;
 		game::Color cbOutlineColor = game::Colors::Magenta;
+		uint32_t cbTextSize = 8;
+		int32_t s = 1;
+		int32_t cbScale = s * cbTextSize;
+		static bool cbChecked = false;
 		// outline
-		pixelMode.RectClip({ 1099,29,1111,41 }, cbOutlineColor);
+		pixelMode.RectClip({ (int32_t)checkBoxPosX - 1, (int32_t)checkBoxPosY - 1, (int32_t)checkBoxPosX + (cbScale + 2) + 1, (int32_t)checkBoxPosY + (cbScale + 2) + 1 }, cbOutlineColor);
 		// box
-		pixelMode.RectFilledClip({ 1100,30,1110,40 }, cbBoxColor);
-		// checkmark "X"
-		pixelMode.TextClip("X", 1102, 32, cbXColor);
+		pixelMode.RectFilledClip({ (int32_t)checkBoxPosX,(int32_t)checkBoxPosY,(int32_t)checkBoxPosX + (cbScale + 2),(int32_t)checkBoxPosY + (cbScale + 2)}, cbBoxColor);
+		if (geKeyboard.WasKeyReleased(geK_B))
+		{
+			cbChecked = !cbChecked;
+		}
+		if (cbChecked)
+		{
+			// checkmark "X"
+			pixelMode.TextClip("x", (int32_t)(checkBoxPosX)+1, (int32_t)(checkBoxPosY + 1), cbXColor, s);
+		}
 		// label
-		pixelMode.TextClip(cblabel, 1100 + 20, 32, cbLabelColor);
+		pixelMode.TextClip(cblabel, checkBoxPosX + (cbScale * 2), checkBoxPosY + 2, cbLabelColor, s);
 
 		// --- End Check box
 		
