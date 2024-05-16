@@ -661,19 +661,42 @@ public:
 			}
 		}
 
-		// --- Begin button
+		// --- Begin Check box
+		uint32_t checkBoxPosX = 1100;
+		uint32_t checkBoxPosY = 30;
+		std::string cblabel = "Wire Frame";
+		game::Color cbLabelColor = game::Colors::Black;
+		game::Color cbXColor = game::Colors::DarkRed;
+		game::Color cbBoxColor = game::Colors::Yellow;
+		game::Color cbOutlineColor = game::Colors::Magenta;
+		// outline
+		pixelMode.RectClip({ 1099,29,1111,41 }, cbOutlineColor);
+		// box
+		pixelMode.RectFilledClip({ 1100,30,1110,40 }, cbBoxColor);
+		// checkmark "X"
+		pixelMode.TextClip("X", 1102, 32, cbXColor);
+		// label
+		pixelMode.TextClip(cblabel, 1100 + 20, 32, cbLabelColor);
+
+		// --- End Check box
+		
+		// --- Begin button requires pixelmode to render
+		// user makes a derived class
+		// OnClick()
+		//	call private click function to do standard stuff (change internal states)
+		//		call virtual OnClick function the user provides
+		// 
 		// draw button
 
+		// passed in
 		// or a Point2i
 		uint32_t buttonPosX = 1100;
 		uint32_t buttonPosY = 20;
 
 		uint32_t buttonLength = 100;
 		uint32_t textScale = 1;
-		bool outline = true;
-		static bool enabled = true;
-		bool mouseHover = false;
-		bool pressed = false;
+		std::string t = "Texture";
+
 
 		game::Color textColor = game::Colors::Black;
 		game::Color enabledColor = game::Colors::Green;
@@ -681,15 +704,21 @@ public:
 		game::Color hoveredColor = game::Colors::LightGray;  //maybe xor the colors
 		game::Color pressedColor = game::Colors::DarkGray;
 		game::Color outlineColor = game::Colors::Magenta;
-		std::string t = "Texture";
 
+		bool outline = true;
+		static bool enabled = true;
+		bool mouseHover = false;
+		bool pressed = false;
+		std::string label = t;
+
+		// calculated on every (size,pos, text size, etc) change
 		uint32_t textHeight = 8;
 		uint32_t textScaled = textHeight * textScale;
 		uint32_t halfTextHeight = textScaled >> 1;
 		uint32_t buttonRadius = halfTextHeight + 2;
 		uint32_t centerPillX = buttonPosX - buttonRadius + (buttonLength >> 1);
 		
-		uint32_t textPosX = centerPillX - ((uint32_t)t.length() * halfTextHeight);
+		uint32_t textPosX = centerPillX - ((uint32_t)label.length() * halfTextHeight);
 		uint32_t textPosY = buttonPosY - halfTextHeight + 1 ;
 
 		// mouse detection  
@@ -705,6 +734,7 @@ public:
 					if (mouse.y > (int32_t)(buttonPosY - buttonRadius))
 					{
 						mouseHover = true;
+						// Bug fix?
 						// if WasButtonePressed(left)
 						//  means was pressed on object,
 						// pressedonobject = true
@@ -750,7 +780,7 @@ public:
 			pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, pressedColor);
 		}
 
-		pixelMode.TextClip(t, textPosX, textPosY, textColor, textScale);
+		pixelMode.TextClip(label, textPosX, textPosY, textColor, textScale);
 
 		// --- END button
 		pixelMode.Render();
