@@ -41,5 +41,8 @@
     <ClInclude Include="GameSoftware3D_Particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GameSimpleUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
