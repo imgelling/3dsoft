@@ -78,6 +78,7 @@ public:
 	//std::vector<game::Triangle> trianglesToRender;
 	//game::RenderTarget renderTarget;
 
+	game::SimpleUI simpleUI;
 	game::ButtonUI textureButton;
 	game::ButtonUI lightingButton;
 
@@ -95,9 +96,9 @@ public:
 		showText = true;
 	}
 
-	void buttonCall(std::string str, std::any value)
+	void simpleUICallBack(std::string str, std::any value)
 	{
-		if (str == "Texture")
+		if (str == "TextureButton")
 		{
 			bool rec = false;
 			try
@@ -115,18 +116,17 @@ public:
 			return;
 		}
 
-		if (str == "Lighting")
+		if (str == "LightingButton")
 		{
 			bool rec = false;
 			try
 			{
-				//std::cout << str << " sent " << std::any_cast<bool>(value) << " as value" << ".\n";
+				//std::cout << value.type().name() << " was sent.\n";
 				rec = std::any_cast<bool>(value);
-
 			}
-			catch (...) //const std::bad_any_cast& e) 
+			catch (...) 
 			{
-				std::cout << str << " sent an INVALID VALUE.\n";// << e.what() << '\n';
+				std::cout << str << " sent an INVALID VALUE.\n";
 				return;
 			}
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING, rec);
@@ -306,23 +306,31 @@ public:
 		geKeyboard.SetTextInputText("3D text");
 
 		// Simple UI
+
+		simpleUI.Initialize(pixelMode, std::bind(&Game::simpleUICallBack, this, std::placeholders::_1, std::placeholders::_2));
+
 		textureButton.label = "Texture";
-		textureButton.enabled = false;
-		textureButton._pixelMode = &pixelMode;
+		textureButton.name = "TextureButton";
+		textureButton.toggled = false;
+		//textureButton._pixelMode = &pixelMode;
 		textureButton.position.x = 1100;
 		textureButton.position.y = 20;
 		textureButton.length = 100;
 		textureButton.outlined = true;
-		textureButton.func = std::bind(&Game::buttonCall,this,std::placeholders::_1, std::placeholders::_2);
+		//textureButton.uiCallback = std::bind(&Game::simpleUICallBack,this,std::placeholders::_1, std::placeholders::_2);
 
 		lightingButton.label = "Lighting";
-		lightingButton.enabled = false;
-		lightingButton._pixelMode = &pixelMode;
+		lightingButton.name = "LightingButton";
+		lightingButton.toggled = false;
+		//lightingButton._pixelMode = &pixelMode;
 		lightingButton.position.x = 1100;
 		lightingButton.position.y = 40;
 		lightingButton.length = 100;
 		lightingButton.outlined = true;
-		lightingButton.func = std::bind(&Game::buttonCall, this, std::placeholders::_1, std::placeholders::_2);
+		//lightingButton.uiCallback = std::bind(&Game::simpleUICallBack, this, std::placeholders::_1, std::placeholders::_2);
+
+		simpleUI.Add(&textureButton);
+		simpleUI.Add(&lightingButton);
 	}
 
 	void Shutdown()
@@ -735,7 +743,7 @@ public:
 		game::Color cbBoxColor = game::Colors::Yellow;
 		game::Color cbOutlineColor = game::Colors::Magenta;
 		uint32_t cbTextSize = 8;
-		int32_t s = 3;
+		int32_t s = 1;
 		int32_t cbScale = s * cbTextSize;
 		static bool cbChecked = false;
 		// outline
@@ -757,116 +765,16 @@ public:
 
 		// --- End Check box
 
-		textureButton.Update();
-		textureButton.Draw();
+		//textureButton.Update();
+		//textureButton.Draw();
 
-		lightingButton.Update();
-		lightingButton.Draw();
+		//lightingButton.Update();
+		//lightingButton.Draw();
+		simpleUI.Update();
+		simpleUI.Draw();
 
 		
-		//// --- Begin button requires pixelmode to render
-		//// user makes a derived class
-		//// OnClick()
-		////	call private click function to do standard stuff (change internal states)
-		////		call virtual OnClick function the user provides
-		//// 
-		//// draw button
-
-		//// passed in
-		//// or a Point2i
-		//uint32_t buttonPosX = 1100; //
-		//uint32_t buttonPosY = 20;	//
-
-		//uint32_t buttonLength = 100;	//
-		//uint32_t textScale = 1;			//
-		//std::string t = "Texture";
-
-
-		//game::Color textColor = game::Colors::Black;
-		//game::Color enabledColor = game::Colors::Green;
-		//game::Color disabledColor = game::Colors::Red;// DarkGray;
-		//game::Color hoveredColor = game::Colors::LightGray;  //maybe xor the colors
-		//game::Color pressedColor = game::Colors::DarkGray;
-		//game::Color outlineColor = game::Colors::Magenta;
-
-		//bool outline = true;
-		//static bool enabled = true;
-		//bool mouseHover = false;
-		//bool pressed = false;
-		//std::string label = t;
-
-		//// calculated on every (size,pos, text size, etc) change
-		//uint32_t textHeight = 8;
-		//uint32_t textScaled = textHeight * textScale;
-		//uint32_t halfTextHeight = textScaled >> 1;
-		//uint32_t buttonRadius = halfTextHeight + 2;
-		//uint32_t centerPillX = buttonPosX - buttonRadius + (buttonLength >> 1);
-		//
-		//uint32_t textPosX = centerPillX - ((uint32_t)label.length() * halfTextHeight);
-		//uint32_t textPosY = buttonPosY - halfTextHeight + 1 ;
-
-		//// mouse detection  
-		//// Bug - held, then move mouse onto button, release and still toggles
-		//// Todo - make rect contains point
-		//game::Pointi mouse = pixelMode.GetScaledMousePosition();
-		//if (mouse.x < (int32_t)(buttonPosX + buttonLength))
-		//{
-		//	if (mouse.x > (int32_t)(buttonPosX - buttonRadius))
-		//	{
-		//		if (mouse.y < (int32_t)(buttonPosY + buttonRadius))
-		//		{
-		//			if (mouse.y > (int32_t)(buttonPosY - buttonRadius))
-		//			{
-		//				mouseHover = true;
-		//				// Bug fix?
-		//				// if WasButtonePressed(left)
-		//				//  means was pressed on object,
-		//				// pressedonobject = true
-		//				if (geMouse.WasButtonReleased(geM_LEFT))
-		//				{
-		//					// if pressedonobject do
-		//					enabled = !enabled;
-		//					software3D.SetState(GAME_SOFTWARE3D_TEXTURE, enabled);
-		//					// and pressedonobject = false
-		//					// else ignore
-		//				}
-		//				if (geMouse.IsButtonHeld(geM_LEFT))
-		//				{
-		//					pressed = true;
-		//				}
-
-		//			}
-
-		//		}
-		//	}
-		//}
-
-		//if (outline)
-		//{
-		//	pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength+2, buttonRadius + 1, outlineColor);
-		//}
-
-		//// just change colors
-		//if (enabled)
-		//{
-		//	pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, enabledColor);
-		//}
-		//else
-		//{
-		//	pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, disabledColor);
-		//}
-		//if (mouseHover)
-		//{
-		//	pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, hoveredColor);
-		//}
-		//if (pressed)
-		//{
-		//	pixelMode.HPillClip(buttonPosX, buttonPosY, buttonLength, buttonRadius, pressedColor);
-		//}
-
-		//pixelMode.TextClip(label, textPosX, textPosY, textColor, textScale);
-
-		//// --- END button
+		
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))
 		{
@@ -887,11 +795,6 @@ int32_t main()
 	game::Logger logger("Log.html");
 	Game engine;
 	engine.geSetLogger(&logger);
-
-	std::any bob;
-	bob = std::string("std::any string test");
-	
-	std::cout << std::any_cast<std::string>(bob) << "\n";
 
 	testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 	testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
