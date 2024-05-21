@@ -74,13 +74,12 @@ public:
 	//game::Mesh sky;
 	game::Mesh text;
 
-
-	//std::vector<game::Triangle> trianglesToRender;
-	//game::RenderTarget renderTarget;
-
+	// UI
 	game::SimpleUI simpleUI;
 	game::ButtonUI textureButton;
 	game::ButtonUI lightingButton;
+	game::CheckBoxUI lightingDepthCheckBox;
+	game::CheckBoxUI lightingFaceCheckBox;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -96,7 +95,7 @@ public:
 		showText = true;
 	}
 
-	void simpleUICallBack(std::string str, std::any value)
+	void simpleUICallBack(const std::string& str, std::any& value)
 	{
 		if (str == "TextureButton")
 		{
@@ -130,6 +129,57 @@ public:
 				return;
 			}
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING, rec);
+			return;
+		}
+
+		if (str == "LightingDepthCheckBox")
+		{
+			bool rec = false;
+			try
+			{
+				//std::cout << value.type().name() << " was sent.\n";
+				rec = std::any_cast<bool>(value);
+			}
+			catch (...)
+			{
+				std::cout << str << " sent an INVALID VALUE.\n";
+				return;
+			}
+			if (rec)
+			{
+				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+				lightingFaceCheckBox.checked = false;
+			}
+			else
+			{
+				//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+			}
+			//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, rec);
+			return;
+		}
+
+		if (str == "LightingFaceCheckBox")
+		{
+			bool rec = false;
+			try
+			{
+				rec = std::any_cast<bool>(value);
+			}
+			catch (...)
+			{
+				std::cout << str << " sent an INVALID VALUE.\n";
+				return;
+			}
+			if (rec)
+			{
+				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+				lightingDepthCheckBox.checked = false;
+			}
+			else
+			{
+				//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+			}
+			//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, rec);
 			return;
 		}
 
@@ -312,25 +362,35 @@ public:
 		textureButton.label = "Texture";
 		textureButton.name = "TextureButton";
 		textureButton.toggled = false;
-		//textureButton._pixelMode = &pixelMode;
 		textureButton.position.x = 1100;
 		textureButton.position.y = 20;
 		textureButton.length = 100;
 		textureButton.outlined = true;
-		//textureButton.uiCallback = std::bind(&Game::simpleUICallBack,this,std::placeholders::_1, std::placeholders::_2);
 
 		lightingButton.label = "Lighting";
 		lightingButton.name = "LightingButton";
 		lightingButton.toggled = false;
-		//lightingButton._pixelMode = &pixelMode;
 		lightingButton.position.x = 1100;
 		lightingButton.position.y = 40;
 		lightingButton.length = 100;
 		lightingButton.outlined = true;
-		//lightingButton.uiCallback = std::bind(&Game::simpleUICallBack, this, std::placeholders::_1, std::placeholders::_2);
+
+		lightingDepthCheckBox.position.x = 1100;
+		lightingDepthCheckBox.position.y = 60;
+		lightingDepthCheckBox.label = "Depth Lighting Mode";
+		lightingDepthCheckBox.name = "LightingDepthCheckBox";
+
+		lightingFaceCheckBox.position.x = 1100;
+		lightingFaceCheckBox.position.y = 80;
+		lightingFaceCheckBox.label = "Face Lighting Mode";
+		lightingFaceCheckBox.name = "LightingFaceCheckBox";
+		lightingFaceCheckBox.checked = true;
 
 		simpleUI.Add(&textureButton);
 		simpleUI.Add(&lightingButton);
+		simpleUI.Add(&lightingDepthCheckBox);
+		simpleUI.Add(&lightingFaceCheckBox);
+
 	}
 
 	void Shutdown()
@@ -472,6 +532,88 @@ public:
 	}
 
 	
+	void GeneratePlane()
+	{
+		// tl
+//topLeftTri.vertices[0].x = -size + pxi;
+//topLeftTri.vertices[0].y = -size + pyj;
+//topLeftTri.vertices[0].z = z;
+//topLeftTri.color[0] = game::Colors::Red;
+//topLeftTri.uvs[0].u = 0.0f;
+//topLeftTri.uvs[0].v = 0.0f;
+//topLeftTri.faceNormal = normal;
+
+//// tr
+//topLeftTri.vertices[1].x = size + pxi;
+//topLeftTri.vertices[1].y = -size + pyj;
+//topLeftTri.vertices[1].z = z;
+//topLeftTri.uvs[1].u = 1.0f;
+//topLeftTri.uvs[1].v = 0.0f;
+//topLeftTri.color[1] = game::Colors::Green;
+
+//// bl
+//topLeftTri.vertices[2].x = -size + pxi;
+//topLeftTri.vertices[2].y = size + pyj;
+//topLeftTri.vertices[2].z = z;
+//topLeftTri.uvs[2].u = 0.0f;
+//topLeftTri.uvs[2].v = 1.0f;
+//topLeftTri.color[2] = game::Colors::Blue;
+
+//// tr
+//bottomRightTri.vertices[0].x = size + pxi;
+//bottomRightTri.vertices[0].y = -size + pyj;
+//bottomRightTri.vertices[0].z = z;
+//bottomRightTri.color[0] = game::Colors::Green;
+//bottomRightTri.uvs[0].u = 1.0f;
+//bottomRightTri.uvs[0].v = 0.0f;
+//bottomRightTri.faceNormal = normal;
+
+//// br
+//bottomRightTri.vertices[1].x = size + pxi;
+//bottomRightTri.vertices[1].y = size + pyj;
+//bottomRightTri.vertices[1].z = z;
+//bottomRightTri.uvs[1].u = 1.0f;
+//bottomRightTri.uvs[1].v = 1.0f;
+//bottomRightTri.color[1] = game::Colors::White;
+
+//// bl
+//bottomRightTri.vertices[2].x = -size + pxi;
+//bottomRightTri.vertices[2].y = size + pyj;
+//bottomRightTri.vertices[2].z = z;
+//bottomRightTri.uvs[2].u = 0.0f;
+//bottomRightTri.uvs[2].v = 1.0f;
+//bottomRightTri.color[2] = game::Colors::Blue;
+
+//for (uint32_t i = 0; i < 3; i++)
+//{
+//	topLeftTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
+//	bottomRightTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
+//	//topLeftTri.vertices[i] -= {pxi, pyj, z};
+//	//topLeftTri.vertices[i] = game::RotateX(topLeftTri.vertices[i], value);
+//	//topLeftTri.vertices[i] = game::RotateY(topLeftTri.vertices[i], -value);
+//	//topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value - 3.14159f);
+//	//topLeftTri.vertices[i] += {pxi , pyj, z};
+//	//bottomRightTri.vertices[i] -= {pxi, pyj, z};
+//	//bottomRightTri.vertices[i] = game::RotateX(bottomRightTri.vertices[i], value);
+//	//bottomRightTri.vertices[i] = game::RotateY(bottomRightTri.vertices[i], -value);
+//	//bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value - 3.14159f);
+//	//bottomRightTri.vertices[i] += {pxi, pyj, z};
+//}
+////for (uint32_t i = 0; i < 3; i++)
+////{
+////	topLeftTri.vertices[i] -= {px + i, py + j, 0};
+////	bottomRightTri.vertices[i] -= {px + i, py + j, 0};
+////}
+////topLeftTri = game::RotateZ(topLeftTri, value);
+////bottomRightTri = game::RotateZ(bottomRightTri, value);
+////for (uint32_t i = 0; i < 3; i++)
+////{
+////	topLeftTri.vertices[i] += {px + i, py + j, 0};
+////	bottomRightTri.vertices[i] += {px + i, py + j, 0};
+////}
+//mesh.tris.emplace_back(topLeftTri);
+//mesh.tris.emplace_back(bottomRightTri);
+	}
 
 
 	// Generate plane, points (particles/etc)
@@ -500,9 +642,6 @@ public:
 
 		mesh.tris.clear();
 
-		//game::Triangle topLeftTri;
-		//game::Triangle bottomRightTri;
-
 		game::Mesh cube;
 		for (uint8_t letter : text)
 		{
@@ -521,89 +660,12 @@ public:
 						//game::GenerateCube(cube, p, color);
 						//game::GenerateUVSphere(cube, 2, 5, p, color);
 						GenerateCylinder(cube, size, size, 10, 0.5f, p, color);
-						for (int i = 0; i < cube.tris.size(); i++)
+						const uint64_t size = cube.tris.size();
+						for (uint32_t i = 0; i < size; ++i)
 						{
 							mesh.tris.emplace_back(cube.tris[i]);
 						}
-						// tl
-						//topLeftTri.vertices[0].x = -size + pxi;
-						//topLeftTri.vertices[0].y = -size + pyj;
-						//topLeftTri.vertices[0].z = z;
-						//topLeftTri.color[0] = game::Colors::Red;
-						//topLeftTri.uvs[0].u = 0.0f;
-						//topLeftTri.uvs[0].v = 0.0f;
-						//topLeftTri.faceNormal = normal;
 
-						//// tr
-						//topLeftTri.vertices[1].x = size + pxi;
-						//topLeftTri.vertices[1].y = -size + pyj;
-						//topLeftTri.vertices[1].z = z;
-						//topLeftTri.uvs[1].u = 1.0f;
-						//topLeftTri.uvs[1].v = 0.0f;
-						//topLeftTri.color[1] = game::Colors::Green;
-
-						//// bl
-						//topLeftTri.vertices[2].x = -size + pxi;
-						//topLeftTri.vertices[2].y = size + pyj;
-						//topLeftTri.vertices[2].z = z;
-						//topLeftTri.uvs[2].u = 0.0f;
-						//topLeftTri.uvs[2].v = 1.0f;
-						//topLeftTri.color[2] = game::Colors::Blue;
-
-						//// tr
-						//bottomRightTri.vertices[0].x = size + pxi;
-						//bottomRightTri.vertices[0].y = -size + pyj;
-						//bottomRightTri.vertices[0].z = z;
-						//bottomRightTri.color[0] = game::Colors::Green;
-						//bottomRightTri.uvs[0].u = 1.0f;
-						//bottomRightTri.uvs[0].v = 0.0f;
-						//bottomRightTri.faceNormal = normal;
-
-						//// br
-						//bottomRightTri.vertices[1].x = size + pxi;
-						//bottomRightTri.vertices[1].y = size + pyj;
-						//bottomRightTri.vertices[1].z = z;
-						//bottomRightTri.uvs[1].u = 1.0f;
-						//bottomRightTri.uvs[1].v = 1.0f;
-						//bottomRightTri.color[1] = game::Colors::White;
-
-						//// bl
-						//bottomRightTri.vertices[2].x = -size + pxi;
-						//bottomRightTri.vertices[2].y = size + pyj;
-						//bottomRightTri.vertices[2].z = z;
-						//bottomRightTri.uvs[2].u = 0.0f;
-						//bottomRightTri.uvs[2].v = 1.0f;
-						//bottomRightTri.color[2] = game::Colors::Blue;
-
-						//for (uint32_t i = 0; i < 3; i++)
-						//{
-						//	topLeftTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
-						//	bottomRightTri.normals[i] = normal;// { 0.0f, 0.0f, -1.0f };
-						//	//topLeftTri.vertices[i] -= {pxi, pyj, z};
-						//	//topLeftTri.vertices[i] = game::RotateX(topLeftTri.vertices[i], value);
-						//	//topLeftTri.vertices[i] = game::RotateY(topLeftTri.vertices[i], -value);
-						//	//topLeftTri.vertices[i] = game::RotateZ(topLeftTri.vertices[i], value - 3.14159f);
-						//	//topLeftTri.vertices[i] += {pxi , pyj, z};
-						//	//bottomRightTri.vertices[i] -= {pxi, pyj, z};
-						//	//bottomRightTri.vertices[i] = game::RotateX(bottomRightTri.vertices[i], value);
-						//	//bottomRightTri.vertices[i] = game::RotateY(bottomRightTri.vertices[i], -value);
-						//	//bottomRightTri.vertices[i] = game::RotateZ(bottomRightTri.vertices[i], value - 3.14159f);
-						//	//bottomRightTri.vertices[i] += {pxi, pyj, z};
-						//}
-						////for (uint32_t i = 0; i < 3; i++)
-						////{
-						////	topLeftTri.vertices[i] -= {px + i, py + j, 0};
-						////	bottomRightTri.vertices[i] -= {px + i, py + j, 0};
-						////}
-						////topLeftTri = game::RotateZ(topLeftTri, value);
-						////bottomRightTri = game::RotateZ(bottomRightTri, value);
-						////for (uint32_t i = 0; i < 3; i++)
-						////{
-						////	topLeftTri.vertices[i] += {px + i, py + j, 0};
-						////	bottomRightTri.vertices[i] += {px + i, py + j, 0};
-						////}
-						//mesh.tris.emplace_back(topLeftTri);
-						//mesh.tris.emplace_back(bottomRightTri);
 					}
 				}
 			}
@@ -646,7 +708,7 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true); // button controlled
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
@@ -734,42 +796,7 @@ public:
 			}
 		}
 
-		// --- Begin Check box
-		uint32_t checkBoxPosX = 800;
-		uint32_t checkBoxPosY = 30;
-		std::string cblabel = "Wire Frame";
-		game::Color cbLabelColor = game::Colors::Black;
-		game::Color cbXColor = game::Colors::DarkRed;
-		game::Color cbBoxColor = game::Colors::Yellow;
-		game::Color cbOutlineColor = game::Colors::Magenta;
-		uint32_t cbTextSize = 8;
-		int32_t s = 1;
-		int32_t cbScale = s * cbTextSize;
-		static bool cbChecked = false;
-		// outline
-		pixelMode.RectClip({ (int32_t)checkBoxPosX - 1, (int32_t)checkBoxPosY - 1, (int32_t)checkBoxPosX + (cbScale + 2) + 1, (int32_t)checkBoxPosY + (cbScale + 2) + 1 }, cbOutlineColor);
-		// box
-		pixelMode.RectFilledClip({ (int32_t)checkBoxPosX,(int32_t)checkBoxPosY,(int32_t)checkBoxPosX + (cbScale + 2),(int32_t)checkBoxPosY + (cbScale + 2)}, cbBoxColor);
-		if (geKeyboard.WasKeyReleased(geK_B))
-		{
-			cbChecked = !cbChecked;
-		}
-		if (cbChecked)
-		{
-			// checkmark "X"
-			pixelMode.TextClip("x", (int32_t)(checkBoxPosX)+1, (int32_t)(checkBoxPosY + 1), cbXColor, s);
-		}
-		// label
-		pixelMode.TextClip(cblabel, checkBoxPosX + (cbScale * 2), checkBoxPosY + 2, cbLabelColor, s);
-		
-
-		// --- End Check box
-
-		//textureButton.Update();
-		//textureButton.Draw();
-
-		//lightingButton.Update();
-		//lightingButton.Draw();
+		// Update and render UI
 		simpleUI.Update();
 		simpleUI.Draw();
 

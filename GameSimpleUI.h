@@ -8,6 +8,7 @@
 
 namespace game
 {
+	// UI element base class, all UI needs to derive from this
 	class ElementUI
 	{
 		friend class SimpleUI;
@@ -19,7 +20,7 @@ namespace game
 		virtual void Update() { enginePointer->geLogger->Error("Must create Update() method."); }
 		virtual void Draw() { enginePointer->geLogger->Error("Must create Draw() method."); }
 	protected:
-		std::function<void(std::string, std::any)> _uiCallback;
+		std::function<void(const std::string&, std::any&)> _uiCallback;
 		PixelMode* _pixelMode;
 		const uint32_t _textHeight = 8;
 		bool _hovered;
@@ -36,7 +37,7 @@ namespace game
 		_pixelMode = nullptr;
 	}
 
-
+	// Can be toggled on or off.  Passes a bool to callback.
 	class ButtonUI : public ElementUI
 	{
 	public:
@@ -72,15 +73,8 @@ namespace game
 		toggled = false;
 	}
 
-	void ButtonUI::Draw()
+	inline void ButtonUI::Draw()
 	{
-#if defined(_DEBUG)
-		if (_pixelMode == nullptr)
-		{
-			enginePointer->geLogger->Error("Pixel Mode not set in ButtonUI named " + label + "\n");
-			return;
-		}
-#endif
 		uint32_t textScaled = _textHeight * scale;
 		uint32_t halfTextHeight = textScaled >> 1;
 		uint32_t buttonRadius = halfTextHeight + 2;
@@ -117,13 +111,6 @@ namespace game
 
 	inline void ButtonUI::Update()
 	{
-#if defined(_DEBUG)
-		if (_pixelMode == nullptr)
-		{
-			enginePointer->geLogger->Error("Pixel Mode not set in ButtonUI named " + label + "\n");
-			return;
-		}
-#endif
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
 		_hovered = false;
@@ -145,13 +132,6 @@ namespace game
 							// if pressedonobject do
 							toggled = !toggled;
 							std::any t = toggled;
-#if defined(_DEBUG)
-							if (_uiCallback == nullptr)
-							{
-								enginePointer->geLogger->Error("Callback function not set in ButtonUI named " + label + "\n");
-								return;
-							}
-#endif
 							_uiCallback(name, t);
 						}
 
@@ -167,6 +147,87 @@ namespace game
 		}
 	}
 
+	// Can be checked or not checked.  Passes a bool to callback
+	class CheckBoxUI : public ElementUI
+	{
+	public:
+		CheckBoxUI();
+		// Text scale (scales the vertical size of pillshape also)
+		uint32_t scale;
+		// Text of button
+		std::string label;
+		bool checked;
+		bool outlined;
+
+		Color labelColor = game::Colors::Black;
+		Color outlineColor = game::Colors::Magenta;
+		Color boxColor = game::Colors::Yellow;
+		Color xColor = game::Colors::DarkRed;
+
+		void Update() override;
+		void Draw() override;
+	private:
+	};
+
+	inline CheckBoxUI::CheckBoxUI()
+	{
+		scale = 1;
+		label = "CheckBox";
+		outlined = true;
+		checked = false;
+	}
+
+	inline void CheckBoxUI::Draw()
+	{
+		const int32_t textScaled = scale * _textHeight;
+
+		// Outline
+		_pixelMode->RectClip({ (int32_t)position.x - 1, (int32_t)position.y - 1, (int32_t)position.x + (textScaled + 2) + 1, (int32_t)position.y + ((int32_t)textScaled + 2) + 1 }, outlineColor);
+		// Box
+		_pixelMode->RectFilledClip({ (int32_t)position.x,(int32_t)position.y,(int32_t)position.x + (textScaled + 2),(int32_t)position.y + (textScaled + 2) }, boxColor);
+		if (checked)
+		{
+			// Checkmark "X"
+			_pixelMode->TextClip("x", (int32_t)(position.x)+1, (int32_t)(position.y + 1), xColor, scale);
+		}
+		// Label
+		_pixelMode->TextClip(label, position.x + (textScaled * 2), position.y + 2, labelColor, scale);
+	}
+
+	inline void CheckBoxUI::Update()
+	{
+		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
+		_pressed = false;
+		_hovered = false;
+		const uint32_t textScaled = _textHeight * scale;
+
+		if (mouse.x < (int32_t)(position.x + (textScaled + 2) + 1))
+		{
+			if (mouse.x > (int32_t)(position.x))
+			{
+				if (mouse.y < (int32_t)(position.y + ((int32_t)textScaled + 2) + 1))
+				{
+					if (mouse.y > (int32_t)(position.y))
+					{
+						_hovered = true;
+						if (enginePointer->geMouse.WasButtonReleased(geM_LEFT))
+						{
+							if (!checked) checked = !checked;
+							std::any t = checked;
+							_uiCallback(name, t);
+						}
+
+						if (enginePointer->geMouse.IsButtonHeld(geM_LEFT))
+						{
+							_pressed = true;
+						}
+
+					}
+
+				}
+			}
+		}
+	}
  
 	class SimpleUI
 	{
@@ -176,12 +237,12 @@ namespace game
 			_pixelMode = nullptr;
 			_uiCallback = nullptr;
 		}
-		SimpleUI(PixelMode &pixelMode, std::function<void(std::string, std::any)> callback)
+		SimpleUI(PixelMode &pixelMode, std::function<void(const std::string&, std::any&)> callback)
 		{
 			_pixelMode = &pixelMode;
 			_uiCallback = callback;
 		}
-		void Initialize(PixelMode& pixelMode, std::function<void(std::string, std::any)> callback)
+		void Initialize(PixelMode& pixelMode, std::function<void(const std::string&, std::any&)> callback)
 		{
 			_pixelMode = &pixelMode;
 			_uiCallback = callback;
@@ -196,6 +257,13 @@ namespace game
 
 		void Update()
 		{
+#if defined(_DEBUG)
+			if (_uiCallback == nullptr)
+			{
+				enginePointer->geLogger->Error("Callback function not set in SimpleUI.\n");
+				return;
+			}
+#endif
 			const uint64_t size = elements.size();
 			for (uint32_t ele = 0; ele < size; ++ele)
 			{
@@ -205,6 +273,13 @@ namespace game
 
 		void Draw()
 		{
+#if defined(_DEBUG)
+			if (_pixelMode == nullptr)
+			{
+				enginePointer->geLogger->Error("Pixel Mode not set in SimpleUI.\n");
+				return;
+		}
+#endif
 			const uint64_t size = elements.size();
 			for (uint32_t ele = 0; ele < size; ++ele)
 			{
@@ -214,7 +289,7 @@ namespace game
 
 	private:
 		PixelMode* _pixelMode;
-		std::function<void(std::string, std::any)> _uiCallback;
+		std::function<void(const std::string&, std::any&)> _uiCallback;
 	};
 
 }
