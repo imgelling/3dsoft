@@ -78,8 +78,9 @@ public:
 	game::SimpleUI simpleUI;
 	game::ButtonUI textureButton;
 	game::ButtonUI lightingButton;
-	game::CheckBoxUI lightingDepthCheckBox;
-	game::CheckBoxUI lightingFaceCheckBox;
+	game::RadialUI lightingDepthRadial;
+	game::RadialUI lightingFaceRadial;
+	game::RadialUI lightingVertexRadial;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -132,7 +133,7 @@ public:
 			return;
 		}
 
-		if (str == "LightingDepthCheckBox")
+		if (str == "LightingDepthRadial")
 		{
 			bool rec = false;
 			try
@@ -148,7 +149,8 @@ public:
 			if (rec)
 			{
 				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
-				lightingFaceCheckBox.checked = false;
+				lightingFaceRadial.checked = false;
+				lightingVertexRadial.checked = false;
 			}
 			else
 			{
@@ -158,7 +160,7 @@ public:
 			return;
 		}
 
-		if (str == "LightingFaceCheckBox")
+		if (str == "LightingFaceRadial")
 		{
 			bool rec = false;
 			try
@@ -173,7 +175,34 @@ public:
 			if (rec)
 			{
 				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-				lightingDepthCheckBox.checked = false;
+				lightingDepthRadial.checked = false;
+				lightingVertexRadial.checked = false;
+			}
+			else
+			{
+				//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+			}
+			//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, rec);
+			return;
+		}
+
+		if (str == "LightingVertexRadial")
+		{
+			bool rec = false;
+			try
+			{
+				rec = std::any_cast<bool>(value);
+			}
+			catch (...)
+			{
+				std::cout << str << " sent an INVALID VALUE.\n";
+				return;
+			}
+			if (rec)
+			{
+				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+				lightingDepthRadial.checked = false;
+				lightingFaceRadial.checked = false;
 			}
 			else
 			{
@@ -361,6 +390,9 @@ public:
 
 		textureButton.label = "Texture";
 		textureButton.name = "TextureButton";
+		textureButton.toggledColor = game::Colors::Green;
+		textureButton.unToggledColor = game::Colors::Red;
+		//textureButton.labelColor = game::Colors::White;
 		textureButton.toggled = false;
 		textureButton.position.x = 1100;
 		textureButton.position.y = 20;
@@ -369,27 +401,40 @@ public:
 
 		lightingButton.label = "Lighting";
 		lightingButton.name = "LightingButton";
+		lightingButton.toggledColor = game::Colors::Green;
+		lightingButton.unToggledColor = game::Colors::Red;
 		lightingButton.toggled = false;
 		lightingButton.position.x = 1100;
 		lightingButton.position.y = 40;
 		lightingButton.length = 100;
 		lightingButton.outlined = true;
 
-		lightingDepthCheckBox.position.x = 1100;
-		lightingDepthCheckBox.position.y = 60;
-		lightingDepthCheckBox.label = "Depth Lighting Mode";
-		lightingDepthCheckBox.name = "LightingDepthCheckBox";
+		lightingDepthRadial.position.x = 1100;
+		lightingDepthRadial.position.y = 60;
+		lightingDepthRadial.label = "Depth Lighting";
+		lightingDepthRadial.name = "LightingDepthRadial";
+		lightingDepthRadial.labelColor = game::Colors::White;
 
-		lightingFaceCheckBox.position.x = 1100;
-		lightingFaceCheckBox.position.y = 80;
-		lightingFaceCheckBox.label = "Face Lighting Mode";
-		lightingFaceCheckBox.name = "LightingFaceCheckBox";
-		lightingFaceCheckBox.checked = true;
+		lightingFaceRadial.position.x = 1100;
+		lightingFaceRadial.position.y = 80;
+		lightingFaceRadial.label = "Face Lighting";
+		lightingFaceRadial.name = "LightingFaceRadial";
+		lightingFaceRadial.labelColor = game::Colors::White;
+		lightingFaceRadial.checked = true;
+
+		lightingVertexRadial.position.x = 1100;
+		lightingVertexRadial.position.y = 100;
+		lightingVertexRadial.label = "Vertex Lighting";
+		lightingVertexRadial.name = "LightingVertexRadial";
+		lightingVertexRadial.labelColor = game::Colors::White;
+		//lightingVertexRadial.scale = 1;
+		
 
 		simpleUI.Add(&textureButton);
 		simpleUI.Add(&lightingButton);
-		simpleUI.Add(&lightingDepthCheckBox);
-		simpleUI.Add(&lightingFaceCheckBox);
+		simpleUI.Add(&lightingDepthRadial);
+		simpleUI.Add(&lightingFaceRadial);
+		simpleUI.Add(&lightingVertexRadial);
 
 	}
 
@@ -658,8 +703,8 @@ public:
 						const float_t pyj = py + (j * sizeX2);
 						const game::Vector3f p = { pxi, pyj, 0 };
 						//game::GenerateCube(cube, p, color);
-						//game::GenerateUVSphere(cube, 2, 5, p, color);
-						GenerateCylinder(cube, size, size, 10, 0.5f, p, color);
+						game::GenerateUVSphere(cube, 10, 20, p, color);
+						//GenerateCylinder(cube, size, size, 10, 0.5f, p, color);
 						const uint64_t size = cube.tris.size();
 						for (uint32_t i = 0; i < size; ++i)
 						{
@@ -685,7 +730,7 @@ public:
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
-		pixelMode.Clear(game::Colors::CornFlowerBlue);
+		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
 		//torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
@@ -788,11 +833,11 @@ public:
 			pixelMode.Text("Working Threads: " + std::to_string(software3D.NumberOfThreads()), 0, 30, game::Colors::Magenta, 1);
 			if (geKeyboard.IsTextInput())
 			{
-				pixelMode.Text("Text Input Mode: True", 0, 50, game::Colors::Magenta, 2);
+				pixelMode.Text("Text Input Mode: True", 0, 50, game::Colors::Magenta, 1);
 			}
 			else
 			{
-				pixelMode.Text("Text Input Mode: False", 0, 50, game::Colors::Magenta, 2);
+				pixelMode.Text("Text Input Mode: False", 0, 50, game::Colors::Magenta, 1);
 			}
 		}
 
@@ -800,6 +845,7 @@ public:
 		simpleUI.Update();
 		simpleUI.Draw();
 
+		// radial	 
 		
 		
 		pixelMode.Render();

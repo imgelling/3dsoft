@@ -52,7 +52,7 @@ namespace game
 		bool toggled;
 		bool outlined;
 
-		Color textColor = game::Colors::Black;
+		Color labelColor = game::Colors::Black;
 		Color toggledColor = game::Colors::LightGray;
 		Color unToggledColor = game::Colors::DarkGray; // 
 		Color hoveredColor = game::Colors::White;  //maybe xor the colors
@@ -106,7 +106,7 @@ namespace game
 			color = pressedColor;
 		}
 		_pixelMode->HPillClip(position.x, position.y, length, buttonRadius, color);
-		_pixelMode->TextClip(label, textPosX, textPosY, textColor, scale);
+		_pixelMode->TextClip(label, textPosX, textPosY, labelColor, scale);
 	}
 
 	inline void ButtonUI::Update()
@@ -129,7 +129,6 @@ namespace game
 						_hovered = true;
 						if (enginePointer->geMouse.WasButtonReleased(geM_LEFT))
 						{
-							// if pressedonobject do
 							toggled = !toggled;
 							std::any t = toggled;
 							_uiCallback(name, t);
@@ -152,7 +151,7 @@ namespace game
 	{
 	public:
 		CheckBoxUI();
-		// Text scale (scales the vertical size of pillshape also)
+		// Text scale (scales the vertical size of checkbox)
 		uint32_t scale;
 		// Text of button
 		std::string label;
@@ -182,13 +181,13 @@ namespace game
 		const int32_t textScaled = scale * _textHeight;
 
 		// Outline
-		_pixelMode->RectClip({ (int32_t)position.x - 1, (int32_t)position.y - 1, (int32_t)position.x + (textScaled + 2) + 1, (int32_t)position.y + ((int32_t)textScaled + 2) + 1 }, outlineColor);
+		_pixelMode->RectClip({ position.x - 1, position.y - 1, position.x + (textScaled + 2) + 1, position.y + (textScaled + 2) + 1 }, outlineColor);
 		// Box
-		_pixelMode->RectFilledClip({ (int32_t)position.x,(int32_t)position.y,(int32_t)position.x + (textScaled + 2),(int32_t)position.y + (textScaled + 2) }, boxColor);
+		_pixelMode->RectFilledClip({ position.x,position.y,position.x + (textScaled + 2),position.y + (textScaled + 2) }, boxColor);
 		if (checked)
 		{
 			// Checkmark "X"
-			_pixelMode->TextClip("x", (int32_t)(position.x)+1, (int32_t)(position.y + 1), xColor, scale);
+			_pixelMode->TextClip("x", (position.x)+1, (position.y + 1), xColor, scale);
 		}
 		// Label
 		_pixelMode->TextClip(label, position.x + (textScaled * 2), position.y + 2, labelColor, scale);
@@ -199,20 +198,20 @@ namespace game
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
 		_hovered = false;
-		const uint32_t textScaled = _textHeight * scale;
+		const int32_t textScaled = _textHeight * scale;
 
-		if (mouse.x < (int32_t)(position.x + (textScaled + 2) + 1))
+		if (mouse.x < (position.x + (textScaled + 2) + 1))
 		{
-			if (mouse.x > (int32_t)(position.x))
+			if (mouse.x > (position.x))
 			{
-				if (mouse.y < (int32_t)(position.y + ((int32_t)textScaled + 2) + 1))
+				if (mouse.y < (position.y + (textScaled + 2) + 1))
 				{
-					if (mouse.y > (int32_t)(position.y))
+					if (mouse.y > (position.y))
 					{
 						_hovered = true;
 						if (enginePointer->geMouse.WasButtonReleased(geM_LEFT))
 						{
-							if (!checked) checked = !checked;
+							checked = !checked;
 							std::any t = checked;
 							_uiCallback(name, t);
 						}
@@ -229,6 +228,97 @@ namespace game
 		}
 	}
  
+	// Can be checked or not checked and only one in a group can be checked.  Passes a bool to callback
+	class RadialUI : public ElementUI
+	{
+	public:
+		RadialUI();
+		// Text scale (scales the vertical size of checkbox)
+		uint32_t scale;
+		// Text of button
+		std::string label;
+		bool checked;
+		bool outlined;
+		int32_t group;
+
+		Color labelColor = game::Colors::Black;
+		Color outlineColor = game::Colors::Magenta;
+		Color boxColor = game::Colors::Yellow;
+		Color xColor = game::Colors::DarkRed;
+
+		void Update() override;
+		void Draw() override;
+	private:
+	};
+
+	inline RadialUI::RadialUI()
+	{
+		scale = 1;
+		label = "CheckBox";
+		outlined = true;
+		checked = false;
+		group = -1;
+	}
+
+	inline void RadialUI::Draw()
+	{
+		const int32_t textScaled = scale * _textHeight;
+		const int32_t scaledRadius = 5 * scale;
+
+		// Outline
+		_pixelMode->CircleClip(position.x + scaledRadius, position.y + scaledRadius, scaledRadius+1, game::Colors::Magenta);
+
+		// Circle
+		_pixelMode->CircleFilledClip(position.x + scaledRadius, position.y + scaledRadius, scaledRadius, game::Colors::White);
+
+		// Dot
+		if (checked)
+		{
+			_pixelMode->CircleFilledClip(position.x + scaledRadius, position.y + scaledRadius, scaledRadius - (2 * scale), game::Colors::Black);
+		}
+
+		// Label
+		_pixelMode->TextClip(label, position.x + (textScaled) * 2, position.y + (scaledRadius - (scaledRadius - (1+scale))), game::Colors::White, scale);
+	
+	}
+
+	inline void RadialUI::Update()
+	{
+		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
+		_pressed = false;
+		_hovered = false;
+		const int32_t scaledDiameter = 5 * scale * 2;// _textHeight* scale;
+		//_pixelMode->RectClip({ position.x,position.y,(position.x + scaledDiameter), (position.y + scaledDiameter) }, game::Colors::Yellow);
+		if (mouse.x < (position.x + (scaledDiameter)))
+		{
+			if (mouse.x >= (position.x))
+			{
+				if (mouse.y <= (position.y + (scaledDiameter)))
+				{
+					if (mouse.y >= (position.y))
+					{
+						_hovered = true;
+						if (enginePointer->geMouse.WasButtonReleased(geM_LEFT))
+						{
+							if (!checked)
+							{
+								checked = !checked;
+								std::any t = checked;
+								_uiCallback(name, t);
+							}
+						}
+
+						if (enginePointer->geMouse.IsButtonHeld(geM_LEFT))
+						{
+							_pressed = true;
+						}
+
+					}
+
+				}
+			}
+		}
+	}
 	class SimpleUI
 	{
 	public:
