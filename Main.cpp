@@ -81,6 +81,7 @@ public:
 	game::RadialUI lightingDepthRadial;
 	game::RadialUI lightingFaceRadial;
 	game::RadialUI lightingVertexRadial;
+	game::CheckBoxUI BackFaceCullingCheckBox;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -212,6 +213,22 @@ public:
 			return;
 		}
 
+
+		if (str == "BackFaceCullingCheckBox")
+		{
+			bool rec = false;
+			try
+			{
+				rec = std::any_cast<bool>(value);
+			}
+			catch (...)
+			{
+				std::cout << str << " sent an INVALID VALUE.\n";
+				return;
+			}
+			software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, rec);
+			return;
+		}
 	}
 
 
@@ -428,6 +445,13 @@ public:
 		lightingVertexRadial.name = "LightingVertexRadial";
 		lightingVertexRadial.labelColor = game::Colors::White;
 		//lightingVertexRadial.scale = 1;
+
+		BackFaceCullingCheckBox.position.x = 1100;
+		BackFaceCullingCheckBox.position.y = 120;
+		BackFaceCullingCheckBox.name = "BackFaceCullingCheckBox";
+		BackFaceCullingCheckBox.label = "BackFace Culling";
+		BackFaceCullingCheckBox.checked = true;
+		BackFaceCullingCheckBox.labelColor = game::Colors::White;
 		
 
 		simpleUI.Add(&textureButton);
@@ -435,6 +459,7 @@ public:
 		simpleUI.Add(&lightingDepthRadial);
 		simpleUI.Add(&lightingFaceRadial);
 		simpleUI.Add(&lightingVertexRadial);
+		simpleUI.Add(&BackFaceCullingCheckBox);
 
 	}
 
@@ -589,17 +614,33 @@ public:
 		game::Triangle bottomRightTri;
 
 
-		game::Vector3f defaultUp = { 0.0f, 1.0f,0.0f };
-		game::Vector3f f = normal;// -position;
-		game::Vector3f r = f.Cross(defaultUp);// .Cross(f);
-		r.Normalize();
-		//r *= -1.0f;
-		game::Vector3f u = f.Cross(r);
+		//game::Vector3f defaultUp = { 0.0f, -1.0f,0.0f };
+		game::Vector3f norm = normal;// -position;
+		norm.Normalize();
+		game::Vector3f u;
+		game::Vector3f v;
+		if (abs(norm.x > 0.1f))
+		{
+			game::Vector3f t = { 0,1,0 };
+			u = t.Cross(norm);
+		}
+		else
+		{
+			game::Vector3f t = { 1,0,0 };
+			u = t.Cross(norm);
+		}
 		u.Normalize();
+		u *= -1.0f;
+		v = norm.Cross(u);
+		v.Normalize();
+		v *= -1.0f;
+		// u = up
+		// v = right
 
 		game::Vector3f p = pos;
-		p = (p - r) + (u);
+		p = p + u * size - v * size;
 
+		// tl
 		topLeftTri.vertices[0] = p;// (r * -1.0f) - u;
 		//topLeftTri.vertices[0].Normalize();
 		//topLeftTri.vertices[0].x = -size;// +x + pos.x;
@@ -615,7 +656,7 @@ public:
 
 		// tr
 		p = pos;
-		p = (p + r) + (u);
+		p = p + u * size + v * size;
 		topLeftTri.vertices[1] = p;// (r * 1.0f) - u;
 		//topLeftTri.vertices[1].Normalize();
 		//topLeftTri.vertices[1].x = size;// +x + pos.x;
@@ -630,7 +671,7 @@ public:
 
 		// bl
 		p = pos;
-		p = (p - r) - u;
+		p = p - u * size - v * size;
 		topLeftTri.vertices[2] = p;// (r * -1.0f) + (u * 1.0f);
 		//topLeftTri.vertices[2].Normalize();
 		//topLeftTri.vertices[2].x = -size;// +x + pos.x;
@@ -641,6 +682,8 @@ public:
 		topLeftTri.color[2] = game::Colors::Blue;
 		topLeftTri.normals[2] = normal;
 
+		//std::swap(topLeftTri.vertices[0], topLeftTri.vertices[1]);
+
 		mesh.tris.emplace_back(topLeftTri);
 
 		// tr
@@ -648,7 +691,7 @@ public:
 		//bottomRightTri.vertices[0].y = -size + y + pos.y;
 		//bottomRightTri.vertices[0].z = z;
 		p = pos;
-		p = (p + r) + (u);
+		p = p + u * size + v * size;
 		bottomRightTri.vertices[0] = p;// (r * 1.0f) - u;
 		bottomRightTri.uvs[0].u = 1.0f;// x + subdivisionSize;// 1.0f;
 		bottomRightTri.uvs[0].v = 0;// y;// 0.0f;
@@ -661,7 +704,7 @@ public:
 		//bottomRightTri.vertices[1].y = size + y + pos.y;
 		//bottomRightTri.vertices[1].z = z;
 		p = pos;
-		p = (p + r) - u;
+		p = p - u * size + v * size;
 		bottomRightTri.vertices[1] = p;// (r)+(u);
 		bottomRightTri.uvs[1].u = 1;// x + subdivisionSize;// 1.0f;
 		bottomRightTri.uvs[1].v = 1;// y + subdivisionSize;// 1.0f;
@@ -670,7 +713,7 @@ public:
 
 		// bl
 		p = pos;
-		p = (p - r) - u;
+		p = p - u * size - v * size;
 		bottomRightTri.vertices[2] = p;// (r * -1.0f) + (u * 1.0f);
 		//bottomRightTri.vertices[2].x = -size + x + pos.x;
 		//bottomRightTri.vertices[2].y = size + y + pos.y;
@@ -790,7 +833,7 @@ public:
 		game::Mesh cube;
 		game::Vector3f normal = { 0,0,-1 };
 		normal.Normalize();
-		normal = game::RotateX(normal, value * 20.0f);
+		normal = game::RotateX(normal, value);
 		normal.Normalize();
 		for (uint8_t letter : text)
 		{
@@ -857,9 +900,7 @@ public:
 		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true); // button controlled
+
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
@@ -868,14 +909,12 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
 		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
-		game::Vector3f normal = { 0,1,-1 };
-		normal.Normalize();
-		//normal = game::RotateX(normal, rotation);
-		normal.Normalize();
-		GeneratePlane(text, { 0,1,0 }, normal, 1, game::Colors::White);
+		game::Vector3f normal = { 0 ,-1, 0};
+		normal = game::RotateX(normal, rotation);
+		//GeneratePlane(text, { 0,0.1f,0 }, normal, 1, game::Colors::White);
 		//text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
