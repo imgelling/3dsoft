@@ -606,7 +606,7 @@ public:
 	void GeneratePlane(game::Mesh& mesh, const game::Vector3f& __restrict pos, const game::Vector3f& __restrict normal, const uint32_t resolution, const game::Color color)
 	{
 		mesh.tris.clear();
-
+		static game::Vector3f oldNorm;
 		const float_t subdivisionSize = 1.0f / (float)resolution;
 		float size = 0.5f / (float)resolution;
 		float z = 0;
@@ -619,26 +619,28 @@ public:
 		norm.Normalize();
 		game::Vector3f u;
 		game::Vector3f v;
-		if (abs(norm.x > 0.1f))
+		game::Vector3f t;
+		if (abs(norm.y) == 1)
 		{
-			game::Vector3f t = { 0,1,0 };
-			u = t.Cross(norm);
+			t = { 1,0,0 };
+			//u = t.Cross(norm);
+			//u.Normalize();
+			//u *= -1.0f;
 		}
-		else
-		{
-			game::Vector3f t = { 1,0,0 };
-			u = t.Cross(norm);
-		}
+		else t = { 0,1,0 };
+		u = t.Cross(norm);
 		u.Normalize();
-		u *= -1.0f;
-		v = norm.Cross(u);
+		v = u.Cross(norm);
 		v.Normalize();
-		v *= -1.0f;
-		// u = up
-		// v = right
+		if ((oldNorm.x != norm.x) || (oldNorm.y != norm.y) || (oldNorm.z != norm.z))
+		{
+			std::cout << norm.x << "," << norm.y << "," << norm.z << "\n";
+			oldNorm = norm;
+		}
+
 
 		game::Vector3f p = pos;
-		p = p + u * size - v * size;
+		p = p + u * size + v * size;
 
 		// tl
 		topLeftTri.vertices[0] = p;// (r * -1.0f) - u;
@@ -652,11 +654,9 @@ public:
 		topLeftTri.faceNormal = normal;
 		topLeftTri.normals[0] = normal;
 
-		//z = ((-n.x * size) - (n.y * -size) - d) * (1.0f / n.z);
-
 		// tr
 		p = pos;
-		p = p + u * size + v * size;
+		p = p - u * size + v * size;
 		topLeftTri.vertices[1] = p;// (r * 1.0f) - u;
 		//topLeftTri.vertices[1].Normalize();
 		//topLeftTri.vertices[1].x = size;// +x + pos.x;
@@ -667,11 +667,10 @@ public:
 		topLeftTri.color[1] = game::Colors::Green;
 		topLeftTri.normals[1] = normal;
 
-		//z = ((-n.x * -size) - (n.y * size) - d) * (1.0f / n.z);
 
 		// bl
 		p = pos;
-		p = p - u * size - v * size;
+		p = p + u * size - v * size;
 		topLeftTri.vertices[2] = p;// (r * -1.0f) + (u * 1.0f);
 		//topLeftTri.vertices[2].Normalize();
 		//topLeftTri.vertices[2].x = -size;// +x + pos.x;
@@ -682,7 +681,6 @@ public:
 		topLeftTri.color[2] = game::Colors::Blue;
 		topLeftTri.normals[2] = normal;
 
-		//std::swap(topLeftTri.vertices[0], topLeftTri.vertices[1]);
 
 		mesh.tris.emplace_back(topLeftTri);
 
@@ -691,7 +689,7 @@ public:
 		//bottomRightTri.vertices[0].y = -size + y + pos.y;
 		//bottomRightTri.vertices[0].z = z;
 		p = pos;
-		p = p + u * size + v * size;
+		p = p - u * size + v * size;
 		bottomRightTri.vertices[0] = p;// (r * 1.0f) - u;
 		bottomRightTri.uvs[0].u = 1.0f;// x + subdivisionSize;// 1.0f;
 		bottomRightTri.uvs[0].v = 0;// y;// 0.0f;
@@ -704,7 +702,7 @@ public:
 		//bottomRightTri.vertices[1].y = size + y + pos.y;
 		//bottomRightTri.vertices[1].z = z;
 		p = pos;
-		p = p - u * size + v * size;
+		p = p - u * size - v * size;
 		bottomRightTri.vertices[1] = p;// (r)+(u);
 		bottomRightTri.uvs[1].u = 1;// x + subdivisionSize;// 1.0f;
 		bottomRightTri.uvs[1].v = 1;// y + subdivisionSize;// 1.0f;
@@ -713,7 +711,7 @@ public:
 
 		// bl
 		p = pos;
-		p = p - u * size - v * size;
+		p = p + u * size - v * size;
 		bottomRightTri.vertices[2] = p;// (r * -1.0f) + (u * 1.0f);
 		//bottomRightTri.vertices[2].x = -size + x + pos.x;
 		//bottomRightTri.vertices[2].y = size + y + pos.y;
@@ -833,7 +831,7 @@ public:
 		game::Mesh cube;
 		game::Vector3f normal = { 0,0,-1 };
 		normal.Normalize();
-		normal = game::RotateX(normal, value);
+		normal = game::RotateZ(normal, value);
 		normal.Normalize();
 		for (uint8_t letter : text)
 		{
@@ -872,7 +870,7 @@ public:
 		static float_t rotation = 0.0f;
 		static float_t pos = 0.0f;
 
-		rotation += (2 * 3.14f / 10.0f) * (msElapsed / 1000.0f);
+		if (geKeyboard.IsKeyHeld(geK_R)) rotation += (1 *  3.14f / 10.0f) * (msElapsed / 1000.0f);
 
 		pos += 1.5f * (msElapsed / 1000.0f);
 
@@ -909,12 +907,12 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
 		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
-		game::Vector3f normal = { 0 ,-1, 0};
-		normal = game::RotateX(normal, rotation);
-		//GeneratePlane(text, { 0,0.1f,0 }, normal, 1, game::Colors::White);
+		game::Vector3f normal = { 1 ,0, 0};
+		normal = game::RotateZ(normal, rotation);
+		GeneratePlane(text, { 0,0,0 }, normal, 1, game::Colors::White);
 		//text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
@@ -989,6 +987,7 @@ public:
 				pixelMode.Text("Text Input Mode: False", 0, 50, game::Colors::Magenta, 1);
 			}
 		}
+		pixelMode.TextClip("rotation is " + std::to_string(rotation / 3.14159f), 0, 70, game::Colors::Magenta, 2);
 
 		// Update and render UI
 		simpleUI.Update();
