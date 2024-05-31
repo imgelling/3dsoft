@@ -620,34 +620,23 @@ public:
 		game::Vector3f u;
 		game::Vector3f v;
 		game::Vector3f t;
-		if (abs(norm.y) == 1)
+		if (abs(norm.y) != 1)
 		{
-			t = { 1,0,0 };
-			//u = t.Cross(norm);
-			//u.Normalize();
-			//u *= -1.0f;
+			t = { 0,1,0 };
 		}
-		else t = { 0,1,0 };
+		else t = { 1,0,0 };
+
 		u = t.Cross(norm);
 		u.Normalize();
+
 		v = u.Cross(norm);
 		v.Normalize();
-		if ((oldNorm.x != norm.x) || (oldNorm.y != norm.y) || (oldNorm.z != norm.z))
-		{
-			std::cout << norm.x << "," << norm.y << "," << norm.z << "\n";
-			oldNorm = norm;
-		}
 
-
-		game::Vector3f p = pos;
-		p = p + u * size + v * size;
 
 		// tl
-		topLeftTri.vertices[0] = p;// (r * -1.0f) - u;
-		//topLeftTri.vertices[0].Normalize();
-		//topLeftTri.vertices[0].x = -size;// +x + pos.x;
-		//topLeftTri.vertices[0].y = -size;// +y + pos.y;
-		//topLeftTri.vertices[0].z = z;
+		game::Vector3f p = pos;
+		p = p + u * size + v * size;
+		topLeftTri.vertices[0] = p;
 		topLeftTri.color[0] = game::Colors::Red;
 		topLeftTri.uvs[0].u = 0.0f;
 		topLeftTri.uvs[0].v = 0.0f;
@@ -657,13 +646,9 @@ public:
 		// tr
 		p = pos;
 		p = p - u * size + v * size;
-		topLeftTri.vertices[1] = p;// (r * 1.0f) - u;
-		//topLeftTri.vertices[1].Normalize();
-		//topLeftTri.vertices[1].x = size;// +x + pos.x;
-		//topLeftTri.vertices[1].y = -size;// +y + pos.y;
-		//topLeftTri.vertices[1].z = z;
-		topLeftTri.uvs[1].u = 1.0f;// x + subdivisionSize; // 1.0f
-		topLeftTri.uvs[1].v = 0.0f;// y;// 0.0f;
+		topLeftTri.vertices[1] = p;
+		topLeftTri.uvs[1].u = 1.0f;
+		topLeftTri.uvs[1].v = 0.0f;
 		topLeftTri.color[1] = game::Colors::Green;
 		topLeftTri.normals[1] = normal;
 
@@ -671,13 +656,9 @@ public:
 		// bl
 		p = pos;
 		p = p + u * size - v * size;
-		topLeftTri.vertices[2] = p;// (r * -1.0f) + (u * 1.0f);
-		//topLeftTri.vertices[2].Normalize();
-		//topLeftTri.vertices[2].x = -size;// +x + pos.x;
-		//topLeftTri.vertices[2].y = size;// +y + pos.y;
-		//topLeftTri.vertices[2].z = z;
-		topLeftTri.uvs[2].u = 0;// x;// 0.0f;
-		topLeftTri.uvs[2].v = 1;// y + subdivisionSize;// 1.0f;
+		topLeftTri.vertices[2] = p;
+		topLeftTri.uvs[2].u = 0;
+		topLeftTri.uvs[2].v = 1;
 		topLeftTri.color[2] = game::Colors::Blue;
 		topLeftTri.normals[2] = normal;
 
@@ -685,39 +666,30 @@ public:
 		mesh.tris.emplace_back(topLeftTri);
 
 		// tr
-		//bottomRightTri.vertices[0].x = size + x + pos.x;
-		//bottomRightTri.vertices[0].y = -size + y + pos.y;
-		//bottomRightTri.vertices[0].z = z;
 		p = pos;
 		p = p - u * size + v * size;
-		bottomRightTri.vertices[0] = p;// (r * 1.0f) - u;
-		bottomRightTri.uvs[0].u = 1.0f;// x + subdivisionSize;// 1.0f;
-		bottomRightTri.uvs[0].v = 0;// y;// 0.0f;
+		bottomRightTri.vertices[0] = p;
+		bottomRightTri.uvs[0].u = 1.0f;
+		bottomRightTri.uvs[0].v = 0;
 		bottomRightTri.color[0] = game::Colors::Green;
 		bottomRightTri.normals[0] = normal;
 		bottomRightTri.faceNormal = normal;
 
 		// br
-		//bottomRightTri.vertices[1].x = size + x + pos.x;
-		//bottomRightTri.vertices[1].y = size + y + pos.y;
-		//bottomRightTri.vertices[1].z = z;
 		p = pos;
 		p = p - u * size - v * size;
-		bottomRightTri.vertices[1] = p;// (r)+(u);
-		bottomRightTri.uvs[1].u = 1;// x + subdivisionSize;// 1.0f;
-		bottomRightTri.uvs[1].v = 1;// y + subdivisionSize;// 1.0f;
+		bottomRightTri.vertices[1] = p;
+		bottomRightTri.uvs[1].u = 1;
+		bottomRightTri.uvs[1].v = 1;
 		bottomRightTri.color[1] = game::Colors::White;
 		bottomRightTri.normals[1] = normal;
 
 		// bl
 		p = pos;
 		p = p + u * size - v * size;
-		bottomRightTri.vertices[2] = p;// (r * -1.0f) + (u * 1.0f);
-		//bottomRightTri.vertices[2].x = -size + x + pos.x;
-		//bottomRightTri.vertices[2].y = size + y + pos.y;
-		//bottomRightTri.vertices[2].z = z;
-		bottomRightTri.uvs[2].u = 0;// x;// 0.0f;
-		bottomRightTri.uvs[2].v = 1;// y + subdivisionSize;// 1.0f;
+		bottomRightTri.vertices[2] = p;
+		bottomRightTri.uvs[2].u = 0;
+		bottomRightTri.uvs[2].v = 1;
 		bottomRightTri.color[2] = game::Colors::Blue;
 		bottomRightTri.normals[2] = normal;
 
@@ -830,9 +802,7 @@ public:
 
 		game::Mesh cube;
 		game::Vector3f normal = { 0,0,-1 };
-		normal.Normalize();
-		normal = game::RotateZ(normal, value);
-		normal.Normalize();
+		//normal = game::RotateX(normal, value);
 		for (uint8_t letter : text)
 		{
 			ox = (letter - 32) % 16;
@@ -879,22 +849,8 @@ public:
 		pixelMode.Clear(game::Colors::Black);
 		software3D.ClearDepth(100.0f);
 
-		//torus.SetRotation(rotation, -rotation, rotation - 3.14156f / 2.0f);
-		
-		//model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		//sky.SetTranslation(camera.position.x, 1.5f, camera.position.z);
-		//particle1.SetRotation(0,0,rotation);
-		//particle1.SetTranslation(3.0f * sin(rotation), -0.5f, 0);
-		//particle1.GenerateModelMatrix();
-		//alphaCube.SetRotation(0.0f, rotation, 0.0f);
-		//game::Vector3f center;// (model.centerPoint);
-		//game::Vector3MultMatrix4x4(particle1.centerPoint, particle1.model, center);
-		//camera.GenerateLookAtMatrix(camera.forward);
+
 		camera.GenerateViewMatrix();
-		//game::Vector3f c = { model.centerPoint.x, model.centerPoint.y, model.centerPoint.z - 0.07f };
-		//camera.GenerateLookAtMatrix2(c); // doesn't work with billboards
-
-
 		
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
@@ -904,7 +860,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
 		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
@@ -992,9 +948,7 @@ public:
 		// Update and render UI
 		simpleUI.Update();
 		simpleUI.Draw();
-
-		// radial	 
-		
+	
 		
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))
