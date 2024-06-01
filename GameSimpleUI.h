@@ -8,6 +8,17 @@
 
 namespace game
 {
+	inline bool CallBackValueCheckUI(const std::string& type, const std::any& value)
+	{
+		return (value.type().name() == type);
+	}
+
+#define UI_VALUE_CHECK(nameOf, typeOf, valueOf) if(!game::CallBackValueCheckUI(typeOf,valueOf)) \
+	{ \
+		std::cout << nameOf << " sent an INVALID VALUE: " << valueOf.type().name() << "\n"; \
+		return; \
+	}\
+
 	// UI element base class, all UI needs to derive from this
 	class ElementUI
 	{

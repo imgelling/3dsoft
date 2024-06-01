@@ -97,136 +97,70 @@ public:
 		showText = true;
 	}
 
+
 	void simpleUICallBack(const std::string& str, std::any& value)
 	{
 		if (str == "TextureButton")
 		{
 			bool rec = false;
-			try
-			{
-				//std::cout << str << " sent " << std::any_cast<bool>(value) << " as value" << ".\n";
-				rec = std::any_cast<bool>(value);
-				
-			}
-			catch (...) //const std::bad_any_cast& e) 
-			{
-				std::cout << str << " sent an INVALID VALUE.\n";// << e.what() << '\n';
-				return;
-			}
+			//try
+			//{
+			//	//std::cout << str << " sent " << std::any_cast<bool>(value) << " as value" << ".\n";
+			//	rec = std::any_cast<bool>(value);
+			//	
+			//}
+			//catch (...) //const std::bad_any_cast& e) 
+			//{
+			//	std::cout << str << " sent an INVALID VALUE.\n";// << e.what() << '\n';
+			//	return;
+			//}
+			UI_VALUE_CHECK(str, "bool", value);
+			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_TEXTURE, rec);
+			return;
+		}
+
+		if (str == "BackFaceCullingCheckBox")
+		{
+			bool rec = false;
+			UI_VALUE_CHECK(str, "bool", value);
+			rec = std::any_cast<bool>(value);
+			software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, rec);
 			return;
 		}
 
 		if (str == "LightingButton")
 		{
 			bool rec = false;
-			try
-			{
-				//std::cout << value.type().name() << " was sent.\n";
-				rec = std::any_cast<bool>(value);
-			}
-			catch (...) 
-			{
-				std::cout << str << " sent an INVALID VALUE.\n";
-				return;
-			}
+			UI_VALUE_CHECK(str, "bool", value);
+			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING, rec);
 			return;
 		}
 
 		if (str == "LightingDepthRadial")
 		{
-			bool rec = false;
-			try
-			{
-				//std::cout << value.type().name() << " was sent.\n";
-				rec = std::any_cast<bool>(value);
-			}
-			catch (...)
-			{
-				std::cout << str << " sent an INVALID VALUE.\n";
-				return;
-			}
-			if (rec)
-			{
-				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
-				lightingFaceRadial.checked = false;
-				lightingVertexRadial.checked = false;
-			}
-			else
-			{
-				//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-			}
-			//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, rec);
+			// Radials will always be true
+			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+			lightingFaceRadial.checked = false;
+			lightingVertexRadial.checked = false;
+
 			return;
 		}
 
 		if (str == "LightingFaceRadial")
 		{
-			bool rec = false;
-			try
-			{
-				rec = std::any_cast<bool>(value);
-			}
-			catch (...)
-			{
-				std::cout << str << " sent an INVALID VALUE.\n";
-				return;
-			}
-			if (rec)
-			{
-				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-				lightingDepthRadial.checked = false;
-				lightingVertexRadial.checked = false;
-			}
-			else
-			{
-				//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-			}
-			//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, rec);
+			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+			lightingDepthRadial.checked = false;
+			lightingVertexRadial.checked = false;
 			return;
 		}
 
 		if (str == "LightingVertexRadial")
 		{
-			bool rec = false;
-			try
-			{
-				rec = std::any_cast<bool>(value);
-			}
-			catch (...)
-			{
-				std::cout << str << " sent an INVALID VALUE.\n";
-				return;
-			}
-			if (rec)
-			{
-				software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
-				lightingDepthRadial.checked = false;
-				lightingFaceRadial.checked = false;
-			}
-			else
-			{
-				//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
-			}
-			//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, rec);
-			return;
-		}
-
-
-		if (str == "BackFaceCullingCheckBox")
-		{
-			bool rec = false;
-			try
-			{
-				rec = std::any_cast<bool>(value);
-			}
-			catch (...)
-			{
-				std::cout << str << " sent an INVALID VALUE.\n";
-				return;
-			}
-			software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, rec);
+			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+			lightingDepthRadial.checked = false;
+			lightingFaceRadial.checked = false;
 			return;
 		}
 	}
@@ -774,7 +708,7 @@ public:
 	}
 
 
-	// Generate plane, points (particles/etc)
+	// Generate points (particles/etc)
 	// torus 
 	// Needs a data structure
 	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color)  noexcept
