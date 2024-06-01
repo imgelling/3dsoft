@@ -66,12 +66,8 @@ public:
 	game::Matrix4x4f mvpMat;
 
 	// Meshes for scenes
-	//game::Mesh plane;
-	//game::Mesh alphaCube;
 	game::Mesh model;
 	Lights lights;
-	//game::Mesh torus;
-	//game::Mesh sky;
 	game::Mesh text;
 
 	// UI
@@ -114,7 +110,9 @@ public:
 			//	std::cout << str << " sent an INVALID VALUE.\n";// << e.what() << '\n';
 			//	return;
 			//}
+#if defined(_DEBUG)
 			UI_VALUE_CHECK(str, "bool", value);
+#endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_TEXTURE, rec);
 			return;
@@ -123,7 +121,9 @@ public:
 		if (str == "BackFaceCullingCheckBox")
 		{
 			bool rec = false;
+#if defined(_DEBUG)
 			UI_VALUE_CHECK(str, "bool", value);
+#endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, rec);
 			return;
@@ -132,7 +132,9 @@ public:
 		if (str == "LightingButton")
 		{
 			bool rec = false;
+#if defined(_DEBUG)
 			UI_VALUE_CHECK(str, "bool", value);
+#endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING, rec);
 			return;
@@ -336,6 +338,8 @@ public:
 		geKeyboard.SetTextInputText("3D text");
 
 		// Simple UI
+		int uiScaleX = resolution.x / 1280;
+
 
 		simpleUI.Initialize(pixelMode, std::bind(&Game::simpleUICallBack, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -345,9 +349,9 @@ public:
 		textureButton.unToggledColor = game::Colors::Red;
 		//textureButton.labelColor = game::Colors::White;
 		textureButton.toggled = false;
-		textureButton.position.x = 1100;
+		textureButton.position.x = 1100 * uiScaleX;
 		textureButton.position.y = 20;
-		textureButton.length = 100;
+		textureButton.length = 100 * uiScaleX;
 		textureButton.outlined = true;
 
 		lightingButton.label = "Lighting";
@@ -355,32 +359,32 @@ public:
 		lightingButton.toggledColor = game::Colors::Green;
 		lightingButton.unToggledColor = game::Colors::Red;
 		lightingButton.toggled = false;
-		lightingButton.position.x = 1100;
+		lightingButton.position.x = 1100 * uiScaleX;
 		lightingButton.position.y = 40;
 		lightingButton.length = 100;
 		lightingButton.outlined = true;
 
-		lightingDepthRadial.position.x = 1100;
+		lightingDepthRadial.position.x = 1100 * uiScaleX;
 		lightingDepthRadial.position.y = 60;
 		lightingDepthRadial.label = "Depth Lighting";
 		lightingDepthRadial.name = "LightingDepthRadial";
 		lightingDepthRadial.labelColor = game::Colors::White;
 
-		lightingFaceRadial.position.x = 1100;
+		lightingFaceRadial.position.x = 1100 * uiScaleX;
 		lightingFaceRadial.position.y = 80;
 		lightingFaceRadial.label = "Face Lighting";
 		lightingFaceRadial.name = "LightingFaceRadial";
 		lightingFaceRadial.labelColor = game::Colors::White;
 		lightingFaceRadial.checked = true;
 
-		lightingVertexRadial.position.x = 1100;
+		lightingVertexRadial.position.x = 1100 * uiScaleX;
 		lightingVertexRadial.position.y = 100;
 		lightingVertexRadial.label = "Vertex Lighting";
 		lightingVertexRadial.name = "LightingVertexRadial";
 		lightingVertexRadial.labelColor = game::Colors::White;
 		//lightingVertexRadial.scale = 1;
 
-		BackFaceCullingCheckBox.position.x = 1100;
+		BackFaceCullingCheckBox.position.x = 1100 * uiScaleX;
 		BackFaceCullingCheckBox.position.y = 120;
 		BackFaceCullingCheckBox.name = "BackFaceCullingCheckBox";
 		BackFaceCullingCheckBox.label = "BackFace Culling";
@@ -535,176 +539,94 @@ public:
 		}
 	}
 
-	// Needs to be able to generate based on pos and normal
 	// Subdivides a plane by resolution x resolution, texture is stretched across the plane
-	void GeneratePlane(game::Mesh& mesh, const game::Vector3f& __restrict pos, const game::Vector3f& __restrict normal, const uint32_t resolution, const game::Color color)
+	void GeneratePlane(game::Mesh& mesh, const game::Vector3f& __restrict pos, const uint32_t resolution, const game::Color color)
 	{
 		mesh.tris.clear();
 		static game::Vector3f oldNorm;
 		const float_t subdivisionSize = 1.0f / (float)resolution;
-		float size = 0.5f / (float)resolution;
-		float z = 0;
+
+		const float z = pos.z;
+		const float size = 0.5f * subdivisionSize;
+		const game::Vector3f normal = { 0,0,-1 };
 		game::Triangle topLeftTri;
 		game::Triangle bottomRightTri;
-
-
-		//game::Vector3f defaultUp = { 0.0f, -1.0f,0.0f };
-		game::Vector3f norm = normal;// -position;
-		norm.Normalize();
-		game::Vector3f u;
-		game::Vector3f v;
-		game::Vector3f t;
-		if (abs(norm.y) != 1)
+		
+		for (float_t y = 0; y < 1.0f; y += subdivisionSize)
 		{
-			t = { 0,1,0 };
-		}
-		else t = { 1,0,0 };
+			for (float_t x = 0; x < 1.0f; x += subdivisionSize)
+			{
+				
+				// tl
+				topLeftTri.vertices[0].x = -size + x + pos.x;
+				topLeftTri.vertices[0].y = -size + y + pos.y;
+				topLeftTri.vertices[0].z = z;
+				topLeftTri.color[0] = game::Colors::Red;
+				topLeftTri.uvs[0].u = x;// 0.0f;
+				topLeftTri.uvs[0].v = y;// 0.0f;
+				topLeftTri.faceNormal = normal;
+				topLeftTri.normals[0] = normal;
 
-		u = t.Cross(norm);
-		u.Normalize();
+				// tr
+				topLeftTri.vertices[1].x = size + x + pos.x;
+				topLeftTri.vertices[1].y = -size + y + pos.y;
+				topLeftTri.vertices[1].z = z;
+				topLeftTri.uvs[1].u = x + subdivisionSize; // 1.0f
+				topLeftTri.uvs[1].v = y;// 0.0f;
+				topLeftTri.color[1] = game::Colors::Green;
+				topLeftTri.normals[1] = normal;
 
-		v = u.Cross(norm);
-		v.Normalize();
-
-
-		// tl
-		game::Vector3f p = pos;
-		p = p + u * size + v * size;
-		topLeftTri.vertices[0] = p;
-		topLeftTri.color[0] = game::Colors::Red;
-		topLeftTri.uvs[0].u = 0.0f;
-		topLeftTri.uvs[0].v = 0.0f;
-		topLeftTri.faceNormal = normal;
-		topLeftTri.normals[0] = normal;
-
-		// tr
-		p = pos;
-		p = p - u * size + v * size;
-		topLeftTri.vertices[1] = p;
-		topLeftTri.uvs[1].u = 1.0f;
-		topLeftTri.uvs[1].v = 0.0f;
-		topLeftTri.color[1] = game::Colors::Green;
-		topLeftTri.normals[1] = normal;
-
-
-		// bl
-		p = pos;
-		p = p + u * size - v * size;
-		topLeftTri.vertices[2] = p;
-		topLeftTri.uvs[2].u = 0;
-		topLeftTri.uvs[2].v = 1;
-		topLeftTri.color[2] = game::Colors::Blue;
-		topLeftTri.normals[2] = normal;
-
-
-		mesh.tris.emplace_back(topLeftTri);
-
-		// tr
-		p = pos;
-		p = p - u * size + v * size;
-		bottomRightTri.vertices[0] = p;
-		bottomRightTri.uvs[0].u = 1.0f;
-		bottomRightTri.uvs[0].v = 0;
-		bottomRightTri.color[0] = game::Colors::Green;
-		bottomRightTri.normals[0] = normal;
-		bottomRightTri.faceNormal = normal;
-
-		// br
-		p = pos;
-		p = p - u * size - v * size;
-		bottomRightTri.vertices[1] = p;
-		bottomRightTri.uvs[1].u = 1;
-		bottomRightTri.uvs[1].v = 1;
-		bottomRightTri.color[1] = game::Colors::White;
-		bottomRightTri.normals[1] = normal;
-
-		// bl
-		p = pos;
-		p = p + u * size - v * size;
-		bottomRightTri.vertices[2] = p;
-		bottomRightTri.uvs[2].u = 0;
-		bottomRightTri.uvs[2].v = 1;
-		bottomRightTri.color[2] = game::Colors::Blue;
-		bottomRightTri.normals[2] = normal;
-
-		mesh.tris.emplace_back(bottomRightTri);
-
-
-		//for (float_t y = 0; y < 1.0f; y += subdivisionSize)
-		//{
-		//	for (float_t x = 0; x < 1.0f; x += subdivisionSize)
-		//	{
-		//		// tl
-		//		topLeftTri.vertices[0].x = -size + x + pos.x;
-		//		topLeftTri.vertices[0].y = -size + y + pos.y;
-		//		topLeftTri.vertices[0].z = z;
-		//		topLeftTri.color[0] = game::Colors::Red;
-		//		topLeftTri.uvs[0].u = x;// 0.0f;
-		//		topLeftTri.uvs[0].v = y;// 0.0f;
-		//		topLeftTri.faceNormal = normal;
-		//		topLeftTri.normals[0] = normal;
-
-		//		// tr
-		//		topLeftTri.vertices[1].x = size + x + pos.x;
-		//		topLeftTri.vertices[1].y = -size + y + pos.y;
-		//		topLeftTri.vertices[1].z = z;
-		//		topLeftTri.uvs[1].u = x + subdivisionSize; // 1.0f
-		//		topLeftTri.uvs[1].v = y;// 0.0f;
-		//		topLeftTri.color[1] = game::Colors::Green;
-		//		topLeftTri.normals[1] = normal;
-
-		//		// bl
-		//		topLeftTri.vertices[2].x = -size + x + pos.x;
-		//		topLeftTri.vertices[2].y = size + y + pos.y;
-		//		topLeftTri.vertices[2].z = z;
-		//		topLeftTri.uvs[2].u = x;// 0.0f;
-		//		topLeftTri.uvs[2].v = y + subdivisionSize;// 1.0f;
-		//		topLeftTri.color[2] = game::Colors::Blue;
-		//		topLeftTri.normals[2] = normal;
+				// bl
+				topLeftTri.vertices[2].x = -size + x + pos.x;
+				topLeftTri.vertices[2].y = size + y + pos.y;
+				topLeftTri.vertices[2].z = z;
+				topLeftTri.uvs[2].u = x;// 0.0f;
+				topLeftTri.uvs[2].v = y + subdivisionSize;// 1.0f;
+				topLeftTri.color[2] = game::Colors::Blue;
+				topLeftTri.normals[2] = normal;
 
 
 
-		//		// tr
-		//		bottomRightTri.vertices[0].x = size + x + pos.x;
-		//		bottomRightTri.vertices[0].y = -size + y + pos.y;
-		//		bottomRightTri.vertices[0].z = z;
-		//		bottomRightTri.uvs[0].u = x + subdivisionSize;// 1.0f;
-		//		bottomRightTri.uvs[0].v = y;// 0.0f;
-		//		bottomRightTri.color[0] = game::Colors::Green;
-		//		bottomRightTri.normals[0] = normal;
-		//		bottomRightTri.faceNormal = normal;
+				// tr
+				bottomRightTri.vertices[0].x = size + x + pos.x;
+				bottomRightTri.vertices[0].y = -size + y + pos.y;
+				bottomRightTri.vertices[0].z = z;
+				bottomRightTri.uvs[0].u = x + subdivisionSize;// 1.0f;
+				bottomRightTri.uvs[0].v = y;// 0.0f;
+				bottomRightTri.color[0] = game::Colors::Green;
+				bottomRightTri.normals[0] = normal;
+				bottomRightTri.faceNormal = normal;
 
-		//		// br
-		//		bottomRightTri.vertices[1].x = size + x + pos.x;
-		//		bottomRightTri.vertices[1].y = size + y + pos.y;
-		//		bottomRightTri.vertices[1].z = z;
-		//		bottomRightTri.uvs[1].u = x + subdivisionSize;// 1.0f;
-		//		bottomRightTri.uvs[1].v = y + subdivisionSize;// 1.0f;
-		//		bottomRightTri.color[1] = game::Colors::White;
-		//		bottomRightTri.normals[1] = normal;
+				// br
+				bottomRightTri.vertices[1].x = size + x + pos.x;
+				bottomRightTri.vertices[1].y = size + y + pos.y;
+				bottomRightTri.vertices[1].z = z;
+				bottomRightTri.uvs[1].u = x + subdivisionSize;// 1.0f;
+				bottomRightTri.uvs[1].v = y + subdivisionSize;// 1.0f;
+				bottomRightTri.color[1] = game::Colors::White;
+				bottomRightTri.normals[1] = normal;
 
-		//		// bl
-		//		bottomRightTri.vertices[2].x = -size + x + pos.x;
-		//		bottomRightTri.vertices[2].y = size + y + pos.y;
-		//		bottomRightTri.vertices[2].z = z;
-		//		bottomRightTri.uvs[2].u = x;// 0.0f;
-		//		bottomRightTri.uvs[2].v = y + subdivisionSize;// 1.0f;
-		//		bottomRightTri.color[2] = game::Colors::Blue;
-		//		bottomRightTri.normals[2] = normal;
+				// bl
+				bottomRightTri.vertices[2].x = -size + x + pos.x;
+				bottomRightTri.vertices[2].y = size + y + pos.y;
+				bottomRightTri.vertices[2].z = z;
+				bottomRightTri.uvs[2].u = x;// 0.0f;
+				bottomRightTri.uvs[2].v = y + subdivisionSize;// 1.0f;
+				bottomRightTri.color[2] = game::Colors::Blue;
+				bottomRightTri.normals[2] = normal;
 
-		//		//for (int e = 0; e < 3; e++)
-		//		//{
-		//		//	topLeftTri.vertices[e] *= cam.lookAt;
-		//		//	topLeftTri.vertices[e] += pos;
-		//		//	bottomRightTri.vertices[e] *= cam.lookAt;
-		//		//	bottomRightTri.vertices[e] += pos;
-		//		//}
+				for (int e = 0; e < 3; e++)
+				{
+					game::Vector3f t = { size * (resolution - 1),size * (resolution-1),0};
+					topLeftTri.vertices[e] -= t;
+					bottomRightTri.vertices[e] -= t;
+				}
 	
 
-		//		mesh.tris.emplace_back(topLeftTri);
-		//		mesh.tris.emplace_back(bottomRightTri);
-		//	}
-		//}
+				mesh.tris.emplace_back(topLeftTri);
+				mesh.tris.emplace_back(bottomRightTri);
+			}
+		}
 	}
 
 
@@ -754,7 +676,7 @@ public:
 						//game::GenerateCube(cube, p, color);
 						//game::GenerateUVSphere(cube, 10, 20, p, color);
 						//GenerateCylinder(cube, size, size, 10, 0.5f, p, color);
-						GeneratePlane(cube, p, normal, 1, color);
+						GeneratePlane(cube, p, 1, color);
 						const uint64_t size = cube.tris.size();
 						for (uint32_t i = 0; i < size; ++i)
 						{
@@ -794,15 +716,14 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
 		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
 		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
-		game::Vector3f normal = { 1 ,0, 0};
-		normal = game::RotateZ(normal, rotation);
-		GeneratePlane(text, { 0,0,0 }, normal, 1, game::Colors::White);
+
+		GeneratePlane(text, { 0,0,0 }, 5, game::Colors::White);
 		//text.SetScale(0.05f, 0.05f, 0.05f);
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
@@ -839,7 +760,7 @@ public:
 			{
 				depth = *zbuffer;
 				zbuffer++;
-				depth += 1.0f;  // 1 added because z becomes < 1.0f near camera and makes depth > 1.0 making colors
+				//depth += 1.0f;  // 1 added because z becomes < 1.0f near camera and makes depth > 1.0 making colors
 								// go all weird
 				depth = 1.0f/depth;
 				dColor.Set(depth, depth, depth, 1.0f);
