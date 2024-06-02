@@ -22,9 +22,9 @@ public:
 		Initialize(numLights, { 0,0,0 });
 		for (uint32_t light = 0; light < numberOfParticles; light++)
 		{
-			particles[light].size = { 1.0f, 1.0f };
-			particles[light].position = { 0.0f,0.0f, 0.9f};
-			particles[light].position.w = 0;
+			particles[light].size = { 0.05f, 0.05f };
+			particles[light].position = { 0.0f,0.0f, 0.0f};
+			//particles[light].position.w = 0;
 			particles[light].alive = true;
 			game::Light pointLight;
 			pointLight.diffuse = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -43,12 +43,15 @@ public:
 				//particles[light].size = { 1.0f, 1.0f };
 				//particles[light].position = { 0.0f,0.0f, 0.9f };
 				//particles[light].alive = true;
-				particles[light].color = game::Colors::White;
+				particles[light].color = game::Colors::Red;
 				particlesAlive++;
 			}
 		}
 	}
 };
+// needs to be able to update off PointLights
+// need a vector of pointlights (for multiple lights) and needs to be passed to engine
+
 
 
 class Game : public game::Engine
@@ -77,6 +80,7 @@ public:
 	game::RadialUI lightingDepthRadial;
 	game::RadialUI lightingFaceRadial;
 	game::RadialUI lightingVertexRadial;
+	game::RadialUI lightingPointRadial;
 	game::CheckBoxUI BackFaceCullingCheckBox;
 
 	game::Camera3D camera;
@@ -146,7 +150,7 @@ public:
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
 			lightingFaceRadial.checked = false;
 			lightingVertexRadial.checked = false;
-
+			lightingPointRadial.checked = false;
 			return;
 		}
 
@@ -155,6 +159,7 @@ public:
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
 			lightingDepthRadial.checked = false;
 			lightingVertexRadial.checked = false;
+			lightingPointRadial.checked = false;
 			return;
 		}
 
@@ -163,8 +168,19 @@ public:
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
 			lightingDepthRadial.checked = false;
 			lightingFaceRadial.checked = false;
+			lightingPointRadial.checked = false;
 			return;
 		}
+
+		if (str == "lightingPointRadial")
+		{
+			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Point);
+			lightingDepthRadial.checked = false;
+			lightingFaceRadial.checked = false;
+			lightingVertexRadial.checked = false;
+			return;
+		}
+		;
 	}
 
 
@@ -232,8 +248,8 @@ public:
 		//software3D.DeleteTexture(model.texture);
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
-		software3D.LoadTexture("content/sky.png", lights.mesh.texture);
-		text.texture = lights.mesh.texture;
+		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
+		//text.texture = lights.mesh.texture;
 		//model.texture = lights.mesh.texture;
 		
 		//game::Random rnd;
@@ -348,11 +364,12 @@ public:
 		textureButton.toggledColor = game::Colors::Green;
 		textureButton.unToggledColor = game::Colors::Red;
 		//textureButton.labelColor = game::Colors::White;
-		textureButton.toggled = false;
+		textureButton.toggled = true;
 		textureButton.position.x = 1100 * uiScaleX;
 		textureButton.position.y = 20;
 		textureButton.length = 100 * uiScaleX;
 		textureButton.outlined = true;
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 
 		lightingButton.label = "Lighting";
 		lightingButton.name = "LightingButton";
@@ -384,8 +401,15 @@ public:
 		lightingVertexRadial.labelColor = game::Colors::White;
 		//lightingVertexRadial.scale = 1;
 
+		
+		lightingPointRadial.position.x = 1100 * uiScaleX;
+		lightingPointRadial.position.y = 120;
+		lightingPointRadial.label = "Point Lighting";
+		lightingPointRadial.name = "lightingPointRadial";
+		lightingPointRadial.labelColor = game::Colors::White;
+
 		BackFaceCullingCheckBox.position.x = 1100 * uiScaleX;
-		BackFaceCullingCheckBox.position.y = 120;
+		BackFaceCullingCheckBox.position.y = 140;
 		BackFaceCullingCheckBox.name = "BackFaceCullingCheckBox";
 		BackFaceCullingCheckBox.label = "BackFace Culling";
 		BackFaceCullingCheckBox.checked = true;
@@ -397,6 +421,7 @@ public:
 		simpleUI.Add(&lightingDepthRadial);
 		simpleUI.Add(&lightingFaceRadial);
 		simpleUI.Add(&lightingVertexRadial);
+		simpleUI.Add(&lightingPointRadial);
 		simpleUI.Add(&BackFaceCullingCheckBox);
 
 	}
@@ -621,19 +646,33 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false); // changed
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		
-		GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
+		//GenerateTextMesh(text, geKeyboard.GetTextInput(), {0 ,0, 0}, true, true, rotation, game::Colors::DarkRed);
 		//GenerateUVSphere(text, 12, 12, { 0,0,0 },game::Colors::White);
 		//GenerateCylinder(text, 0.5f, 0.5f, 30, 0.5f, {0,0,0}, game::Colors::White);
 		//GeneratePlane(text, { 0,0,0 }, 5, game::Colors::White);
-		text.SetScale(0.05f, 0.05f, 0.05f);
+		game::GenerateCube(text, { 0,0,0 }, game::Colors::White);
+		text.SetScale(2.05f, 1.05f, 2.05f);
+		for (uint32_t c = 0; c < text.tris.size(); c++)
+		{
+			text.tris[c].faceNormal *= -1.0f;
+			text.tris[c].faceNormal.Normalize();
+			text.tris[c].normals[0] *= -1.0f;
+			text.tris[c].normals[1] *= -1.0f;
+			text.tris[c].normals[2] *= -1.0f;
+			std::swap(text.tris[c].vertices[1], text.tris[c].vertices[2]);
+			std::swap(text.tris[c].uvs[1], text.tris[c].uvs[2]);
+			std::swap(text.tris[c].normals[1], text.tris[c].normals[2]);
+			std::swap(text.tris[c].faceNormal, text.tris[c].faceNormal);
+		}
 		
 		//text.SetTranslation((geKeyboard.GetTextInput().length() * -0.5f) * 0.05f, 0, 0);
 		//text.SetRotation(0, rotation, 0); // 4.8
@@ -645,18 +684,18 @@ public:
 
 
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		////software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
+		software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 
-		//lights.Update();
-		//lights.GeneratePointSpriteMatrix(camera);
-		//lights.GenerateQuads();
-		//software3D.RenderMesh(lights.mesh, lights.particlesAlive << 1, mvpMat, camera, clip);
+		lights.Update();
+		lights.GeneratePointSpriteMatrix(camera);
+		lights.GenerateQuads();
+		software3D.RenderMesh(lights.mesh, lights.particlesAlive << 1, mvpMat, camera, clip);
 
 		// show depth buffer
 		if (!geKeyboard.IsTextInput() && geKeyboard.IsKeyHeld(geK_SPACE))
@@ -669,7 +708,7 @@ public:
 			{
 				depth = *zbuffer;
 				zbuffer++;
-				//depth += 1.0f;  // 1 added because z becomes < 1.0f near camera and makes depth > 1.0 making colors
+				depth += 1.0f;  // 1 added because z becomes < 1.0f near camera and makes depth > 1.0 making colors
 								// go all weird
 				depth = 1.0f/depth;
 				dColor.Set(depth, depth, depth, 1.0f);
