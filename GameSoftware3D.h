@@ -1793,6 +1793,96 @@ namespace game
 			}
 		}
 	}
+	
+	// Subdivides a plane by resolution x resolution, texture is stretched across the plane
+	inline void GeneratePlane(game::Mesh& mesh, const game::Vector3f& __restrict pos, const uint32_t resolution, const game::Color color)
+	{
+		mesh.tris.clear();
+		static game::Vector3f oldNorm;
+		const float_t subdivisionSize = 1.0f / (float)resolution;
+
+		const float z = pos.z;
+		const float size = 0.5f * subdivisionSize;
+		const game::Vector3f normal = { 0,0,-1 };
+		game::Triangle topLeftTri;
+		game::Triangle bottomRightTri;
+
+		for (float_t y = 0; y < 1.0f; y += subdivisionSize)
+		{
+			for (float_t x = 0; x < 1.0f; x += subdivisionSize)
+			{
+
+				// tl
+				topLeftTri.vertices[0].x = -size + x + pos.x;
+				topLeftTri.vertices[0].y = -size + y + pos.y;
+				topLeftTri.vertices[0].z = z;
+				topLeftTri.color[0] = game::Colors::Red;
+				topLeftTri.uvs[0].u = x;// 0.0f;
+				topLeftTri.uvs[0].v = y;// 0.0f;
+				topLeftTri.faceNormal = normal;
+				topLeftTri.normals[0] = normal;
+
+				// tr
+				topLeftTri.vertices[1].x = size + x + pos.x;
+				topLeftTri.vertices[1].y = -size + y + pos.y;
+				topLeftTri.vertices[1].z = z;
+				topLeftTri.uvs[1].u = x + subdivisionSize; // 1.0f
+				topLeftTri.uvs[1].v = y;// 0.0f;
+				topLeftTri.color[1] = game::Colors::Green;
+				topLeftTri.normals[1] = normal;
+
+				// bl
+				topLeftTri.vertices[2].x = -size + x + pos.x;
+				topLeftTri.vertices[2].y = size + y + pos.y;
+				topLeftTri.vertices[2].z = z;
+				topLeftTri.uvs[2].u = x;// 0.0f;
+				topLeftTri.uvs[2].v = y + subdivisionSize;// 1.0f;
+				topLeftTri.color[2] = game::Colors::Blue;
+				topLeftTri.normals[2] = normal;
+
+
+
+				// tr
+				bottomRightTri.vertices[0].x = size + x + pos.x;
+				bottomRightTri.vertices[0].y = -size + y + pos.y;
+				bottomRightTri.vertices[0].z = z;
+				bottomRightTri.uvs[0].u = x + subdivisionSize;// 1.0f;
+				bottomRightTri.uvs[0].v = y;// 0.0f;
+				bottomRightTri.color[0] = game::Colors::Green;
+				bottomRightTri.normals[0] = normal;
+				bottomRightTri.faceNormal = normal;
+
+				// br
+				bottomRightTri.vertices[1].x = size + x + pos.x;
+				bottomRightTri.vertices[1].y = size + y + pos.y;
+				bottomRightTri.vertices[1].z = z;
+				bottomRightTri.uvs[1].u = x + subdivisionSize;// 1.0f;
+				bottomRightTri.uvs[1].v = y + subdivisionSize;// 1.0f;
+				bottomRightTri.color[1] = game::Colors::White;
+				bottomRightTri.normals[1] = normal;
+
+				// bl
+				bottomRightTri.vertices[2].x = -size + x + pos.x;
+				bottomRightTri.vertices[2].y = size + y + pos.y;
+				bottomRightTri.vertices[2].z = z;
+				bottomRightTri.uvs[2].u = x;// 0.0f;
+				bottomRightTri.uvs[2].v = y + subdivisionSize;// 1.0f;
+				bottomRightTri.color[2] = game::Colors::Blue;
+				bottomRightTri.normals[2] = normal;
+
+				for (int e = 0; e < 3; e++)
+				{
+					game::Vector3f t = { size * (resolution - 1),size * (resolution - 1),0 };
+					topLeftTri.vertices[e] = topLeftTri.vertices[e] - t;
+					bottomRightTri.vertices[e] = bottomRightTri.vertices[e] - t;
+				}
+
+
+				mesh.tris.emplace_back(topLeftTri);
+				mesh.tris.emplace_back(bottomRightTri);
+			}
+		}
+	}
 
 	inline void GenerateCube(game::Mesh& mesh, const game::Vector3f& __restrict pos, const game::Color& color)  noexcept
 	{
