@@ -61,9 +61,10 @@ namespace game
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
 
-		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
+		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) noexcept;
 		void RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept;
 		float_t* depthBuffer;
+		std::vector<Light> lights;
 	private:
 		std::vector<game::Triangle> _trianglesToRender;
 		RenderTarget _currentRenderTarget;
@@ -711,11 +712,24 @@ namespace game
 		ParameterEquation vnx;
 		ParameterEquation vny;
 		ParameterEquation vnz;
-		if (lighting)
+		if (lighting) // needs only vertex and point
 		{
 			vnx.Set(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			vny.Set(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			vnz.Set(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+		}
+
+		// Point
+		ParameterEquation disParam;
+		ParameterEquation lnx;
+		ParameterEquation lny;
+		ParameterEquation lnz;
+		if (lighting) // needs only vertex and point
+		{
+			disParam.Set(triangle.distSq[0] * oneOverW.x, triangle.distSq[1] * oneOverW.y, triangle.distSq[2] * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			lnx.Set(triangle.lNormal[0].x * oneOverW.x, triangle.lNormal[1].x * oneOverW.y, triangle.lNormal[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			lny.Set(triangle.lNormal[0].y * oneOverW.x, triangle.lNormal[1].y * oneOverW.y, triangle.lNormal[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			lnz.Set(triangle.lNormal[0].z * oneOverW.x, triangle.lNormal[1].z * oneOverW.y, triangle.lNormal[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		}
 
 		// Texture parameters
@@ -928,7 +942,7 @@ namespace game
 						}
 						if (lighting)
 						{
-							if (_lightingType == LightingType::Vertex)
+							if ((_lightingType == LightingType::Vertex) || (_lightingType == LightingType::Point))
 							{
 								vnx.stepX(nXEval);
 								vny.stepX(nYEval);
@@ -1015,6 +1029,55 @@ namespace game
 							luminance = max(0.25f, luminance);// < 0.0f ? 0.0f : lum;
 
 							luminance = min(luminance, 1.0f);
+						}
+						else if ((_lightingType == LightingType::Point))
+						{
+							// Vertex normal lighting
+							if (!vnx.first)
+							{
+								vnx.stepX(nXEval);
+								vny.stepX(nYEval);
+								vnz.stepX(nZEval);
+							}
+							else
+							{
+								vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
+								vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
+								vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
+							}
+							vertexNormalEval.x = nXEval * oneOverDepthEval;
+							vertexNormalEval.y = nYEval * oneOverDepthEval;
+							vertexNormalEval.z = nZEval * oneOverDepthEval;
+
+							// falloff
+							float lNX = 0;
+							float lNY = 0;
+							float lNZ = 0;
+							lnx.evaluate(pixelOffset.x, pixelOffset.y, lNX);
+							lny.evaluate(pixelOffset.x, pixelOffset.y, lNY);
+							lnz.evaluate(pixelOffset.x, pixelOffset.y, lNZ);
+							lNX *= oneOverDepthEval;
+							lNY *= oneOverDepthEval;
+							lNZ *= oneOverDepthEval;
+							lightNormal = { -lNX,-lNY,-lNZ };
+							lightNormal.Normalize();
+							//std::cout << lightNormal.x << " " << lightNormal.y << " " << lightNormal.z << "\n";
+							luminance = -vertexNormalEval.Dot(lightNormal);
+							
+							// falloff
+							//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
+							//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
+							float_t d = 0;
+							disParam.evaluate(pixelOffset.x, pixelOffset.y, d);
+							d *= oneOverDepthEval;
+							//luminance *= (lightNormal.Mag2()) / (d * d);
+							//luminance += 0.25f;
+
+							if (luminance < 0.05f) luminance = 0.05f; //amibient
+							if (luminance > 1) luminance = 1;
+							luminance = max(0.25f, luminance);
+							//luminance = max(0,luminance);
+							//luminance = 1.0f - luminance;
 						}
 						else if (_lightingType == LightingType::Depth)
 						{
@@ -1539,13 +1602,42 @@ namespace game
 		//vector = ret;
 	}
 
-	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) noexcept
 	{
 		mesh.GenerateModelMatrix();
 		Matrix4x4f mvpCopy(mvp);
 		mvpCopy = mvpCopy * mesh.model;
 		game::Triangle workingTriangle;
 
+
+		// Point light stuff
+		const uint64_t numLights = lights.size();
+		for (uint32_t i = 0; i < numberOfTris; ++i)
+		{
+			for (uint32_t l = 0; l < numLights; ++l)
+			{
+				Vector3f camL = lights[l].position;// *camera.view;
+				Triangle newt = mesh.tris[i];
+				newt.vertices[0] *= mesh.model;
+				newt.vertices[1] *= mesh.model;
+				newt.vertices[2] *= mesh.model;
+				//newt.vertices[0] *= camera.view;
+				//newt.vertices[1] *= camera.view;
+				//newt.vertices[2] *= camera.view;
+				mesh.tris[i].lNormal[0] = camL - newt.vertices[0];
+				mesh.tris[i].lNormal[1] = camL - newt.vertices[1];
+				mesh.tris[i].lNormal[2] = camL - newt.vertices[2];
+
+
+				mesh.tris[i].distSq[0] = mesh.tris[i].lNormal[0].Mag();
+				mesh.tris[i].distSq[1] = mesh.tris[i].lNormal[1].Mag();
+				mesh.tris[i].distSq[2] = mesh.tris[i].lNormal[2].Mag();
+
+				mesh.tris[i].lNormal[0].Normalize();
+				mesh.tris[i].lNormal[1].Normalize();
+				mesh.tris[i].lNormal[2].Normalize();
+			}
+		}
 
 		game::Triangle newClippedTris[2];
 		uint32_t numberTrisGenerated = {};

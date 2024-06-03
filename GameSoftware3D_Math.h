@@ -289,7 +289,7 @@ namespace game
 			// but the two new points are at the locations where the 
 			// original sides of the triangle (lines) intersect with the plane
 			float_t t = 0.0f;
-			float r = 0.0f, g=0.0f, b = 0.0f;
+			float_t r = 0.0f, g=0.0f, b = 0.0f;
 
 			// First intersection
 			out_tri1.vertices[1] = VectorIntersectPlane(planeNormalDotPoint, planeNormal, in_tri.vertices[insidePoints[0]], in_tri.vertices[outsidePoints[0]], t);
