@@ -1080,12 +1080,13 @@ namespace game
 								//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
 								// Attenuation calc 
 								float_t ad = (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
-								float_t attCon = 1.0f;
+								float_t attCon = 0;
 								float_t attLin = 1.0f * ad;
-								float_t attExp = 1.005f * ad * ad;
+								float_t attExp = 0 * ad * ad;
 								ad = attCon + attLin + attExp;
 
-								intensity *= 1.0f / ad;
+								intensity *= pow(1.0f / ad,2.2f);
+								//intensity *= 1.0f / ad;;
 							}
 
 							if (intensity < 0.05f) intensity = 0.05f;
