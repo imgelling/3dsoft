@@ -1085,8 +1085,8 @@ namespace game
 								float_t attExp = 0 * ad * ad;
 								ad = attCon + attLin + attExp;
 
-								intensity *= pow(1.0f / ad,2.2f);
-								//intensity *= 1.0f / ad;;
+								//intensity *= pow(1.0f / ad,2.2f);
+								intensity *= 1.0f / ad;;
 							}
 
 							if (intensity < 0.05f) intensity = 0.05f;
