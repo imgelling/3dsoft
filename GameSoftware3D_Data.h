@@ -150,7 +150,7 @@ namespace game
 		Vector3f faceNormal;
 		Vector3f normals[3];
 		Vector2f uvs[3];
-		float_t distSq[3];
+		Vector3f pixelPos[3];
 		Vector3f lNormal[3];
 
 		EdgeEquation edge0;

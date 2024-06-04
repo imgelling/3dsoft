@@ -720,13 +720,15 @@ namespace game
 		}
 
 		// Point
-		ParameterEquation disParam;
+		ParameterEquation pixelPos[3];
 		ParameterEquation lnx;
 		ParameterEquation lny;
 		ParameterEquation lnz;
-		if (lighting) // needs only vertex and point
+		if (lighting) // needs only point
 		{
-			disParam.Set(triangle.distSq[0] * oneOverW.x, triangle.distSq[1] * oneOverW.y, triangle.distSq[2] * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			pixelPos[0].Set(triangle.pixelPos[0].x * oneOverW.x, triangle.pixelPos[1].x * oneOverW.y, triangle.pixelPos[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			pixelPos[1].Set(triangle.pixelPos[0].y * oneOverW.x, triangle.pixelPos[1].y * oneOverW.y, triangle.pixelPos[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			pixelPos[2].Set(triangle.pixelPos[0].z * oneOverW.x, triangle.pixelPos[1].z * oneOverW.y, triangle.pixelPos[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			lnx.Set(triangle.lNormal[0].x * oneOverW.x, triangle.lNormal[1].x * oneOverW.y, triangle.lNormal[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			lny.Set(triangle.lNormal[0].y * oneOverW.x, triangle.lNormal[1].y * oneOverW.y, triangle.lNormal[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			lnz.Set(triangle.lNormal[0].z * oneOverW.x, triangle.lNormal[1].z * oneOverW.y, triangle.lNormal[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
@@ -1053,31 +1055,46 @@ namespace game
 							float lNX = 0;
 							float lNY = 0;
 							float lNZ = 0;
-							lnx.evaluate(pixelOffset.x, pixelOffset.y, lNX);
-							lny.evaluate(pixelOffset.x, pixelOffset.y, lNY);
-							lnz.evaluate(pixelOffset.x, pixelOffset.y, lNZ);
+							pixelPos[0].evaluate(pixelOffset.x, pixelOffset.y, lNX);
+							pixelPos[1].evaluate(pixelOffset.x, pixelOffset.y, lNY);
+							pixelPos[2].evaluate(pixelOffset.x, pixelOffset.y, lNZ);
 							lNX *= oneOverDepthEval;
 							lNY *= oneOverDepthEval;
 							lNZ *= oneOverDepthEval;
-							lightNormal = { -lNX,-lNY,-lNZ };
-							lightNormal.Normalize();
-							//std::cout << lightNormal.x << " " << lightNormal.y << " " << lightNormal.z << "\n";
-							luminance = -vertexNormalEval.Dot(lightNormal);
-							
-							// falloff
-							//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
-							//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
-							float_t d = 0;
-							disParam.evaluate(pixelOffset.x, pixelOffset.y, d);
-							d *= oneOverDepthEval;
-							//luminance *= (lightNormal.Mag2()) / (d * d);
-							//luminance += 0.25f;
+							Vector3f pixPos = { lNX,lNY,lNZ };
+							Vector3f lightDir = lights[0].position - pixPos;// { -lNX, -lNY, -lNZ };
+							lightDir *= -1.0f;
+							Vector3f e = lightDir;
+							lightDir.Normalize();
 
-							if (luminance < 0.05f) luminance = 0.05f; //amibient
+							luminance = -vertexNormalEval.Dot(lightDir);
+							if (luminance > 1.0f)
+							{
+								luminance = 1.0f;
+							}
+							//if (luminance > 0)
+							{
+								//luminance += 0.25f; // Ambient
+
+								// falloff
+								//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
+								//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
+								float_t ad = (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
+								//std::cout << ad << "\n";
+								//disParam.evaluate(pixelOffset.x, pixelOffset.y, d);
+								//d *= oneOverDepthEval;
+								float_t attCon = 1.0f;
+								float_t attLin = 1.0f * ad;
+								float_t attExp = 1.005f * ad * ad;
+								ad = attCon + attLin + attExp;
+
+								//luminance *= (lightNormal.Mag2()) / (d);
+								luminance *= 1.0f / ad;
+							}
+							if (luminance < 0.05f) luminance = 0.05f;
 							if (luminance > 1) luminance = 1;
-							luminance = max(0.25f, luminance);
-							//luminance = max(0,luminance);
-							//luminance = 1.0f - luminance;
+
+
 						}
 						else if (_lightingType == LightingType::Depth)
 						{
@@ -1629,9 +1646,9 @@ namespace game
 				mesh.tris[i].lNormal[2] = camL - newt.vertices[2];
 
 
-				mesh.tris[i].distSq[0] = mesh.tris[i].lNormal[0].Mag();
-				mesh.tris[i].distSq[1] = mesh.tris[i].lNormal[1].Mag();
-				mesh.tris[i].distSq[2] = mesh.tris[i].lNormal[2].Mag();
+				mesh.tris[i].pixelPos[0] = newt.vertices[0];//mesh.tris[i].lNormal[0].Mag();
+				mesh.tris[i].pixelPos[1] = newt.vertices[1];//mesh.tris[i].lNormal[1].Mag();
+				mesh.tris[i].pixelPos[2] = newt.vertices[2];//mesh.tris[i].lNormal[2].Mag();
 
 				mesh.tris[i].lNormal[0].Normalize();
 				mesh.tris[i].lNormal[1].Normalize();
@@ -1908,7 +1925,7 @@ namespace game
 				topLeftTri.vertices[0].x = -size + x + pos.x;
 				topLeftTri.vertices[0].y = -size + y + pos.y;
 				topLeftTri.vertices[0].z = z;
-				topLeftTri.color[0] = game::Colors::Red;
+				topLeftTri.color[0] = game::Colors::White;
 				topLeftTri.uvs[0].u = x;// 0.0f;
 				topLeftTri.uvs[0].v = y;// 0.0f;
 				topLeftTri.faceNormal = normal;
@@ -1920,7 +1937,7 @@ namespace game
 				topLeftTri.vertices[1].z = z;
 				topLeftTri.uvs[1].u = x + subdivisionSize; // 1.0f
 				topLeftTri.uvs[1].v = y;// 0.0f;
-				topLeftTri.color[1] = game::Colors::Green;
+				topLeftTri.color[1] = game::Colors::White; // game::Colors::Green;
 				topLeftTri.normals[1] = normal;
 
 				// bl
@@ -1929,7 +1946,7 @@ namespace game
 				topLeftTri.vertices[2].z = z;
 				topLeftTri.uvs[2].u = x;// 0.0f;
 				topLeftTri.uvs[2].v = y + subdivisionSize;// 1.0f;
-				topLeftTri.color[2] = game::Colors::Blue;
+				topLeftTri.color[2] = game::Colors::White; //game::Colors::Blue;
 				topLeftTri.normals[2] = normal;
 
 
@@ -1940,7 +1957,7 @@ namespace game
 				bottomRightTri.vertices[0].z = z;
 				bottomRightTri.uvs[0].u = x + subdivisionSize;// 1.0f;
 				bottomRightTri.uvs[0].v = y;// 0.0f;
-				bottomRightTri.color[0] = game::Colors::Green;
+				bottomRightTri.color[0] = game::Colors::White; //game::Colors::Green;
 				bottomRightTri.normals[0] = normal;
 				bottomRightTri.faceNormal = normal;
 
@@ -1959,7 +1976,7 @@ namespace game
 				bottomRightTri.vertices[2].z = z;
 				bottomRightTri.uvs[2].u = x;// 0.0f;
 				bottomRightTri.uvs[2].v = y + subdivisionSize;// 1.0f;
-				bottomRightTri.color[2] = game::Colors::Blue;
+				bottomRightTri.color[2] = game::Colors::White; //game::Colors::Blue;
 				bottomRightTri.normals[2] = normal;
 
 				for (int e = 0; e < 3; e++)
