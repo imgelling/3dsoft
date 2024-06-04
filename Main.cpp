@@ -427,7 +427,7 @@ public:
 
 		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
 		game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
-		//room.SetScale(2.00f, 2.00f, 2.00f);
+		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
 		for (uint32_t c = 0; c < room.tris.size(); c++)
 		{
@@ -695,35 +695,35 @@ public:
 
 
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Point);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
-		
+		 
 
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
+		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 
 		lights.lights[0].diffuse = game::Colors::Blue;
 		//lights.lights[0].position = { 0.75f,0.0f,0.75f };
-		//lights.lights[0].position = game::RotateX(lights.lights[0].position, 0.01f);
-		//lights.lights[0].position = game::RotateY(lights.lights[0].position, -0.01f);
-		//lights.lights[0].position = game::RotateZ(lights.lights[0].position, 0.01f);
+		lights.lights[0].position = game::RotateX(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
+		lights.lights[0].position = game::RotateY(lights.lights[0].position, -(1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
+		lights.lights[0].position = game::RotateZ(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f) * 0.75f);
 		lights.Update();
 		software3D.lights = lights.lights;
 		lights.GeneratePointSpriteMatrix(camera);

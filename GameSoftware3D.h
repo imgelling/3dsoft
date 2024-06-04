@@ -694,7 +694,7 @@ namespace game
 		ParameterEquation depthParam(oneOverW.x, oneOverW.y, oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 
 		// Face normal light pre calc (directional light) can add ambient here
-		float_t luminance = {};
+		float_t intensity = {};
 		Vector3f lightNormal(0.0f, 0.0f, 1.0f);  // direction the light is shining to (opposite for y)
 		if (lighting)
 		{
@@ -703,8 +703,8 @@ namespace game
 			//faceNormal.Normalize();
 			if (_lightingType == LightingType::Face)
 			{
-				luminance = -lightNormal.Dot(triangle.faceNormal); // Should have the negative as it is left handed
-				luminance = max(0.25f, luminance); //ambient here for face
+				intensity = -lightNormal.Dot(triangle.faceNormal); // Should have the negative as it is left handed
+				intensity = max(0.25f, intensity); //ambient here for face
 			}
 		}
 
@@ -721,17 +721,17 @@ namespace game
 
 		// Point
 		ParameterEquation pixelPos[3];
-		ParameterEquation lnx;
-		ParameterEquation lny;
-		ParameterEquation lnz;
+		//ParameterEquation lnx;
+		//ParameterEquation lny;
+		//ParameterEquation lnz;
 		if (lighting) // needs only point
 		{
 			pixelPos[0].Set(triangle.pixelPos[0].x * oneOverW.x, triangle.pixelPos[1].x * oneOverW.y, triangle.pixelPos[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			pixelPos[1].Set(triangle.pixelPos[0].y * oneOverW.x, triangle.pixelPos[1].y * oneOverW.y, triangle.pixelPos[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			pixelPos[2].Set(triangle.pixelPos[0].z * oneOverW.x, triangle.pixelPos[1].z * oneOverW.y, triangle.pixelPos[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			lnx.Set(triangle.lNormal[0].x * oneOverW.x, triangle.lNormal[1].x * oneOverW.y, triangle.lNormal[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			lny.Set(triangle.lNormal[0].y * oneOverW.x, triangle.lNormal[1].y * oneOverW.y, triangle.lNormal[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			lnz.Set(triangle.lNormal[0].z * oneOverW.x, triangle.lNormal[1].z * oneOverW.y, triangle.lNormal[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			//lnx.Set(triangle.lNormal[0].x * oneOverW.x, triangle.lNormal[1].x * oneOverW.y, triangle.lNormal[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			//lny.Set(triangle.lNormal[0].y * oneOverW.x, triangle.lNormal[1].y * oneOverW.y, triangle.lNormal[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			//lnz.Set(triangle.lNormal[0].z * oneOverW.x, triangle.lNormal[1].z * oneOverW.y, triangle.lNormal[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 		}
 
 		// Texture parameters
@@ -1026,11 +1026,11 @@ namespace game
 							vertexNormalEval.y = nYEval * oneOverDepthEval;
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
 
-							luminance = -vertexNormalEval.Dot(lightNormal);
-							luminance += 0.25f; //ambient
-							luminance = max(0.25f, luminance);// < 0.0f ? 0.0f : lum;
+							intensity = -vertexNormalEval.Dot(lightNormal);
+							intensity += 0.25f; //ambient
+							intensity = max(0.25f, intensity);// < 0.0f ? 0.0f : lum;
 
-							luminance = min(luminance, 1.0f);
+							intensity = min(intensity, 1.0f);
 						}
 						else if ((_lightingType == LightingType::Point))
 						{
@@ -1052,57 +1052,54 @@ namespace game
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
 
 							// falloff
-							float lNX = 0;
-							float lNY = 0;
-							float lNZ = 0;
-							pixelPos[0].evaluate(pixelOffset.x, pixelOffset.y, lNX);
-							pixelPos[1].evaluate(pixelOffset.x, pixelOffset.y, lNY);
-							pixelPos[2].evaluate(pixelOffset.x, pixelOffset.y, lNZ);
-							lNX *= oneOverDepthEval;
-							lNY *= oneOverDepthEval;
-							lNZ *= oneOverDepthEval;
-							Vector3f pixPos = { lNX,lNY,lNZ };
-							Vector3f lightDir = lights[0].position - pixPos;// { -lNX, -lNY, -lNZ };
-							lightDir *= -1.0f;
-							Vector3f e = lightDir;
+							float pixelPosEvalX = 0;
+							float pixelPosEvalY = 0;
+							float pixelPosEvalZ = 0;
+							pixelPos[0].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalX);
+							pixelPos[1].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalY);
+							pixelPos[2].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalZ);
+							pixelPosEvalX *= oneOverDepthEval;
+							pixelPosEvalY *= oneOverDepthEval;
+							pixelPosEvalZ *= oneOverDepthEval;
+
+							// Get direction of pixel to light
+							Vector3f pixPos = { pixelPosEvalX,pixelPosEvalY,pixelPosEvalZ };
+							Vector3f lightDir = pixPos - lights[0].position; // swapped instead of negating
 							lightDir.Normalize();
 
-							luminance = -vertexNormalEval.Dot(lightDir);
-							if (luminance > 1.0f)
+							// Diffuse calc
+							intensity = -vertexNormalEval.Dot(lightDir);
+							if (intensity > 1.0f)
 							{
-								luminance = 1.0f;
+								intensity = 1.0f;
 							}
-							//if (luminance > 0)
+							if (intensity > 0)
 							{
-								//luminance += 0.25f; // Ambient
-
 								// falloff
 								//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
 								//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
+								// Attenuation calc 
 								float_t ad = (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
-								//std::cout << ad << "\n";
-								//disParam.evaluate(pixelOffset.x, pixelOffset.y, d);
-								//d *= oneOverDepthEval;
 								float_t attCon = 1.0f;
 								float_t attLin = 1.0f * ad;
 								float_t attExp = 1.005f * ad * ad;
 								ad = attCon + attLin + attExp;
 
-								//luminance *= (lightNormal.Mag2()) / (d);
-								luminance *= 1.0f / ad;
+								intensity *= 1.0f / ad;
 							}
-							if (luminance < 0.05f) luminance = 0.05f;
-							if (luminance > 1) luminance = 1;
+
+							if (intensity < 0.05f) intensity = 0.05f;
+							if (intensity > 1) intensity = 1;
 
 
 						}
 						else if (_lightingType == LightingType::Depth)
 						{
 							//Depth based lighting color
-							luminance = oneOverDepthEval + 1.0f;
-							luminance = 1.0f / luminance;
-							luminance += 0.25f; // simulate ambient 
-							luminance = min(luminance, 1.0f);
+							intensity = oneOverDepthEval + 1.0f;
+							intensity = 1.0f / intensity;
+							intensity += 0.25f; // simulate ambient 
+							intensity = min(intensity, 1.0f);
 						}
 					}
 
@@ -1125,10 +1122,10 @@ namespace game
 						}
 						if (lighting)
 						{
-							rSource = min(rEval * oneOverDepthEval, 1.0f) * luminance;
-							gSource = min(gEval * oneOverDepthEval, 1.0f) * luminance;
-							bSource = min(bEval * oneOverDepthEval, 1.0f) * luminance;
-							aSource = min(aEval * oneOverDepthEval, 1.0f) * luminance;
+							rSource = min(rEval * oneOverDepthEval, 1.0f) * intensity;
+							gSource = min(gEval * oneOverDepthEval, 1.0f) * intensity;
+							bSource = min(bEval * oneOverDepthEval, 1.0f) * intensity;
+							aSource = min(aEval * oneOverDepthEval, 1.0f) * intensity;
 						}
 						else
 						{
@@ -1242,9 +1239,9 @@ namespace game
 						// texture lighting
 						if (lighting)
 						{
-							rSource *= luminance;
-							gSource *= luminance;
-							bSource *= luminance;
+							rSource *= intensity;
+							gSource *= intensity;
+							bSource *= intensity;
 						}
 
 						if (_enableAlphaBlend) 
@@ -1628,32 +1625,11 @@ namespace game
 
 
 		// Point light stuff
-		const uint64_t numLights = lights.size();
 		for (uint32_t i = 0; i < numberOfTris; ++i)
 		{
-			for (uint32_t l = 0; l < numLights; ++l)
-			{
-				Vector3f camL = lights[l].position;// *camera.view;
-				Triangle newt = mesh.tris[i];
-				newt.vertices[0] *= mesh.model;
-				newt.vertices[1] *= mesh.model;
-				newt.vertices[2] *= mesh.model;
-				//newt.vertices[0] *= camera.view;
-				//newt.vertices[1] *= camera.view;
-				//newt.vertices[2] *= camera.view;
-				mesh.tris[i].lNormal[0] = camL - newt.vertices[0];
-				mesh.tris[i].lNormal[1] = camL - newt.vertices[1];
-				mesh.tris[i].lNormal[2] = camL - newt.vertices[2];
-
-
-				mesh.tris[i].pixelPos[0] = newt.vertices[0];//mesh.tris[i].lNormal[0].Mag();
-				mesh.tris[i].pixelPos[1] = newt.vertices[1];//mesh.tris[i].lNormal[1].Mag();
-				mesh.tris[i].pixelPos[2] = newt.vertices[2];//mesh.tris[i].lNormal[2].Mag();
-
-				mesh.tris[i].lNormal[0].Normalize();
-				mesh.tris[i].lNormal[1].Normalize();
-				mesh.tris[i].lNormal[2].Normalize();
-			}
+			mesh.tris[i].pixelPos[0] = mesh.tris[i].vertices[0] * mesh.model;
+			mesh.tris[i].pixelPos[1] = mesh.tris[i].vertices[1] * mesh.model;
+			mesh.tris[i].pixelPos[2] = mesh.tris[i].vertices[2] * mesh.model;
 		}
 
 		game::Triangle newClippedTris[2];
