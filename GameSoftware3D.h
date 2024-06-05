@@ -1080,10 +1080,10 @@ namespace game
 								//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
 								// Attenuation calc 
 								float_t ad = (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
-								float_t attCon = 0;
-								float_t attLin = 1.0f * ad;
-								float_t attExp = 0 * ad * ad;
-								ad = attCon + attLin + attExp;
+								//float_t attCon = 0.0f;
+								float_t attLin = lights[0].attenuation.linear * ad;
+								float_t attExp = lights[0].attenuation.exponential * ad * ad;
+								ad = lights[0].attenuation.constant + attLin + attExp;
 
 								//intensity *= pow(1.0f / ad,2.2f);
 								intensity *= 1.0f / ad;;
@@ -1157,7 +1157,8 @@ namespace game
 							gSource = gSource * adnewa + gDest * da1minadnewa;
 							bSource = bSource * adnewa + bDest * da1minadnewa;
 						}
-						*colorBuffer = (uint32_t(aFinal * 255) << 24) | (uint32_t(bSource * 255) << 16) | (uint32_t(gSource * 255) << 8) | uint32_t(rSource * 255); colorAtPixel.packedABGR;
+						*colorBuffer = (uint32_t(aFinal * 255) << 24) | (uint32_t(bSource * 255) << 16) | (uint32_t(gSource * 255) << 8) | uint32_t(rSource * 255); 
+						//colorAtPixel.packedABGR;
 					}
 
 					
@@ -1265,6 +1266,9 @@ namespace game
 							gSource = gSource * adnewa + gDest * da1minadnewa;
 							bSource = bSource * adnewa + bDest * da1minadnewa;
 						}
+						//rSource = pow(rSource, 1.0f / 2.2f);
+						//gSource = pow(gSource, 1.0f / 2.2f);
+						//bSource = pow(bSource, 1.0f / 2.2f);
 						*colorBuffer = (uint32_t(aFinal * 255)<< 24) | (uint32_t(bSource * 255) << 16) | (uint32_t(gSource * 255) << 8) | uint32_t(rSource * 255);// colorAtPixel.packedABGR;// color;// _currentTexture.data[ty * _currentTexture.size.width + tx];
 					}
 				}

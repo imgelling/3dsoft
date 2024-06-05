@@ -249,7 +249,7 @@ public:
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
-		software3D.LoadTexture("content/sky.png", room.texture);
+		//software3D.LoadTexture("content/sky.png", room.texture);
 		//text.texture = lights.mesh.texture;
 		//model.texture = lights.mesh.texture;
 		
@@ -409,13 +409,23 @@ public:
 		lightingPointRadial.name = "lightingPointRadial";
 		lightingPointRadial.labelColor = game::Colors::White;
 
+
+		PointLightConstSlider.position.x = 1100;
+		PointLightConstSlider.position.y = 140;
+		PointLightConstSlider.name = "PointLightConstSlider";
+		PointLightConstSlider.label = "Fall Off Constant";
+		PointLightConstSlider.labelColor = game::Colors::White;
+		PointLightConstSlider.value = 5.0f;
+		PointLightConstSlider.minValue = -10.0f;
+		PointLightConstSlider.maxValue = 10.0f;
+		PointLightConstSlider.length = 17*8;
+		
 		BackFaceCullingCheckBox.position.x = 1100 * uiScaleX;
-		BackFaceCullingCheckBox.position.y = 140;
+		BackFaceCullingCheckBox.position.y = 180;
 		BackFaceCullingCheckBox.name = "BackFaceCullingCheckBox";
 		BackFaceCullingCheckBox.label = "BackFace Culling";
 		BackFaceCullingCheckBox.checked = true;
 		BackFaceCullingCheckBox.labelColor = game::Colors::White;
-		
 
 		simpleUI.Add(&textureButton);
 		simpleUI.Add(&lightingButton);
@@ -424,24 +434,31 @@ public:
 		simpleUI.Add(&lightingVertexRadial);
 		simpleUI.Add(&lightingPointRadial);
 		simpleUI.Add(&BackFaceCullingCheckBox);
+		simpleUI.Add(&PointLightConstSlider);
 
 
 		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
-		game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
-		room.SetScale(2.00f, 2.00f, 2.00f);
+		//game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
+		game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
+		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
+		//room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
-		for (uint32_t c = 0; c < room.tris.size(); c++)
-		{
-			room.tris[c].faceNormal *= -1.0f;
-			room.tris[c].faceNormal.Normalize();
-			room.tris[c].normals[0] *= -1.0f;
-			room.tris[c].normals[1] *= -1.0f;
-			room.tris[c].normals[2] *= -1.0f;
-			std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
-			std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
-			std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
-			std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
-		}
+		//for (uint32_t c = 0; c < room.tris.size(); c++)
+		//{
+		//	room.tris[c].faceNormal *= -1.0f;
+		//	room.tris[c].faceNormal.Normalize();
+		//	room.tris[c].normals[0] *= -1.0f;
+		//	room.tris[c].normals[1] *= -1.0f;
+		//	room.tris[c].normals[2] *= -1.0f;
+		//	std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
+		//	std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
+		//	std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
+		//	std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
+		//}
+
+		lights.lights[0].attenuation.constant = 0;
+		lights.lights[0].attenuation.linear = 1.0f;
+		lights.lights[0].attenuation.exponential = 1.0f;
 	}
 
 	void Shutdown()
@@ -696,8 +713,8 @@ public:
 
 
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Point);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
@@ -711,20 +728,20 @@ public:
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
+		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
 		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
 
 		//lights.lights[0].diffuse = game::Colors::Blue;
 		//lights.lights[0].position = { 0.75f,0.0f,0.75f };
-		lights.lights[0].position = game::RotateX(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
-		lights.lights[0].position = game::RotateY(lights.lights[0].position, -(1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
-		lights.lights[0].position = game::RotateZ(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f) * 0.75f);
+		//lights.lights[0].position = game::RotateX(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
+		//lights.lights[0].position = game::RotateY(lights.lights[0].position, -(1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
+		//lights.lights[0].position = game::RotateZ(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f) * 0.75f);
 		lights.Update();
 		software3D.lights = lights.lights;
 		lights.GeneratePointSpriteMatrix(camera);
@@ -753,6 +770,7 @@ public:
 		//		pixelMode.Text("Showing Depth buffer.", 0, 60, game::Colors::Magenta, 1);
 		//}
 
+
 		maxFPS = max(maxFPS, geGetFramesPerSecond());
 		if (showText)
 		{
@@ -779,13 +797,41 @@ public:
 			{
 				pixelMode.Text("Text Input Mode: False", 0, 50, game::Colors::Magenta, 1);
 			}
+			// Update and render UI
+			simpleUI.Update();
+			simpleUI.Draw();
 		}
 		//pixelMode.TextClip("rotation is " + std::to_string(rotation / 3.14159f), 0, 70, game::Colors::Magenta, 2);
 
-		// Update and render UI
-		simpleUI.Update();
-		simpleUI.Draw();
+
 	
+		//// Gamma
+		//if (geKeyboard.IsKeyHeld(geK_G))
+		//{
+		//	game::Color fc;
+		//	uint32_t c = 0;
+		//	uint32_t* v = pixelMode.videoBuffer;
+		//	float r = 0;
+		//	float g = 0;
+		//	float b = 0;
+		//	float a = 0;
+		//	for (int pos = 0; pos < resolution.height * resolution.width; pos++)
+		//	{
+		//		c = *v;
+		//		r = ((c >> 0) & 0xFF) * (1.0f / 255.0f);
+		//		g = ((c >> 8) & 0xFF) * (1.0f / 255.0f);
+		//		b = ((c >> 16) & 0xFF) * (1.0f / 255.0f);
+		//		a = ((c >> 24) & 0xFF) * (1.0f / 255.0f);
+		//		r = pow(r, 1.0f/2.2f);
+		//		b = pow(b, 1.0f/2.2f);
+		//		g = pow(g, 1.0f/2.2f);
+		//		r = min(1.0f, r);
+		//		g = min(1.0f, g);
+		//		b = min(1.0f, b);
+		//		*v = (uint32_t(a * 255) << 24) | (uint32_t(b * 255) << 16) | (uint32_t(g * 255) << 8) | uint32_t(r * 255);
+		//		v++;
+		//	}
+		//}
 		
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))

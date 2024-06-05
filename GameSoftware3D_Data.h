@@ -77,6 +77,12 @@ namespace game
 		Vector3f position;
 		Color diffuse;
 		Color specular;
+		struct 
+		{
+			float_t constant = 0.0f;
+			float_t linear = 0.0f;
+			float_t exponential = 0.0f;
+		} attenuation;
 	};
 #pragma pack(pop)
 

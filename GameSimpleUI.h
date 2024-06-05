@@ -354,6 +354,7 @@ namespace game
 		void Update() override;
 		void Draw() override;
 	private:
+		float_t _valuePercentOfBar;
 	};
 
 	template<typename T>
@@ -361,10 +362,12 @@ namespace game
 	{
 		scale = 1;
 		label = "Slider";
+		length = 0;
 		outlined = true;
 		minValue = (T)0;
 		maxValue = (T)0;
 		value = (T)0;
+		_valuePercentOfBar = 0;
 	}
 
 	template<typename T>
@@ -373,21 +376,19 @@ namespace game
 		const int32_t textScaled = scale * _textHeight;
 		const int32_t scaledRadius = 5 * scale;
 
-		// Outline
-		_pixelMode->CircleClip(position.x + scaledRadius, position.y + scaledRadius, scaledRadius + 1, game::Colors::Magenta);
+		// h bar
+		//_pixelMode->RectFilledClip({ position.x, position.y + 8 + 4, position.x + (int32_t)length, position.y + 8 + 9 }, boxColor);
+		_pixelMode->HLineClip(position.x, position.x + (int32_t)length, position.y + 10 + (9 - 4) + 1, boxColor);
+		_pixelMode->HLineClip(position.x, position.x + (int32_t)length, position.y + 10 + (9 - 4) + 2, boxColor);
 
-		// Circle
-		_pixelMode->CircleFilledClip(position.x + scaledRadius, position.y + scaledRadius, scaledRadius, game::Colors::White);
-
-		// Dot
-		//if (checked)
-		//{
-		//	_pixelMode->CircleFilledClip(position.x + scaledRadius, position.y + scaledRadius, scaledRadius - (2 * scale), game::Colors::Black);
-		//}
+		// Value bar
+		_valuePercentOfBar = (value + abs(minValue)) / (float)(abs(minValue) + abs(maxValue));
+		float vPos = length * _valuePercentOfBar;
+		_pixelMode->RectFilledClip({ position.x + (int32_t)(vPos), position.y + 10 + 4 - 4, position.x + (int32_t)(vPos) + 3, position.y + 10 + 9 + 4}, game::Colors::DarkRed);
 
 		// Label
 		_pixelMode->TextClip(label, position.x + (textScaled) * 2, position.y + (scaledRadius - (scaledRadius - (1 + scale))), game::Colors::White, scale);
-
+		_pixelMode->TextClip(std::to_string(value), position.x + (int32_t)length + 10 - 300, position.y + 8 + 4, game::Colors::White);
 	}
 
 	template<typename T>
