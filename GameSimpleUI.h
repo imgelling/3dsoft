@@ -331,7 +331,6 @@ namespace game
 		}
 	}
 
-	template<typename T>
 	class SliderUI : public ElementUI
 	{
 	public:
@@ -341,9 +340,9 @@ namespace game
 		std::string label;
 		bool outlined;
 
-		T minValue;
-		T maxValue;
-		T value;
+		float_t minValue;
+		float_t maxValue;
+		float_t value;
 		uint32_t length;
 
 		Color labelColor = game::Colors::Black;
@@ -357,70 +356,72 @@ namespace game
 		float_t _valuePercentOfBar;
 	};
 
-	template<typename T>
-	inline SliderUI<T>::SliderUI()
+	inline SliderUI::SliderUI()
 	{
 		scale = 1;
 		label = "Slider";
 		length = 0;
 		outlined = true;
-		minValue = (T)0;
-		maxValue = (T)0;
-		value = (T)0;
+		minValue = 0;
+		maxValue = 0;
+		value = 0;
 		_valuePercentOfBar = 0;
 	}
 
-	template<typename T>
-	inline void SliderUI<T>::Draw()
+	inline void SliderUI::Draw()
 	{
 		const int32_t textScaled = scale * _textHeight;
 		const int32_t scaledRadius = 5 * scale;
 
 		// h bar
 		//_pixelMode->RectFilledClip({ position.x, position.y + 8 + 4, position.x + (int32_t)length, position.y + 8 + 9 }, boxColor);
-		_pixelMode->HLineClip(position.x, position.x + (int32_t)length, position.y + 10 + (9 - 4) + 1, boxColor);
-		_pixelMode->HLineClip(position.x, position.x + (int32_t)length, position.y + 10 + (9 - 4) + 2, boxColor);
+		_pixelMode->HLineClip(position.x, position.x + (int32_t)length, position.y + 12 + (9 - 4) + 1, boxColor);
+		_pixelMode->HLineClip(position.x, position.x + (int32_t)length, position.y + 12 + (9 - 4) + 2, boxColor);
 
 		// Value bar
-		_valuePercentOfBar = (value + abs(minValue)) / (float)(abs(minValue) + abs(maxValue));
 		float vPos = length * _valuePercentOfBar;
-		_pixelMode->RectFilledClip({ position.x + (int32_t)(vPos), position.y + 10 + 4 - 4, position.x + (int32_t)(vPos) + 3, position.y + 10 + 9 + 4}, game::Colors::DarkRed);
+		if (_hovered)
+		_pixelMode->RectFilledClip({ position.x + (int32_t)(vPos), position.y + 12 + 4 - 4, position.x + (int32_t)(vPos) + 3, position.y + 10 + 9 + 4}, game::Colors::Magenta);
+		else
+			_pixelMode->RectFilledClip({ position.x + (int32_t)(vPos), position.y + 12 + 4 - 4, position.x + (int32_t)(vPos)+3, position.y + 10 + 9 + 4 }, game::Colors::DarkRed);
 
 		// Label
 		_pixelMode->TextClip(label, position.x + (textScaled) * 2, position.y + (scaledRadius - (scaledRadius - (1 + scale))), game::Colors::White, scale);
-		_pixelMode->TextClip(std::to_string(value), position.x + (int32_t)length + 10 - 300, position.y + 8 + 4, game::Colors::White);
+		// the following could be optimized
+		_pixelMode->TextClip(std::to_string(value).substr(0, std::to_string(value).find(".") + 3), position.x - (uint32_t)(std::to_string(value).substr(0, std::to_string(value).find(".") + 3).length() + 1) * 8, position.y + 12 + 4, game::Colors::White);
 	}
 
-	template<typename T>
-	inline void SliderUI<T>::Update()
+	inline void SliderUI::Update()
 	{
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
 		_hovered = false;
-		const int32_t scaledDiameter = 5 * scale * 2;// _textHeight* scale;
-		//_pixelMode->RectClip({ position.x,position.y,(position.x + scaledDiameter), (position.y + scaledDiameter) }, game::Colors::Yellow);
-		if (mouse.x < (position.x + (scaledDiameter)))
+
+		if (mouse.x <= (position.x + (int32_t)(length)))
 		{
 			if (mouse.x >= (position.x))
 			{
-				if (mouse.y <= (position.y + (scaledDiameter)))
+				if (mouse.y <= (position.y + 12 + 9 + 4))
 				{
-					if (mouse.y >= (position.y))
+					if (mouse.y >= (position.y + 12 + 4 - 4))
 					{
 						_hovered = true;
-						if (enginePointer->geMouse.WasButtonReleased(geM_LEFT))
-						{
-							//if (!checked)
-							//{
-							//	checked = !checked;
-							//	std::any t = checked;
-							//	_uiCallback(name, t);
-							//}
-						}
 
 						if (enginePointer->geMouse.IsButtonHeld(geM_LEFT))
 						{
 							_pressed = true;
+							
+							_valuePercentOfBar = (mouse.x - position.x) / (float)(length);
+							float_t barScale = (_valuePercentOfBar) * (float)(maxValue - minValue) + minValue;
+							
+							value = barScale;
+							
+							value = max(minValue, value);
+							value = min(maxValue, value);
+
+							std::any t = value;
+							_uiCallback(name, t);
+							
 						}
 
 					}
@@ -428,6 +429,7 @@ namespace game
 				}
 			}
 		}
+
 	}
 
 	class SimpleUI

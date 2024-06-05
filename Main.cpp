@@ -80,8 +80,10 @@ public:
 	game::RadialUI lightingFaceRadial;
 	game::RadialUI lightingVertexRadial;
 	game::RadialUI lightingPointRadial;
-	game::CheckBoxUI BackFaceCullingCheckBox;
-	game::SliderUI<float_t> PointLightConstSlider;
+	game::CheckBoxUI backFaceCullingCheckBox;
+	game::SliderUI pointLightConstSlider;
+	game::SliderUI pointLightLinearSlider;
+	game::SliderUI pointLightExponentialSlider;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -141,6 +143,34 @@ public:
 #endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING, rec);
+			return;
+		}
+
+		if (str == "PointLightConstSlider")
+		{
+#if defined(_DEBUG)
+			UI_VALUE_CHECK(str, "float", value);
+#endif
+			lights.lights[0].attenuation.constant = std::any_cast<float>(value);
+			return;
+		}
+
+		if (str == "PointLightLinearSlider")
+		{
+#if defined(_DEBUG)
+			UI_VALUE_CHECK(str, "float", value);
+#endif
+			lights.lights[0].attenuation.linear = std::any_cast<float>(value);
+			return;
+		}
+
+		if (str == "PointLightExponentialSlider")
+		{
+#if defined(_DEBUG)
+			UI_VALUE_CHECK(str, "float", value);
+#endif
+			lights.lights[0].attenuation.exponential = std::any_cast<float>(value);
+			//pointLightExponentialSlider.value = lights.lights[0].attenuation.exponential;
 			return;
 		}
 
@@ -410,22 +440,42 @@ public:
 		lightingPointRadial.labelColor = game::Colors::White;
 
 
-		PointLightConstSlider.position.x = 1100;
-		PointLightConstSlider.position.y = 140;
-		PointLightConstSlider.name = "PointLightConstSlider";
-		PointLightConstSlider.label = "Fall Off Constant";
-		PointLightConstSlider.labelColor = game::Colors::White;
-		PointLightConstSlider.value = 5.0f;
-		PointLightConstSlider.minValue = -10.0f;
-		PointLightConstSlider.maxValue = 10.0f;
-		PointLightConstSlider.length = 17*8;
+		pointLightConstSlider.position.x = 1100;
+		pointLightConstSlider.position.y = 140;
+		pointLightConstSlider.name = "PointLightConstSlider";
+		pointLightConstSlider.label = "Fall Off Constant";
+		pointLightConstSlider.labelColor = game::Colors::White;
+		pointLightConstSlider.value = 0;// .0f;
+		pointLightConstSlider.minValue = 0;// .0f;
+		pointLightConstSlider.maxValue = 10;// .0f;
+		pointLightConstSlider.length = 17*8;
+
+		pointLightLinearSlider.position.x = 1100;
+		pointLightLinearSlider.position.y = 170;
+		pointLightLinearSlider.name = "PointLightLinearSlider";
+		pointLightLinearSlider.label = "Fall Off Linear";
+		pointLightLinearSlider.labelColor = game::Colors::White;
+		pointLightLinearSlider.value = 0;// .0f;
+		pointLightLinearSlider.minValue = 0;// .0f;
+		pointLightLinearSlider.maxValue = 10;// .0f;
+		pointLightLinearSlider.length = 17 * 8;
+
+		pointLightExponentialSlider.position.x = 1100;
+		pointLightExponentialSlider.position.y = 200;
+		pointLightExponentialSlider.name = "PointLightExponentialSlider";
+		pointLightExponentialSlider.label = "Fall Off Exponential";
+		pointLightExponentialSlider.labelColor = game::Colors::White;
+		pointLightExponentialSlider.value = 0;// .0f;
+		pointLightExponentialSlider.minValue = 0;// .0f;
+		pointLightExponentialSlider.maxValue = 10;// .0f;
+		pointLightExponentialSlider.length = 17 * 8;
 		
-		BackFaceCullingCheckBox.position.x = 1100 * uiScaleX;
-		BackFaceCullingCheckBox.position.y = 180;
-		BackFaceCullingCheckBox.name = "BackFaceCullingCheckBox";
-		BackFaceCullingCheckBox.label = "BackFace Culling";
-		BackFaceCullingCheckBox.checked = true;
-		BackFaceCullingCheckBox.labelColor = game::Colors::White;
+		backFaceCullingCheckBox.position.x = 1100 * uiScaleX;
+		backFaceCullingCheckBox.position.y = 230;
+		backFaceCullingCheckBox.name = "BackFaceCullingCheckBox";
+		backFaceCullingCheckBox.label = "BackFace Culling";
+		backFaceCullingCheckBox.checked = true;
+		backFaceCullingCheckBox.labelColor = game::Colors::White;
 
 		simpleUI.Add(&textureButton);
 		simpleUI.Add(&lightingButton);
@@ -433,8 +483,10 @@ public:
 		simpleUI.Add(&lightingFaceRadial);
 		simpleUI.Add(&lightingVertexRadial);
 		simpleUI.Add(&lightingPointRadial);
-		simpleUI.Add(&BackFaceCullingCheckBox);
-		simpleUI.Add(&PointLightConstSlider);
+		simpleUI.Add(&backFaceCullingCheckBox);
+		simpleUI.Add(&pointLightConstSlider);
+		simpleUI.Add(&pointLightLinearSlider);
+		simpleUI.Add(&pointLightExponentialSlider);
 
 
 		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
@@ -457,8 +509,8 @@ public:
 		//}
 
 		lights.lights[0].attenuation.constant = 0;
-		lights.lights[0].attenuation.linear = 1.0f;
-		lights.lights[0].attenuation.exponential = 1.0f;
+		lights.lights[0].attenuation.linear = 0.0f;
+		lights.lights[0].attenuation.exponential = 0.0f;
 	}
 
 	void Shutdown()
@@ -589,28 +641,28 @@ public:
 		}
 
 		// Mouse look
-		game::Pointi mouse = geMouse.GetPositionRelative();
-		float smoothedMouseDeltax = 0;
-		// Y rotation
-		if (mouse.x)
-		{
-			if (geMouse.IsButtonHeld(geM_LEFT))
-			{
-				smoothedMouseDeltax = (mouse.x / 2560.0f * 400.0f);//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
-				camera.SetRotation(0.0f, smoothedMouseDeltax * (3.14159f / 180.0f), 0.0f);
-			}
-		}
-		// X rotation
-		float smoothedMouseDelta = 0;
-		if (mouse.y)
-		{
-			if (geMouse.IsButtonHeld(geM_LEFT))
-			{
-				
-				smoothedMouseDelta = (mouse.y / 1440.0f * 400.0f);//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
-				camera.SetRotation(-smoothedMouseDelta * (3.14159f / 180.0f), 0.0f, 0.0f);
-			}
-		}
+		//game::Pointi mouse = geMouse.GetPositionRelative();
+		//float smoothedMouseDeltax = 0;
+		//// Y rotation
+		//if (mouse.x)
+		//{
+		//	if (geMouse.IsButtonHeld(geM_LEFT))
+		//	{
+		//		smoothedMouseDeltax = (mouse.x / 2560.0f * 400.0f);//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
+		//		camera.SetRotation(0.0f, smoothedMouseDeltax * (3.14159f / 180.0f), 0.0f);
+		//	}
+		//}
+		//// X rotation
+		//float smoothedMouseDelta = 0;
+		//if (mouse.y)
+		//{
+		//	if (geMouse.IsButtonHeld(geM_LEFT))
+		//	{
+		//		
+		//		smoothedMouseDelta = (mouse.y / 1440.0f * 400.0f);//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
+		//		camera.SetRotation(-smoothedMouseDelta * (3.14159f / 180.0f), 0.0f, 0.0f);
+		//	}
+		//}
 
 
 		if (geKeyboard.WasKeyPressed(geK_F3))
@@ -657,8 +709,6 @@ public:
 		mesh.tris.clear();
 
 		game::Mesh cube;
-		game::Vector3f normal = { 0,0,-1 };
-		//normal = game::RotateX(normal, value);
 		for (uint8_t letter : text)
 		{
 			ox = (letter - 32) % 16;
@@ -716,10 +766,9 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
 		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Point);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true);
 		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
+		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
+		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
