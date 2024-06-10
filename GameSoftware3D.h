@@ -701,6 +701,7 @@ namespace game
 			//Vector3f faceNormal(triangle.faceNormal);// (0.0f, 0.0f, 1.0f);
 			//lightNormal.Normalize();
 			//faceNormal.Normalize();
+
 			if (_lightingType == LightingType::Face)
 			{
 				intensity = -lightNormal.Dot(triangle.faceNormal); // Should have the negative as it is left handed
@@ -708,31 +709,24 @@ namespace game
 			}
 		}
 
-		// Vertex normal parameters (directional light)
+		// Lighting parameters
 		ParameterEquation vnx;
 		ParameterEquation vny;
 		ParameterEquation vnz;
+		ParameterEquation pixelPosParam[3];
 		if (lighting) // needs only vertex and point
 		{
 			vnx.Set(triangle.normals[0].x * oneOverW.x, triangle.normals[1].x * oneOverW.y, triangle.normals[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			vny.Set(triangle.normals[0].y * oneOverW.x, triangle.normals[1].y * oneOverW.y, triangle.normals[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
 			vnz.Set(triangle.normals[0].z * oneOverW.x, triangle.normals[1].z * oneOverW.y, triangle.normals[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			if (_lightingType == LightingType::Point)
+			{
+				pixelPosParam[0].Set(triangle.pixelPos[0].x * oneOverW.x, triangle.pixelPos[1].x * oneOverW.y, triangle.pixelPos[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+				pixelPosParam[1].Set(triangle.pixelPos[0].y * oneOverW.x, triangle.pixelPos[1].y * oneOverW.y, triangle.pixelPos[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+				pixelPosParam[2].Set(triangle.pixelPos[0].z * oneOverW.x, triangle.pixelPos[1].z * oneOverW.y, triangle.pixelPos[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
+			}
 		}
 
-		// Point
-		ParameterEquation pixelPos[3];
-		//ParameterEquation lnx;
-		//ParameterEquation lny;
-		//ParameterEquation lnz;
-		if (lighting) // needs only point
-		{
-			pixelPos[0].Set(triangle.pixelPos[0].x * oneOverW.x, triangle.pixelPos[1].x * oneOverW.y, triangle.pixelPos[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			pixelPos[1].Set(triangle.pixelPos[0].y * oneOverW.x, triangle.pixelPos[1].y * oneOverW.y, triangle.pixelPos[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			pixelPos[2].Set(triangle.pixelPos[0].z * oneOverW.x, triangle.pixelPos[1].z * oneOverW.y, triangle.pixelPos[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			//lnx.Set(triangle.lNormal[0].x * oneOverW.x, triangle.lNormal[1].x * oneOverW.y, triangle.lNormal[2].x * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			//lny.Set(triangle.lNormal[0].y * oneOverW.x, triangle.lNormal[1].y * oneOverW.y, triangle.lNormal[2].y * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-			//lnz.Set(triangle.lNormal[0].z * oneOverW.x, triangle.lNormal[1].z * oneOverW.y, triangle.lNormal[2].z * oneOverW.z, triangle.edge0, triangle.edge1, triangle.edge2, triangle.area);
-		}
 
 		// Texture parameters
 		ParameterEquation uParam;
@@ -798,6 +792,11 @@ namespace game
 		float_t nXEval = {};
 		float_t nYEval = {};
 		float_t nZEval = {};
+		float_t pixelPosEvalX = {};
+		float_t pixelPosEvalY = {};
+		float_t pixelPosEvalZ = {};
+
+		
 
 		float_t  rSource = {};
 		float_t  gSource = {};
@@ -821,7 +820,16 @@ namespace game
 		float_t aDest {};
 		float_t aFinal(1.0f);
 
-		uint32_t dest = {};
+		Vector3f pixPos = {};
+		Vector3f lightDir = {};
+		Vector3f lightDist = {};
+		float_t ad{};
+		float_t attLin{};
+		float_t attExp{};
+
+
+
+		uint32_t destColor = {};
 
 		Vector3f vertexNormalEval;
 
@@ -949,6 +957,9 @@ namespace game
 								vnx.stepX(nXEval);
 								vny.stepX(nYEval);
 								vnz.stepX(nZEval);
+								pixelPosParam[0].stepX(pixelPosEvalX);
+								pixelPosParam[1].stepX(pixelPosEvalY);
+								pixelPosParam[2].stepX(pixelPosEvalZ);
 							}
 						}
 						if (!textured || _enableColorTinting)
@@ -1034,55 +1045,46 @@ namespace game
 						}
 						else if ((_lightingType == LightingType::Point))
 						{
-							// Vertex normal lighting
-							if (!vnx.first)
+							if (pixelPosParam[0].first == 0)
 							{
 								vnx.stepX(nXEval);
 								vny.stepX(nYEval);
 								vnz.stepX(nZEval);
+								pixelPosParam[0].stepX(pixelPosEvalX);
+								pixelPosParam[1].stepX(pixelPosEvalY);
+								pixelPosParam[2].stepX(pixelPosEvalZ);
 							}
 							else
 							{
 								vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
 								vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
 								vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
+								pixelPosParam[0].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalX);
+								pixelPosParam[1].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalY);
+								pixelPosParam[2].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalZ);
 							}
 							vertexNormalEval.x = nXEval * oneOverDepthEval;
 							vertexNormalEval.y = nYEval * oneOverDepthEval;
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
 
-							// falloff
-							float pixelPosEvalX = 0;
-							float pixelPosEvalY = 0;
-							float pixelPosEvalZ = 0;
-							pixelPos[0].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalX);
-							pixelPos[1].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalY);
-							pixelPos[2].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalZ);
-							pixelPosEvalX *= oneOverDepthEval;
-							pixelPosEvalY *= oneOverDepthEval;
-							pixelPosEvalZ *= oneOverDepthEval;
-
 							// Get direction of pixel to light
-							Vector3f pixPos = { pixelPosEvalX,pixelPosEvalY,pixelPosEvalZ };
-							Vector3f lightDir = pixPos - lights[0].position; // swapped instead of negating
+							pixPos = { pixelPosEvalX * oneOverDepthEval,pixelPosEvalY * oneOverDepthEval,pixelPosEvalZ * oneOverDepthEval };
+							lightDir = pixPos - lights[0].position; // swapped instead of negating
+							lightDist = lightDir;
 							lightDir.Normalize();
 
 							// Diffuse calc
 							intensity = -vertexNormalEval.Dot(lightDir);
-							if (intensity > 1.0f)
-							{
-								intensity = 1.0f;
-							}
+							intensity = min(intensity, 1.0f);
 							if (intensity > 0)
 							{
 								// falloff
 								//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
 								//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
 								// Attenuation calc 
-								float_t ad = (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
-								//float_t attCon = 0.0f;
-								float_t attLin = lights[0].attenuation.linear * ad;
-								float_t attExp = lights[0].attenuation.exponential * ad * ad;
+								ad = lightDist.x * lightDist.x + lightDist.y * lightDist.y + lightDist.z * lightDist.z;//Mag2();// (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
+								attLin = lights[0].attenuation.linear * ad;
+								attExp = lights[0].attenuation.exponential * ad * ad;
 								ad = lights[0].attenuation.constant + attLin + attExp;
 
 								//intensity *= pow(1.0f / ad,2.2f);
@@ -1091,8 +1093,6 @@ namespace game
 
 							if (intensity < 0.05f) intensity = 0.05f;
 							if (intensity > 1) intensity = 1;
-
-
 						}
 						else if (_lightingType == LightingType::Depth)
 						{
@@ -1143,12 +1143,12 @@ namespace game
 						// alpha blending
 						if (_enableAlphaBlend) 
 						{
-							dest = *colorBuffer;
+							destColor = *colorBuffer;
 							// extract dest						
-							rDest = ((dest >> 0) & 0xFF) * (1.0f / 255.0f);
-							gDest = ((dest >> 8) & 0xFF) * (1.0f / 255.0f);
-							bDest = ((dest >> 16) & 0xFF) * (1.0f / 255.0f);
-							aDest = ((dest >> 24) & 0xFF) * (1.0f / 255.0f);
+							rDest = ((destColor >> 0) & 0xFF) * (1.0f / 255.0f);
+							gDest = ((destColor >> 8) & 0xFF) * (1.0f / 255.0f);
+							bDest = ((destColor >> 16) & 0xFF) * (1.0f / 255.0f);
+							aDest = ((destColor >> 24) & 0xFF) * (1.0f / 255.0f);
 							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
@@ -1255,12 +1255,12 @@ namespace game
 
 						if (_enableAlphaBlend) 
 						{
-							dest = *colorBuffer;
+							destColor = *colorBuffer;
 							// extract dest
-							rDest = ((dest >> 0) & 0xFF) * (1.0f / 255.0f);
-							gDest = ((dest >> 8) & 0xFF) * (1.0f / 255.0f);
-							bDest = ((dest >> 16) & 0xFF) * (1.0f / 255.0f);
-							aDest = ((dest >> 24) & 0xFF) * (1.0f / 255.0f);
+							rDest = ((destColor >> 0) & 0xFF) * (1.0f / 255.0f);
+							gDest = ((destColor >> 8) & 0xFF) * (1.0f / 255.0f);
+							bDest = ((destColor >> 16) & 0xFF) * (1.0f / 255.0f);
+							aDest = ((destColor >> 24) & 0xFF) * (1.0f / 255.0f);
 
 							aFinal = 1.0f - (1.0f - aSource) * (1.0f - aDest);
 							// fg.R * fg.A / r.A + bg.R * bg.A * (1 - fg.A) / r.A;
@@ -1300,6 +1300,7 @@ namespace game
 				vnx.first = 1;
 				//vny.first = 1;
 				//vnz.first = 1;
+				pixelPosParam[0].first = 1;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;
