@@ -1123,10 +1123,14 @@ namespace game
 						}
 						if (lighting)
 						{
-							rSource = min(rEval * oneOverDepthEval, 1.0f) * intensity;
-							gSource = min(gEval * oneOverDepthEval, 1.0f) * intensity;
-							bSource = min(bEval * oneOverDepthEval, 1.0f) * intensity;
+							rSource = min(rEval * oneOverDepthEval, 1.0f);
+							gSource = min(gEval * oneOverDepthEval, 1.0f);
+							bSource = min(bEval * oneOverDepthEval, 1.0f);
 							aSource = min(aEval * oneOverDepthEval, 1.0f) * intensity;
+							rSource = (rSource + lights[0].diffuse.rf) * 0.5f * intensity; // light color
+							gSource = (gSource + lights[0].diffuse.gf) * 0.5f * intensity;
+							bSource = (bSource + lights[0].diffuse.bf) * 0.5f * intensity;
+
 						}
 						else
 						{
@@ -1239,8 +1243,11 @@ namespace game
 
 
 						// texture lighting
-						if (lighting)
+						if (lighting) // this may need to go to end
 						{
+							rSource = (rSource + lights[0].diffuse.rf) * 0.5f; // color light
+							gSource = (gSource + lights[0].diffuse.gf) * 0.5f;
+							bSource = (bSource + lights[0].diffuse.bf) * 0.5f;
 							rSource *= intensity;
 							gSource *= intensity;
 							bSource *= intensity;
@@ -1630,11 +1637,14 @@ namespace game
 
 
 		// Point light stuff
-		for (uint32_t i = 0; i < numberOfTris; ++i)
+		if (_enableLighting && (_lightingType == LightingType::Point))
 		{
-			mesh.tris[i].pixelPos[0] = mesh.tris[i].vertices[0] * mesh.model;
-			mesh.tris[i].pixelPos[1] = mesh.tris[i].vertices[1] * mesh.model;
-			mesh.tris[i].pixelPos[2] = mesh.tris[i].vertices[2] * mesh.model;
+			for (uint32_t i = 0; i < numberOfTris; ++i)
+			{
+				mesh.tris[i].pixelPos[0] = mesh.tris[i].vertices[0] * mesh.model;
+				mesh.tris[i].pixelPos[1] = mesh.tris[i].vertices[1] * mesh.model;
+				mesh.tris[i].pixelPos[2] = mesh.tris[i].vertices[2] * mesh.model;
+			}
 		}
 
 		game::Triangle newClippedTris[2];

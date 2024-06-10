@@ -491,7 +491,7 @@ public:
 
 		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
 		//game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
-		game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
+		game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::Black);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
@@ -511,6 +511,7 @@ public:
 		lights.lights[0].attenuation.constant = 0;
 		lights.lights[0].attenuation.linear = 0.0f;
 		lights.lights[0].attenuation.exponential = 0.0f;
+		lights.lights[0].diffuse = game::Colors::DarkOrange;
 	}
 
 	void Shutdown()
