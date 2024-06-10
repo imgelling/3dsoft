@@ -27,7 +27,7 @@
 #define GAME_SOFTWARE3D_COLOR_TINTING 12
 #define GAME_SOFTWARE3D_WIREFRAME_COLOR 13
 
- 
+
 namespace game
 {
 

@@ -28,7 +28,7 @@ namespace game
 		Pointi position;
 		std::string name;
 		bool enabled;
-		virtual void Update() { enginePointer->geLogger->Error("Must create Update() method."); }
+		virtual bool Update() { enginePointer->geLogger->Error("Must create Update() method."); return false; }
 		virtual void Draw() { enginePointer->geLogger->Error("Must create Draw() method."); }
 	protected:
 		std::function<void(const std::string&, std::any&)> _uiCallback;
@@ -70,7 +70,7 @@ namespace game
 		Color pressedColor = game::Colors::Gray;
 		Color outlineColor = game::Colors::Magenta;
 
-		void Update() override;
+		bool Update() override;
 		void Draw() override;		
 	private:
 	};
@@ -120,7 +120,7 @@ namespace game
 		_pixelMode->TextClip(label, textPosX, textPosY, labelColor, scale);
 	}
 
-	inline void ButtonUI::Update()
+	inline bool ButtonUI::Update()
 	{
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
@@ -149,12 +149,13 @@ namespace game
 						{
 							_pressed = true;
 						}
-
+						return true;
 					}
 
 				}
 			}
 		}
+		return false;
 	}
 
 	// Can be checked or not checked.  Passes a bool to callback
@@ -174,7 +175,7 @@ namespace game
 		Color boxColor = game::Colors::Yellow;
 		Color xColor = game::Colors::DarkRed;
 
-		void Update() override;
+		bool Update() override;
 		void Draw() override;
 	private:
 	};
@@ -204,7 +205,7 @@ namespace game
 		_pixelMode->TextClip(label, position.x + (textScaled * 2), position.y + 2, labelColor, scale);
 	}
 
-	inline void CheckBoxUI::Update()
+	inline bool CheckBoxUI::Update()
 	{
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
@@ -231,12 +232,13 @@ namespace game
 						{
 							_pressed = true;
 						}
-
+						return true;
 					}
 
 				}
 			}
 		}
+		return false;
 	}
  
 	// Can be checked or not checked and only one in a group can be checked.  Passes a bool to callback
@@ -257,7 +259,7 @@ namespace game
 		Color boxColor = game::Colors::Yellow;
 		Color xColor = game::Colors::DarkRed;
 
-		void Update() override;
+		bool Update() override;
 		void Draw() override;
 	private:
 	};
@@ -293,7 +295,7 @@ namespace game
 	
 	}
 
-	inline void RadialUI::Update()
+	inline bool RadialUI::Update()
 	{
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
@@ -323,12 +325,13 @@ namespace game
 						{
 							_pressed = true;
 						}
-
+						return true;
 					}
 
 				}
 			}
 		}
+		return false;
 	}
 
 	class SliderUI : public ElementUI
@@ -350,7 +353,7 @@ namespace game
 		Color boxColor = game::Colors::Yellow;
 		Color xColor = game::Colors::DarkRed;
 
-		void Update() override;
+		bool Update() override;
 		void Draw() override;
 	private:
 		float_t _valuePercentOfBar;
@@ -391,7 +394,7 @@ namespace game
 		_pixelMode->TextClip(std::to_string(value).substr(0, std::to_string(value).find(".") + 3), position.x - (uint32_t)(std::to_string(value).substr(0, std::to_string(value).find(".") + 3).length() + 1) * 8, position.y + 12 + 4, game::Colors::White);
 	}
 
-	inline void SliderUI::Update()
+	inline bool SliderUI::Update()
 	{
 		const game::Pointi mouse = _pixelMode->GetScaledMousePosition();
 		_pressed = false;
@@ -421,14 +424,15 @@ namespace game
 
 							std::any t = value;
 							_uiCallback(name, t);
-							
 						}
+						return true;
 
 					}
 
 				}
 			}
 		}
+		return false;
 
 	}
 
@@ -439,7 +443,9 @@ namespace game
 		{
 			_pixelMode = nullptr;
 			_uiCallback = nullptr;
+			inputWasUsed = false;
 		}
+		bool inputWasUsed;
 		SimpleUI(PixelMode &pixelMode, std::function<void(const std::string&, std::any&)> callback)
 		{
 			_pixelMode = &pixelMode;
@@ -467,10 +473,13 @@ namespace game
 				return;
 			}
 #endif
+			inputWasUsed = false;
 			const uint64_t size = elements.size();
+			bool ret = false;
 			for (uint32_t ele = 0; ele < size; ++ele)
 			{
-				elements[ele]->Update();
+				ret = elements[ele]->Update();
+				if (ret) inputWasUsed = true;
 			}
 		}
 
@@ -493,6 +502,7 @@ namespace game
 	private:
 		PixelMode* _pixelMode;
 		std::function<void(const std::string&, std::any&)> _uiCallback;
+
 	};
 
 }

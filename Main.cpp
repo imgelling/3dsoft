@@ -493,20 +493,20 @@ public:
 		//game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
 		game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
-		//room.SetScale(2.00f, 2.00f, 2.00f);
+		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
-		//for (uint32_t c = 0; c < room.tris.size(); c++)
-		//{
-		//	room.tris[c].faceNormal *= -1.0f;
-		//	room.tris[c].faceNormal.Normalize();
-		//	room.tris[c].normals[0] *= -1.0f;
-		//	room.tris[c].normals[1] *= -1.0f;
-		//	room.tris[c].normals[2] *= -1.0f;
-		//	std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
-		//	std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
-		//	std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
-		//	std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
-		//}
+		for (uint32_t c = 0; c < room.tris.size(); c++)
+		{
+			room.tris[c].faceNormal *= -1.0f;
+			room.tris[c].faceNormal.Normalize();
+			room.tris[c].normals[0] *= -1.0f;
+			room.tris[c].normals[1] *= -1.0f;
+			room.tris[c].normals[2] *= -1.0f;
+			std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
+			std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
+			std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
+			std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
+		}
 
 		lights.lights[0].attenuation.constant = 0;
 		lights.lights[0].attenuation.linear = 0.0f;
@@ -640,29 +640,32 @@ public:
 			}
 		}
 
-		// Mouse look
-		//game::Pointi mouse = geMouse.GetPositionRelative();
-		//float smoothedMouseDeltax = 0;
-		//// Y rotation
-		//if (mouse.x)
-		//{
-		//	if (geMouse.IsButtonHeld(geM_LEFT))
-		//	{
-		//		smoothedMouseDeltax = (mouse.x / 2560.0f * 400.0f);//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
-		//		camera.SetRotation(0.0f, smoothedMouseDeltax * (3.14159f / 180.0f), 0.0f);
-		//	}
-		//}
-		//// X rotation
-		//float smoothedMouseDelta = 0;
-		//if (mouse.y)
-		//{
-		//	if (geMouse.IsButtonHeld(geM_LEFT))
-		//	{
-		//		
-		//		smoothedMouseDelta = (mouse.y / 1440.0f * 400.0f);//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
-		//		camera.SetRotation(-smoothedMouseDelta * (3.14159f / 180.0f), 0.0f, 0.0f);
-		//	}
-		//}
+		if (!simpleUI.inputWasUsed)
+		{
+			// Mouse look
+			game::Pointi mouse = geMouse.GetPositionRelative();
+			float smoothedMouseDeltax = 0;
+			// Y rotation
+			if (mouse.x)
+			{
+				if (geMouse.IsButtonHeld(geM_LEFT))
+				{
+					smoothedMouseDeltax = (mouse.x / 2560.0f * 400.0f);//smoothingFactor * mouse.x + (1.0f - smoothingFactor) * smoothedMouseDeltax;
+					camera.SetRotation(0.0f, smoothedMouseDeltax * (3.14159f / 180.0f), 0.0f);
+				}
+			}
+			// X rotation
+			float smoothedMouseDelta = 0;
+			if (mouse.y)
+			{
+				if (geMouse.IsButtonHeld(geM_LEFT))
+				{
+					
+					smoothedMouseDelta = (mouse.y / 1440.0f * 400.0f);//smoothingFactor * mouse.y + (1.0f - smoothingFactor) * smoothedMouseDelta;
+					camera.SetRotation(-smoothedMouseDelta * (3.14159f / 180.0f), 0.0f, 0.0f);
+				}
+			}
+		}
 
 
 		if (geKeyboard.WasKeyPressed(geK_F3))
@@ -896,6 +899,7 @@ public:
 
 
 };
+
 
 int32_t main()
 {
