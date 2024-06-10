@@ -49,7 +49,7 @@ public:
 		}
 	}
 };
-// needs to be able to update off PointLights
+
 
 
 
@@ -90,7 +90,7 @@ public:
 
 
 	game::FillMode state = game::FillMode::Filled;
-	game::Pointi resolution = { 1280 , 720 };
+	const game::Pointi resolution = { 1280 , 720 };
 	bool showText;
 
 	Game() : game::Engine()
@@ -385,7 +385,7 @@ public:
 		geKeyboard.SetTextInputText("3D text");
 
 		// Simple UI
-		int uiScaleX = resolution.x / 1280;
+		int uiScaleX = (resolution.x / 1280);
 
 
 		simpleUI.Initialize(pixelMode, std::bind(&Game::simpleUICallBack, this, std::placeholders::_1, std::placeholders::_2));
@@ -398,7 +398,7 @@ public:
 		textureButton.toggled = true;
 		textureButton.position.x = 1100 * uiScaleX;
 		textureButton.position.y = 20;
-		textureButton.length = 100 * uiScaleX;
+		textureButton.length = 100;
 		textureButton.outlined = true;
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 
@@ -440,7 +440,7 @@ public:
 		lightingPointRadial.labelColor = game::Colors::White;
 
 
-		pointLightConstSlider.position.x = 1100;
+		pointLightConstSlider.position.x = 1100 * uiScaleX;
 		pointLightConstSlider.position.y = 140;
 		pointLightConstSlider.name = "PointLightConstSlider";
 		pointLightConstSlider.label = "Fall Off Constant";
@@ -450,7 +450,7 @@ public:
 		pointLightConstSlider.maxValue = 10;// .0f;
 		pointLightConstSlider.length = 17*8;
 
-		pointLightLinearSlider.position.x = 1100;
+		pointLightLinearSlider.position.x = 1100 * uiScaleX;
 		pointLightLinearSlider.position.y = 170;
 		pointLightLinearSlider.name = "PointLightLinearSlider";
 		pointLightLinearSlider.label = "Fall Off Linear";
@@ -460,7 +460,7 @@ public:
 		pointLightLinearSlider.maxValue = 10;// .0f;
 		pointLightLinearSlider.length = 17 * 8;
 
-		pointLightExponentialSlider.position.x = 1100;
+		pointLightExponentialSlider.position.x = 1100 * uiScaleX;
 		pointLightExponentialSlider.position.y = 200;
 		pointLightExponentialSlider.name = "PointLightExponentialSlider";
 		pointLightExponentialSlider.label = "Fall Off Exponential";
@@ -490,8 +490,8 @@ public:
 
 
 		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
-		//game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
-		game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::Black);
+		game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
+		//game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model

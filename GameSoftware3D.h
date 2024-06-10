@@ -116,7 +116,7 @@ namespace game
 		_enableAlphaTest = false;
 		_alphaTestValue = 128;
 		_enableAlphaBlend = false;
-		_numbuffers = 5;
+		_numbuffers = 2;
 		_enableColorTinting = false;
 		_wireFrameThicknessSquared = 1.0f;
 		_wireFrameColor = Colors::White.packedABGR;
