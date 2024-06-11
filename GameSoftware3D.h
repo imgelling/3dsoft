@@ -1070,29 +1070,35 @@ namespace game
 							// Get direction of pixel to light
 							pixPos = { pixelPosEvalX * oneOverDepthEval,pixelPosEvalY * oneOverDepthEval,pixelPosEvalZ * oneOverDepthEval };
 							lightDir = pixPos - lights[0].position; // swapped instead of negating
-							lightDist = lightDir;
-							lightDir.Normalize();
-
-							// Diffuse calc
-							intensity = -vertexNormalEval.Dot(lightDir);
-							intensity = min(intensity, 1.0f);
-							if (intensity > 0)
+							intensity = 0.1f;
+							const float_t ld2 = lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z;
+							if (ld2 < lights[0].radius)
 							{
-								// falloff
-								//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
-								//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
-								// Attenuation calc 
-								ad = lightDist.x * lightDist.x + lightDist.y * lightDist.y + lightDist.z * lightDist.z;//Mag2();// (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
-								attLin = lights[0].attenuation.linear * ad;
-								attExp = lights[0].attenuation.exponential * ad * ad;
-								ad = lights[0].attenuation.constant + attLin + attExp;
+								lightDist = lightDir;
+								lightDir.Normalize();
 
-								//intensity *= pow(1.0f / ad,2.2f);
-								intensity *= 1.0f / ad;;
+								// Diffuse calc
+								intensity = -vertexNormalEval.Dot(lightDir);
+								if (intensity > 0)
+								{
+									// falloff
+									//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
+									//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
+									// Attenuation calc 
+									//ad = lightDist.x* lightDist.x + lightDist.y * lightDist.y + lightDist.z * lightDist.z;//Mag2();// (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
+									attLin = lights[0].attenuation.linear * ld2;// ad;
+									attExp = lights[0].attenuation.exponential * ld2 * ld2;// ad* ad;
+									//ad = lights[0].attenuation.constant + attLin + attExp;
+
+									//intensity *= pow(1.0f / ad,2.2f);
+									//intensity *= 1.0f / ad;
+									intensity *= 1.0f / (lights[0].attenuation.constant + attLin + attExp);
+									//std::cout << lightDist.Mag2() << "\n";
+								}
+								intensity = max(intensity, 0.1f);
+								intensity = min(intensity, 1.0f);
 							}
-
-							if (intensity < 0.05f) intensity = 0.05f;
-							if (intensity > 1) intensity = 1;
+					
 						}
 						else if (_lightingType == LightingType::Depth)
 						{

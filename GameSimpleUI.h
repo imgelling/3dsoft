@@ -400,6 +400,9 @@ namespace game
 		_pressed = false;
 		_hovered = false;
 
+
+		_valuePercentOfBar = (value + abs(minValue)) / (float)(abs(minValue) + abs(maxValue));
+
 		if (mouse.x <= (position.x + (int32_t)(length)))
 		{
 			if (mouse.x >= (position.x))
@@ -450,6 +453,7 @@ namespace game
 		{
 			_pixelMode = &pixelMode;
 			_uiCallback = callback;
+			inputWasUsed = false;
 		}
 		void Initialize(PixelMode& pixelMode, std::function<void(const std::string&, std::any&)> callback)
 		{

@@ -83,6 +83,16 @@ namespace game
 			float_t linear = 0.0f;
 			float_t exponential = 0.0f;
 		} attenuation;
+		float_t radius = 0.0f;
+		void CalculateRadius()
+		{
+			float lightMax = std::fmaxf(std::fmaxf(diffuse.rf, diffuse.gf), diffuse.bf);
+			radius =
+				(float)(-attenuation.linear + std::sqrtf(attenuation.linear * attenuation.linear - 4.0f * attenuation.exponential * (attenuation.constant - (256.0f / 5.0f) * lightMax)))
+				/ (2.0f * attenuation.exponential);
+			//radius *= radius;
+			//std::cout << radius << "\n";
+		}
 	};
 #pragma pack(pop)
 

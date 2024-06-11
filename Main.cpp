@@ -88,6 +88,8 @@ public:
 	game::Camera3D camera;
 	uint32_t maxFPS;
 
+	int32_t lightColor = 0;
+
 
 	game::FillMode state = game::FillMode::Filled;
 	const game::Pointi resolution = { 1280 , 720 };
@@ -152,6 +154,7 @@ public:
 			UI_VALUE_CHECK(str, "float", value);
 #endif
 			lights.lights[0].attenuation.constant = std::any_cast<float>(value);
+			lights.lights[0].CalculateRadius();
 			return;
 		}
 
@@ -161,6 +164,7 @@ public:
 			UI_VALUE_CHECK(str, "float", value);
 #endif
 			lights.lights[0].attenuation.linear = std::any_cast<float>(value);
+			lights.lights[0].CalculateRadius();
 			return;
 		}
 
@@ -170,6 +174,7 @@ public:
 			UI_VALUE_CHECK(str, "float", value);
 #endif
 			lights.lights[0].attenuation.exponential = std::any_cast<float>(value);
+			lights.lights[0].CalculateRadius();
 			//pointLightExponentialSlider.value = lights.lights[0].attenuation.exponential;
 			return;
 		}
@@ -222,7 +227,7 @@ public:
 #endif
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
-		attributes.VsyncOn = false;
+		attributes.VsyncOn = true;
 		attributes.FrameLock = 0;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
 		attributes.DebugMode = false;
@@ -357,7 +362,7 @@ public:
 
 
 		// Preset some world stuff
-		camera.position.z = -1.0f;
+		camera.position.z = -2.0f;
 		camera.position.y = 0;
 
 		//plane.SetRotation(-3.14159f / 2.0f, 0, 0);
@@ -440,12 +445,18 @@ public:
 		lightingPointRadial.labelColor = game::Colors::White;
 
 
+		lights.lights[0].attenuation.constant = 1.0f;
+		lights.lights[0].attenuation.linear = 0.7f;
+		lights.lights[0].attenuation.exponential = 1.8f;
+		lights.lights[0].diffuse = game::Colors::Red;
+		lights.lights[0].CalculateRadius();
+
 		pointLightConstSlider.position.x = 1100 * uiScaleX;
 		pointLightConstSlider.position.y = 140;
 		pointLightConstSlider.name = "PointLightConstSlider";
 		pointLightConstSlider.label = "Fall Off Constant";
 		pointLightConstSlider.labelColor = game::Colors::White;
-		pointLightConstSlider.value = 0;// .0f;
+		pointLightConstSlider.value = lights.lights[0].attenuation.constant;// .0f;
 		pointLightConstSlider.minValue = 0;// .0f;
 		pointLightConstSlider.maxValue = 10;// .0f;
 		pointLightConstSlider.length = 17*8;
@@ -455,7 +466,7 @@ public:
 		pointLightLinearSlider.name = "PointLightLinearSlider";
 		pointLightLinearSlider.label = "Fall Off Linear";
 		pointLightLinearSlider.labelColor = game::Colors::White;
-		pointLightLinearSlider.value = 0;// .0f;
+		pointLightLinearSlider.value = lights.lights[0].attenuation.linear;// .0f;
 		pointLightLinearSlider.minValue = 0;// .0f;
 		pointLightLinearSlider.maxValue = 10;// .0f;
 		pointLightLinearSlider.length = 17 * 8;
@@ -465,7 +476,7 @@ public:
 		pointLightExponentialSlider.name = "PointLightExponentialSlider";
 		pointLightExponentialSlider.label = "Fall Off Exponential";
 		pointLightExponentialSlider.labelColor = game::Colors::White;
-		pointLightExponentialSlider.value = 0;// .0f;
+		pointLightExponentialSlider.value = lights.lights[0].attenuation.exponential;// .0f;
 		pointLightExponentialSlider.minValue = 0;// .0f;
 		pointLightExponentialSlider.maxValue = 10;// .0f;
 		pointLightExponentialSlider.length = 17 * 8;
@@ -490,7 +501,7 @@ public:
 
 
 		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
-		game::GenerateCube(room, { 0,0,0 }, game::Colors::White);
+		game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
 		//game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
@@ -508,10 +519,7 @@ public:
 			std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
 		}
 
-		lights.lights[0].attenuation.constant = 0;
-		lights.lights[0].attenuation.linear = 0.0f;
-		lights.lights[0].attenuation.exponential = 0.0f;
-		lights.lights[0].diffuse = game::Colors::DarkOrange;
+
 	}
 
 	void Shutdown()
@@ -538,12 +546,26 @@ public:
 
 		if (geKeyboard.WasKeyReleased(geK_COMMA))
 		{
-			software3D.SetState(GAME_SOFTWARE3D_WIREFRAME_COLOR, (int)game::Colors::CornFlowerBlue.packedABGR);
+			lightColor--;
+			lightColor = max(0, lightColor);
+			switch (lightColor)
+			{
+			case 0: lights.lights[0].diffuse = game::Colors::Red; break;
+			case 1: lights.lights[0].diffuse = game::Colors::Green; break;
+			case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
+			}
 		}
 
 		if (geKeyboard.WasKeyReleased(geK_PERIOD))
 		{
-			software3D.SetState(GAME_SOFTWARE3D_WIREFRAME_COLOR, (int)game::Colors::White.packedABGR);
+			lightColor++;
+			lightColor = min(2, lightColor);
+			switch (lightColor)
+			{
+			case 0: lights.lights[0].diffuse = game::Colors::Red; break;
+			case 1: lights.lights[0].diffuse = game::Colors::Green; break;
+			case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
+			}
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_F1))
@@ -777,7 +799,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		 
-
+		room.SetRotation(rotation, -rotation, 2.0f * rotation);
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 
