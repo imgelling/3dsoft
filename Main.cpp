@@ -83,7 +83,7 @@ public:
 	game::CheckBoxUI backFaceCullingCheckBox;
 	game::SliderUI pointLightConstSlider;
 	game::SliderUI pointLightLinearSlider;
-	game::SliderUI pointLightExponentialSlider;
+	game::SliderUI pointLightQuadraticSlider;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -168,12 +168,12 @@ public:
 			return;
 		}
 
-		if (str == "PointLightExponentialSlider")
+		if (str == "PointLightQuadraticSlider")
 		{
 #if defined(_DEBUG)
 			UI_VALUE_CHECK(str, "float", value);
 #endif
-			lights.lights[0].attenuation.exponential = std::any_cast<float>(value);
+			lights.lights[0].attenuation.quadratic = std::any_cast<float>(value);
 			lights.lights[0].CalculateRadius();
 			//pointLightExponentialSlider.value = lights.lights[0].attenuation.exponential;
 			return;
@@ -227,7 +227,7 @@ public:
 #endif
 		game::Attributes attributes;
 		attributes.WindowTitle = "Window Title";
-		attributes.VsyncOn = true;
+		attributes.VsyncOn = false;
 		attributes.FrameLock = 0;
 		attributes.RenderingAPI = game::RenderAPI::DirectX11;
 		attributes.DebugMode = false;
@@ -447,14 +447,14 @@ public:
 
 		lights.lights[0].attenuation.constant = 1.0f;
 		lights.lights[0].attenuation.linear = 0.7f;
-		lights.lights[0].attenuation.exponential = 1.8f;
+		lights.lights[0].attenuation.quadratic = 1.8f;
 		lights.lights[0].diffuse = game::Colors::Red;
 		lights.lights[0].CalculateRadius();
 
 		pointLightConstSlider.position.x = 1100 * uiScaleX;
 		pointLightConstSlider.position.y = 140;
 		pointLightConstSlider.name = "PointLightConstSlider";
-		pointLightConstSlider.label = "Fall Off Constant";
+		pointLightConstSlider.label = "Fall Off - Constant";
 		pointLightConstSlider.labelColor = game::Colors::White;
 		pointLightConstSlider.value = lights.lights[0].attenuation.constant;// .0f;
 		pointLightConstSlider.minValue = 0;// .0f;
@@ -464,22 +464,22 @@ public:
 		pointLightLinearSlider.position.x = 1100 * uiScaleX;
 		pointLightLinearSlider.position.y = 170;
 		pointLightLinearSlider.name = "PointLightLinearSlider";
-		pointLightLinearSlider.label = "Fall Off Linear";
+		pointLightLinearSlider.label = "Fall Off - Linear";
 		pointLightLinearSlider.labelColor = game::Colors::White;
 		pointLightLinearSlider.value = lights.lights[0].attenuation.linear;// .0f;
 		pointLightLinearSlider.minValue = 0;// .0f;
 		pointLightLinearSlider.maxValue = 10;// .0f;
 		pointLightLinearSlider.length = 17 * 8;
 
-		pointLightExponentialSlider.position.x = 1100 * uiScaleX;
-		pointLightExponentialSlider.position.y = 200;
-		pointLightExponentialSlider.name = "PointLightExponentialSlider";
-		pointLightExponentialSlider.label = "Fall Off Exponential";
-		pointLightExponentialSlider.labelColor = game::Colors::White;
-		pointLightExponentialSlider.value = lights.lights[0].attenuation.exponential;// .0f;
-		pointLightExponentialSlider.minValue = 0;// .0f;
-		pointLightExponentialSlider.maxValue = 10;// .0f;
-		pointLightExponentialSlider.length = 17 * 8;
+		pointLightQuadraticSlider.position.x = 1100 * uiScaleX;
+		pointLightQuadraticSlider.position.y = 200;
+		pointLightQuadraticSlider.name = "PointLightQuadraticSlider";
+		pointLightQuadraticSlider.label = "Fall Off - Quadradic";
+		pointLightQuadraticSlider.labelColor = game::Colors::White;
+		pointLightQuadraticSlider.value = lights.lights[0].attenuation.quadratic;// .0f;
+		pointLightQuadraticSlider.minValue = 0;// .0f;
+		pointLightQuadraticSlider.maxValue = 10;// .0f;
+		pointLightQuadraticSlider.length = 17 * 8;
 		
 		backFaceCullingCheckBox.position.x = 1100 * uiScaleX;
 		backFaceCullingCheckBox.position.y = 230;
@@ -497,27 +497,27 @@ public:
 		simpleUI.Add(&backFaceCullingCheckBox);
 		simpleUI.Add(&pointLightConstSlider);
 		simpleUI.Add(&pointLightLinearSlider);
-		simpleUI.Add(&pointLightExponentialSlider);
+		simpleUI.Add(&pointLightQuadraticSlider);
 
 
-		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
-		game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
+		game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
+		//game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
 		//game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
-		for (uint32_t c = 0; c < room.tris.size(); c++)
-		{
-			room.tris[c].faceNormal *= -1.0f;
-			room.tris[c].faceNormal.Normalize();
-			room.tris[c].normals[0] *= -1.0f;
-			room.tris[c].normals[1] *= -1.0f;
-			room.tris[c].normals[2] *= -1.0f;
-			std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
-			std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
-			std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
-			std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
-		}
+		//for (uint32_t c = 0; c < room.tris.size(); c++)
+		//{
+		//	room.tris[c].faceNormal *= -1.0f;
+		//	room.tris[c].faceNormal.Normalize();
+		//	room.tris[c].normals[0] *= -1.0f;
+		//	room.tris[c].normals[1] *= -1.0f;
+		//	room.tris[c].normals[2] *= -1.0f;
+		//	std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
+		//	std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
+		//	std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
+		//	std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
+		//}
 
 
 	}
@@ -799,7 +799,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
 		 
-		room.SetRotation(rotation, -rotation, 2.0f * rotation);
+		//room.SetRotation(rotation, -rotation, 2.0f * rotation);
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 

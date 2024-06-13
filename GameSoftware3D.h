@@ -669,11 +669,11 @@ namespace game
 	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& __restrict clip) noexcept
 	{
 		uint32_t foundTriangle = {};
-		uint32_t videoBufferStride(_currentRenderTarget.size.width);
+		const uint32_t videoBufferStride(_currentRenderTarget.size.width);
 
 		game::Vector2f pixelOffset;
 
-		Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
+		const Vector3f oneOverW(1.0f / triangle.vertices[0].w, 1.0f / triangle.vertices[1].w, 1.0f / triangle.vertices[2].w);
 
 		// Color parameter	
 		Color colorAtPixel;
@@ -824,8 +824,8 @@ namespace game
 		Vector3f lightDir = {};
 		Vector3f lightDist = {};
 		float_t ad{};
-		float_t attLin{};
-		float_t attExp{};
+		float_t attLinear{};
+		float_t attQuadratic{};
 
 
 
@@ -1086,13 +1086,13 @@ namespace game
 									//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
 									// Attenuation calc 
 									//ad = lightDist.x* lightDist.x + lightDist.y * lightDist.y + lightDist.z * lightDist.z;//Mag2();// (lights[0].position - pixPos).Dot(lights[0].position - pixPos);// e.Mag();
-									attLin = lights[0].attenuation.linear * ld2;// ad;
-									attExp = lights[0].attenuation.exponential * ld2 * ld2;// ad* ad;
+									attLinear = lights[0].attenuation.linear * ld2;// ad;
+									attQuadratic = lights[0].attenuation.quadratic * ld2 * ld2;// ad* ad;
 									//ad = lights[0].attenuation.constant + attLin + attExp;
 
 									//intensity *= pow(1.0f / ad,2.2f);
 									//intensity *= 1.0f / ad;
-									intensity *= 1.0f / (lights[0].attenuation.constant + attLin + attExp);
+									intensity *= 1.0f / (lights[0].attenuation.constant + attLinear + attQuadratic);
 									//std::cout << lightDist.Mag2() << "\n";
 								}
 								intensity = max(intensity, 0.1f);
