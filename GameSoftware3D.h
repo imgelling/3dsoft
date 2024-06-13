@@ -12,22 +12,6 @@
 #include "GameSoftware3D_PointSprite.h"
 #include "GameThreadPool.h"
 
-#define GAME_SOFTWARE3D_STATE_FILL_MODE 0
-#define GAME_SOFTWARE3D_STATE_THREADED 1
-#define GAME_SOFTWARE3D_WIREFRAME_THICKNESS 2
-#define GAME_SOFTWARE3D_TEXTURE 3
-#define GAME_SOFTWARE3D_LIGHTING 4
-#define GAME_SOFTWARE3D_LIGHTING_TYPE 5
-#define GAME_SOFTWARE3D_ALPHA_TEST 6
-#define GAME_SOFTWARE3D_ALPHA_TEST_VALUE 7
-#define GAME_SOFTWARE3D_BACKFACECULL 8
-#define GAME_SOFTWARE3D_DEPTH_WRITE 9
-#define GAME_SOFTWARE3D_SORT 10
-#define GAME_SOFTWARE3D_ALPHA_BLEND 11
-#define GAME_SOFTWARE3D_COLOR_TINTING 12
-#define GAME_SOFTWARE3D_WIREFRAME_COLOR 13
-
-
 namespace game
 {
 
@@ -72,7 +56,6 @@ namespace game
 		void _Render(const std::vector<Triangle>& tris, const Recti& __restrict clip) noexcept;
 		void _GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h);
 		std::atomic<uint32_t> _fence;
-		bool _multiThreaded;
 		bool _usingRenderTarget;
 		RenderTarget _defaultRenderTarget;
 		Texture _defaultTexture;
@@ -80,6 +63,8 @@ namespace game
 		uint32_t _currentDepth;
 		Texture _currentTexture;
 		ThreadPool _threadPool;
+
+		bool _multiThreaded;
 		SortingType _sortType;
 		FillMode _fillMode;
 		bool _enableTexturing;
@@ -91,10 +76,11 @@ namespace game
 		bool _enableAlphaTest;
 		uint32_t _alphaTestValue;
 		bool _enableAlphaBlend;
-		PixelMode* _pixelMode;
-		uint32_t _totalBufferSize;
 		float_t _wireFrameThicknessSquared;
 		uint32_t _wireFrameColor;
+
+		PixelMode* _pixelMode;
+		uint32_t _totalBufferSize;
 	};
 
 	Software3D::Software3D()
@@ -406,7 +392,7 @@ namespace game
 	{
 		switch (state)
 		{
-		case GAME_SOFTWARE3D_STATE_FILL_MODE:
+		case GAME_SOFTWARE3D_FILL_MODE:
 		{
 			if ((value < (int32_t)FillMode::WireFrame) || (value >= (int32_t)FillMode::None))
 			{
@@ -415,7 +401,7 @@ namespace game
 			_fillMode = (FillMode)value;
 			return true;
 		}
-		case GAME_SOFTWARE3D_STATE_THREADED:
+		case GAME_SOFTWARE3D_THREADED:
 		{
 			if (value >= 0)
 			{
@@ -927,7 +913,7 @@ namespace game
 					depthParam.evaluate(pixelOffset.x, pixelOffset.y, dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
-				if (oneOverDepthEval < *depthBufferPtr)
+				if (oneOverDepthEval < *depthBufferPtr)  // add depth testing
 				{
 					if (textured)
 					{

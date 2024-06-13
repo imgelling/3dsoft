@@ -4,6 +4,21 @@
 #include "GameMath.h"
 #include "GameColor.h"
 
+constexpr auto GAME_SOFTWARE3D_FILL_MODE = 0;
+constexpr auto GAME_SOFTWARE3D_THREADED = 1;
+constexpr auto GAME_SOFTWARE3D_WIREFRAME_THICKNESS = 2;
+constexpr auto GAME_SOFTWARE3D_TEXTURE = 3;
+constexpr auto GAME_SOFTWARE3D_LIGHTING = 4;
+constexpr auto GAME_SOFTWARE3D_LIGHTING_TYPE = 5;
+constexpr auto GAME_SOFTWARE3D_ALPHA_TEST = 6;
+constexpr auto GAME_SOFTWARE3D_ALPHA_TEST_VALUE = 7;
+constexpr auto GAME_SOFTWARE3D_BACKFACECULL = 8;
+constexpr auto GAME_SOFTWARE3D_DEPTH_WRITE = 9;
+constexpr auto GAME_SOFTWARE3D_SORT = 10;
+constexpr auto GAME_SOFTWARE3D_ALPHA_BLEND = 11;
+constexpr auto GAME_SOFTWARE3D_COLOR_TINTING = 12;
+constexpr auto GAME_SOFTWARE3D_WIREFRAME_COLOR = 13;
+
 namespace game
 {
 	enum FillMode
@@ -72,6 +87,26 @@ namespace game
 	}
 
 #pragma pack(push,16)
+	struct Software3DStateObject
+	{
+		bool alphaBlend;					// Do alpha blending
+		bool alphaTest;						// Do alpha testing
+		uint32_t alphaTestValue;			// Minimal value to render while alpha testing
+		bool backFaceCulling;				// Do back face culling
+		bool colorTinting;					// Do color tiniting of textures
+		bool depthWrite;					// Do depth writing
+		FillMode fillMode;					// How to fill the triangle or not
+		bool lighting;						// Do lighting
+		LightingType lightingType;			// Type of lighting
+		bool multiThreaded;					// Do pipeline multithreading
+		SortingType sortType;				// How to sort the triangles or not
+		bool texturing;						// Do texturing
+		uint32_t wireFrameColor;			// Color of the wireframe
+		float_t wireFrameThicknessSquared;	// Thickness of wireframe squared
+	};
+#pragma pack(pop)
+
+#pragma pack(push,16)
 	struct Light
 	{
 		Vector3f position;
@@ -84,7 +119,7 @@ namespace game
 			float_t quadratic = 0.0f;
 		} attenuation;
 		float_t radius = 0.0f;
-		void CalculateRadius()
+		void CalculateRadius() 
 		{
 			float lightMax = std::fmaxf(std::fmaxf(diffuse.rf, diffuse.gf), diffuse.bf);
 			radius =

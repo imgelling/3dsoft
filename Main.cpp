@@ -251,7 +251,7 @@ public:
 			geLogLastError();
 		}
 
-		software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
+		software3D.SetState(GAME_SOFTWARE3D_FILL_MODE, state);
 
 		//if (!LoadObj("Content/coney.obj", model))
 		//{
@@ -571,19 +571,19 @@ public:
 		if (geKeyboard.WasKeyPressed(geK_F1))
 		{
 			state++;
-			software3D.SetState(GAME_SOFTWARE3D_STATE_FILL_MODE, state);
+			software3D.SetState(GAME_SOFTWARE3D_FILL_MODE, state);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
 		{
-			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, -1);
+			software3D.SetState(GAME_SOFTWARE3D_THREADED, -1);
 			clip.SetNumberOfClipsRects(1);
 			clip.GenerateClips(resolution);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
-			software3D.SetState(GAME_SOFTWARE3D_STATE_THREADED, 0);
+			software3D.SetState(GAME_SOFTWARE3D_THREADED, 0);
 			clip.SetNumberOfClipsRects(24);
 			clip.GenerateClips(resolution);
 		}
@@ -932,6 +932,9 @@ int32_t main()
 
 	testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 	testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+
+	game::Software3DStateObject sso = {};
+
 
 	// Create the needed bits for the engine
 	if (!engine.geCreate())
