@@ -1039,13 +1039,12 @@ namespace game
 
 							intensity = -vertexNormalEval.Dot(lightNormal);
 							intensity += 0.25f; //ambient
-							intensity = max(0.25f, intensity);// < 0.0f ? 0.0f : lum;
-
+							intensity = max(0.25f, intensity);
 							intensity = min(intensity, 1.0f);
 						}
 						else if ((_lightingType == LightingType::Point))
 						{
-							if (pixelPosParam[0].first == 0)
+							if (vnx.first == 0)
 							{
 								vnx.stepX(nXEval);
 								vny.stepX(nYEval);
@@ -1066,11 +1065,12 @@ namespace game
 							vertexNormalEval.x = nXEval * oneOverDepthEval;
 							vertexNormalEval.y = nYEval * oneOverDepthEval;
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
+							//vertexNormalEval.Normalize(); // needs?
 
 							// Get direction of pixel to light
 							pixPos = { pixelPosEvalX * oneOverDepthEval,pixelPosEvalY * oneOverDepthEval,pixelPosEvalZ * oneOverDepthEval };
 							lightDir = pixPos - lights[0].position; // swapped instead of negating
-							intensity = 0.1f;
+							intensity = 0.25f;  // ambient
 							const float_t ld2 = lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z;
 							if (ld2 < lights[0].radius)
 							{
@@ -1081,6 +1081,7 @@ namespace game
 								intensity = -vertexNormalEval.Dot(lightDir);
 								if (intensity > 0)
 								{
+									intensity += 0.25f; // ambient
 									// falloff
 									//diffuseLighting *= ((length(lightDir) * length(lightDir)) / dot(light.Position - Input.WorldPosition, light.Position - Input.WorldPosition));
 									//                   lightNormal * lightNormal / (lightpos-pixelpos.dot(lightpos-pixelpos) this last part is squaring
@@ -1095,7 +1096,7 @@ namespace game
 									intensity *= 1.0f / (lights[0].attenuation.constant + attLinear + attQuadratic);
 									//std::cout << lightDist.Mag2() << "\n";
 								}
-								intensity = max(intensity, 0.1f);
+								intensity = max(intensity, 0.25f); // ambient
 								intensity = min(intensity, 1.0f);
 							}
 					
@@ -1105,7 +1106,7 @@ namespace game
 							//Depth based lighting color
 							intensity = oneOverDepthEval + 1.0f;
 							intensity = 1.0f / intensity;
-							intensity += 0.25f; // simulate ambient 
+							intensity += 0.25f; // simulate ambient ?
 							intensity = min(intensity, 1.0f);
 						}
 					}
@@ -1127,23 +1128,17 @@ namespace game
 							bColorParam.evaluate(pixelOffset.x, pixelOffset.y, bEval);
 							aColorParam.evaluate(pixelOffset.x, pixelOffset.y, aEval);
 						}
+
+						rSource = min(rEval * oneOverDepthEval, 1.0f);
+						gSource = min(gEval * oneOverDepthEval, 1.0f);
+						bSource = min(bEval * oneOverDepthEval, 1.0f);
+						aSource = min(aEval * oneOverDepthEval, 1.0f);
+
 						if (lighting)
 						{
-							rSource = min(rEval * oneOverDepthEval, 1.0f);
-							gSource = min(gEval * oneOverDepthEval, 1.0f);
-							bSource = min(bEval * oneOverDepthEval, 1.0f);
-							aSource = min(aEval * oneOverDepthEval, 1.0f) * intensity;
 							rSource = (rSource + lights[0].diffuse.rf) * 0.5f * intensity; // light color
 							gSource = (gSource + lights[0].diffuse.gf) * 0.5f * intensity;
 							bSource = (bSource + lights[0].diffuse.bf) * 0.5f * intensity;
-
-						}
-						else
-						{
-							rSource = min(rEval * oneOverDepthEval, 1.0f);
-							gSource = min(gEval * oneOverDepthEval, 1.0f);
-							bSource = min(bEval * oneOverDepthEval, 1.0f);
-							aSource = min(aEval * oneOverDepthEval, 1.0f);
 						}
 
 						// alpha blending
@@ -1247,7 +1242,6 @@ namespace game
 							aSource = ((aSource * min(aEval * oneOverDepthEval, 1.0f)));
 						}
 
-
 						// texture lighting
 						if (lighting) // this may need to go to end
 						{
@@ -1306,7 +1300,7 @@ namespace game
 				vnx.first = 1;
 				//vny.first = 1;
 				//vnz.first = 1;
-				pixelPosParam[0].first = 1;
+				//pixelPosParam[0].first = 1;
 			}
 			colorBuffer += videoBufferStride - xLoopCount;
 			depthBufferPtr += videoBufferStride - xLoopCount;
