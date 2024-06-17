@@ -91,7 +91,7 @@ namespace game
 		_fence = 0;
 		_currentDepth = 0;
 		_totalBufferSize = 0;
-		_multiThreaded = false;
+		_multiThreaded = true;// false;
 		depthBuffer = nullptr;
 		_enableDepthWrite = true;
 		_enableTexturing = false;

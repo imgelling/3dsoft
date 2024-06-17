@@ -103,6 +103,23 @@ namespace game
 		bool texturing;						// Do texturing
 		uint32_t wireFrameColor;			// Color of the wireframe
 		float_t wireFrameThicknessSquared;	// Thickness of wireframe squared
+		Software3DStateObject()
+		{
+			alphaBlend = false;
+			alphaTest = false;
+			alphaTestValue = 128;
+			backFaceCulling = true;
+			colorTinting = false;
+			depthWrite = true;
+			fillMode = FillMode::Filled;
+			lighting = false;
+			lightingType = LightingType::Face;
+			multiThreaded = true;
+			sortType = SortingType::FrontToBack;
+			texturing = false;
+			wireFrameColor = Colors::White.packedABGR;
+			wireFrameThicknessSquared = 1.0f;
+		}
 	};
 #pragma pack(pop)
 
