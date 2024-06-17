@@ -89,20 +89,20 @@ namespace game
 #pragma pack(push,16)
 	struct Software3DStateObject
 	{
-		bool alphaBlend;					// Do alpha blending
-		bool alphaTest;						// Do alpha testing
-		uint32_t alphaTestValue;			// Minimal value to render while alpha testing
-		bool backFaceCulling;				// Do back face culling
-		bool colorTinting;					// Do color tiniting of textures
-		bool depthWrite;					// Do depth writing
-		FillMode fillMode;					// How to fill the triangle or not
-		bool lighting;						// Do lighting
-		LightingType lightingType;			// Type of lighting
-		bool multiThreaded;					// Do pipeline multithreading
-		SortingType sortType;				// How to sort the triangles or not
-		bool texturing;						// Do texturing
-		uint32_t wireFrameColor;			// Color of the wireframe
-		float_t wireFrameThicknessSquared;	// Thickness of wireframe squared
+		bool alphaBlend;					// Do alpha blending default false
+		bool alphaTest;						// Do alpha testing default false
+		uint32_t alphaTestValue;			// Minimal value to render while alpha testing default 128
+		bool backFaceCulling;				// Do back face culling default true
+		bool colorTinting;					// Do color tiniting of textures default false
+		bool depthWrite;					// Do depth writing default true
+		FillMode fillMode;					// How to fill the triangle or not default Filled
+		bool lighting;						// Do lighting default false
+		LightingType lightingType;			// Type of lighting default Face
+		bool multiThreaded;					// Do pipeline multithreading default true
+		SortingType sortType;				// How to sort the triangles or not default FrontToBack
+		bool texturing;						// Do texturing default false
+		uint32_t wireFrameColor;			// Color of the wireframe default Colors::White.packedABGR
+		float_t wireFrameThicknessSquared;	// Thickness of wireframe squared default 1.0f
 		Software3DStateObject()
 		{
 			alphaBlend = false;

@@ -84,6 +84,7 @@ public:
 	game::SliderUI pointLightConstSlider;
 	game::SliderUI pointLightLinearSlider;
 	game::SliderUI pointLightQuadraticSlider;
+	game::Software3DStateObject uiStateObject;
 
 	game::Camera3D camera;
 	uint32_t maxFPS;
@@ -123,6 +124,7 @@ public:
 #endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_TEXTURE, rec);
+			uiStateObject.texturing = rec;
 			return;
 		}
 
@@ -134,6 +136,7 @@ public:
 #endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, rec);
+			uiStateObject.backFaceCulling = rec;
 			return;
 		}
 
@@ -145,6 +148,7 @@ public:
 #endif
 			rec = std::any_cast<bool>(value);
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING, rec);
+			uiStateObject.lighting = rec;
 			return;
 		}
 
@@ -183,6 +187,7 @@ public:
 		{
 			// Radials will always be true
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Depth);
+			uiStateObject.lightingType = game::LightingType::Depth;
 			lightingFaceRadial.checked = false;
 			lightingVertexRadial.checked = false;
 			lightingPointRadial.checked = false;
@@ -192,6 +197,7 @@ public:
 		if (str == "LightingFaceRadial")
 		{
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Face);
+			uiStateObject.lightingType = game::LightingType::Face;
 			lightingDepthRadial.checked = false;
 			lightingVertexRadial.checked = false;
 			lightingPointRadial.checked = false;
@@ -201,6 +207,7 @@ public:
 		if (str == "LightingVertexRadial")
 		{
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Vertex);
+			uiStateObject.lightingType = game::LightingType::Vertex;
 			lightingDepthRadial.checked = false;
 			lightingFaceRadial.checked = false;
 			lightingPointRadial.checked = false;
@@ -210,6 +217,7 @@ public:
 		if (str == "lightingPointRadial")
 		{
 			software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Point);
+			uiStateObject.lightingType = game::LightingType::Point;
 			lightingDepthRadial.checked = false;
 			lightingFaceRadial.checked = false;
 			lightingVertexRadial.checked = false;
@@ -236,7 +244,7 @@ public:
 		//GenerateClips(numclips, clip, resolution);
 		clip.SetNumberOfClipsRects(24);
 		clip.GenerateClips(resolution);
-		lights.InitializeLights(1);
+		lights.InitializeLights(3);
 	}
 
 	void LoadContent()
@@ -288,106 +296,22 @@ public:
 		//text.texture = lights.mesh.texture;
 		//model.texture = lights.mesh.texture;
 		
-		//game::Random rnd;
-		//rnd.NewSeed();
-
-		float_t z = 0.0f;
-		float_t size = 1.0f;
-		game::Triangle topLeftTri;
-		game::Triangle bottomRightTri;
-
-		// tl
-		topLeftTri.vertices[0].x = -size;
-		topLeftTri.vertices[0].y = -size;
-		topLeftTri.vertices[0].z = z;
-		topLeftTri.color[0] = game::Colors::Red;
-		topLeftTri.uvs[0].u = 0.0f;
-		topLeftTri.uvs[0].v = 0.0f;
-		topLeftTri.faceNormal.x = 0.0f;
-		topLeftTri.faceNormal.y = 0.0f;
-		topLeftTri.faceNormal.z = -1.0f;
-
-
-		// tr
-		topLeftTri.vertices[1].x = size;
-		topLeftTri.vertices[1].y = -size;
-		topLeftTri.vertices[1].z = z;
-		topLeftTri.uvs[1].u = 1.0f;
-		topLeftTri.uvs[1].v = 0.0f;
-		topLeftTri.color[1] = game::Colors::Green;
-
-		// bl
-		topLeftTri.vertices[2].x = -size;
-		topLeftTri.vertices[2].y = size;
-		topLeftTri.vertices[2].z = z;
-		topLeftTri.uvs[2].u = 0.0f;
-		topLeftTri.uvs[2].v = 1.0f;
-		topLeftTri.color[2] = game::Colors::Blue;
-
-		// tr
-		bottomRightTri.vertices[0].x = size;
-		bottomRightTri.vertices[0].y = -size;
-		bottomRightTri.vertices[0].z = z;
-		bottomRightTri.color[0] = game::Colors::Green;
-		bottomRightTri.uvs[0].u = 1.0f;
-		bottomRightTri.uvs[0].v = 0.0f;
-		bottomRightTri.faceNormal.x = 0.0f;
-		bottomRightTri.faceNormal.y = 0.0f;
-		bottomRightTri.faceNormal.z = -1.0f;
-
-		// br
-		bottomRightTri.vertices[1].x = size;
-		bottomRightTri.vertices[1].y = size;
-		bottomRightTri.vertices[1].z = z;
-		bottomRightTri.uvs[1].u = 1.0f;
-		bottomRightTri.uvs[1].v = 1.0f;
-		bottomRightTri.color[1] = game::Colors::White;
-
-		// bl
-		bottomRightTri.vertices[2].x = -size;
-		bottomRightTri.vertices[2].y = size;
-		bottomRightTri.vertices[2].z = z;
-		bottomRightTri.uvs[2].u = 0.0f;
-		bottomRightTri.uvs[2].v = 1.0f;
-		bottomRightTri.color[2] = game::Colors::Blue;
-
-		for (uint32_t i = 0; i < 3; i++)
-		{
-			topLeftTri.normals[i] = { 0.0f,0.0f,-1.0f };
-			bottomRightTri.normals[i] = { 0.0f,0.0f,-1.0f };
-		}
-
-		//plane.tris.emplace_back(topLeftTri);
-		//plane.tris.emplace_back(bottomRightTri);
-
 
 		// Preset some world stuff
 		camera.position.z = -2.0f;
 		camera.position.y = 0;
 
-		//plane.SetRotation(-3.14159f / 2.0f, 0, 0);
-		//plane.SetTranslation(0.0f, 0.1f, 0.0f);
-		//plane.SetScale(60.0f, 60.0f, 60.0f);
-
-		//alphaCube.SetTranslation(-0.0f, -0.41f, 0.0f);
-		//alphaCube.SetScale(0.5f, 0.5f, 0.5f);
-
-		////model.SetRotation(3.14159f / 2.0f, 3.14159f, 0.0f);
-		//model.SetScale(1.0f, 1.0f, 1.0f);
-		//model.SetTranslation(0, 0.1f, 0);
-
-
-		//sky.SetRotation(3.14159f / 2.0f, 0.0f, 0.0f);
-		//sky.SetScale(50.0f, 50.0f, 50.0f);
-		//sky.SetTranslation(camera.position.x, camera.position.y, camera.position.z);
-
-		//torus.SetTranslation(0.0f, -0.1f, 0.0f);
 
 		// Pre calc projection matrix
 		game::my_PerspectiveFOV2(70.0f, resolution.x / (float_t)resolution.y, 0.1f, 100.0f, projMat);
 
 		// Text stuff
 		geKeyboard.SetTextInputText("3D text");
+
+		// State stuff
+		uiStateObject.texturing = true;
+		uiStateObject.lighting = false;
+		uiStateObject.lightingType = game::LightingType::Face;
 
 		// Simple UI
 		int uiScaleX = (resolution.x / 1280);
@@ -400,7 +324,7 @@ public:
 		textureButton.toggledColor = game::Colors::Green;
 		textureButton.unToggledColor = game::Colors::Red;
 		//textureButton.labelColor = game::Colors::White;
-		textureButton.toggled = true;
+		textureButton.toggled = uiStateObject.texturing;
 		textureButton.position.x = 1100 * uiScaleX;
 		textureButton.position.y = 20;
 		textureButton.length = 100;
@@ -411,7 +335,7 @@ public:
 		lightingButton.name = "LightingButton";
 		lightingButton.toggledColor = game::Colors::Green;
 		lightingButton.unToggledColor = game::Colors::Red;
-		lightingButton.toggled = false;
+		lightingButton.toggled = uiStateObject.lighting;
 		lightingButton.position.x = 1100 * uiScaleX;
 		lightingButton.position.y = 40;
 		lightingButton.length = 100;
@@ -500,24 +424,24 @@ public:
 		simpleUI.Add(&pointLightQuadraticSlider);
 
 
-		game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
-		//game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
+		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
+		game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
 		//game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
-		//for (uint32_t c = 0; c < room.tris.size(); c++)
-		//{
-		//	room.tris[c].faceNormal *= -1.0f;
-		//	room.tris[c].faceNormal.Normalize();
-		//	room.tris[c].normals[0] *= -1.0f;
-		//	room.tris[c].normals[1] *= -1.0f;
-		//	room.tris[c].normals[2] *= -1.0f;
-		//	std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
-		//	std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
-		//	std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
-		//	std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
-		//}
+		for (uint32_t c = 0; c < room.tris.size(); c++)
+		{
+			room.tris[c].faceNormal *= -1.0f;
+			room.tris[c].faceNormal.Normalize();
+			room.tris[c].normals[0] *= -1.0f;
+			room.tris[c].normals[1] *= -1.0f;
+			room.tris[c].normals[2] *= -1.0f;
+			std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
+			std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
+			std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
+			std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
+		}
 
 
 	}
@@ -788,29 +712,19 @@ public:
 		mvpMat = projMat * camera.view; // not sure if this should be in the RenderMesh
 
 
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING_TYPE, game::LightingType::Point);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::FrontToBack);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, true); // changed
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, false);
-		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, false);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		//software3D.RenderMesh(model, model.tris.size(), mvpMat, camera, clip);	
+		software3D.SetStateObject(uiStateObject);
 		 
 		//room.SetRotation(rotation, -rotation, 2.0f * rotation);
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 
-		//software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
-		//software3D.SetState(GAME_SOFTWARE3D_DEPTH_WRITE, false);
-		//software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
-		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
-		//software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
-		//software3D.SetState(GAME_SOFTWARE3D_SORT, game::SortingType::BackToFront);
-		//software3D.SetState(GAME_SOFTWARE3D_ALPHA_BLEND, true);
 		software3D.SetState(GAME_SOFTWARE3D_ALPHA_TEST, true);
+		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
+		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
+		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+
+		lights.lights[1].diffuse = game::Colors::Green;
+		lights.lights[2].diffuse = game::Colors::Blue;
 
 		//lights.lights[0].diffuse = game::Colors::Blue;
 		//lights.lights[0].position = { 0.75f,0.0f,0.75f };

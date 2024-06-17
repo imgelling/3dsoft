@@ -44,6 +44,7 @@ namespace game
 		void DeleteRenderTarget(RenderTarget& target) noexcept;
 		bool SetRenderTarget(const RenderTarget& target) noexcept;
 		void SetRenderTargetDefault() noexcept;
+		void SetStateObject(const Software3DStateObject& state) noexcept;
 
 		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) noexcept;
 		void RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept;
@@ -334,6 +335,24 @@ namespace game
 		}
 		target.size.width = 0;
 		target.size.height = 0;
+	}
+
+	inline void Software3D::SetStateObject(const Software3DStateObject& state) noexcept
+	{
+		_enableAlphaBlend = state.alphaBlend;					// Do alpha blending
+		_enableAlphaTest = state.alphaTest;						// Do alpha testing
+		_alphaTestValue = state.alphaTestValue;					// Minimal value to render while alpha testing
+		_enableBackFaceCulling = state.backFaceCulling;			// Do back face culling
+		_enableColorTinting = state.colorTinting;				// Do color tiniting of textures
+		_enableDepthWrite = state.depthWrite;					// Do depth writing
+		_fillMode = state.fillMode;								// How to fill the triangle or not
+		_enableLighting = state.lighting;						// Do lighting
+		_lightingType = state.lightingType;						// Type of lighting
+		_multiThreaded = state.multiThreaded;					// Do pipeline multithreading
+		_sortType = state.sortType;								// How to sort the triangles or not
+		_enableTexturing = state.texturing;						// Do texturing
+		_wireFrameColor = state.wireFrameColor;					// Color of the wireframe
+		_wireFrameThicknessSquared = state.wireFrameThicknessSquared;	// Thickness of wireframe squared
 	}
 
 	inline void Software3D::Fence(const uint64_t fenceValue) noexcept
