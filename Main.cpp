@@ -312,6 +312,7 @@ public:
 		uiStateObject.texturing = true;
 		uiStateObject.lighting = false;
 		uiStateObject.lightingType = game::LightingType::Face;
+		uiStateObject.multiThreaded = true;
 
 		// Simple UI
 		int uiScaleX = (resolution.x / 1280);
@@ -329,7 +330,6 @@ public:
 		textureButton.position.y = 20;
 		textureButton.length = 100;
 		textureButton.outlined = true;
-		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 
 		lightingButton.label = "Lighting";
 		lightingButton.name = "LightingButton";
@@ -502,12 +502,14 @@ public:
 		{
 			software3D.SetState(GAME_SOFTWARE3D_THREADED, -1);
 			clip.SetNumberOfClipsRects(1);
+			uiStateObject.multiThreaded = false;
 			clip.GenerateClips(resolution);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_THREADED, 0);
+			uiStateObject.multiThreaded = true;
 			clip.SetNumberOfClipsRects(24);
 			clip.GenerateClips(resolution);
 		}
@@ -794,33 +796,33 @@ public:
 
 
 	
-		//// Gamma
-		//if (geKeyboard.IsKeyHeld(geK_G))
-		//{
-		//	game::Color fc;
-		//	uint32_t c = 0;
-		//	uint32_t* v = pixelMode.videoBuffer;
-		//	float r = 0;
-		//	float g = 0;
-		//	float b = 0;
-		//	float a = 0;
-		//	for (int pos = 0; pos < resolution.height * resolution.width; pos++)
-		//	{
-		//		c = *v;
-		//		r = ((c >> 0) & 0xFF) * (1.0f / 255.0f);
-		//		g = ((c >> 8) & 0xFF) * (1.0f / 255.0f);
-		//		b = ((c >> 16) & 0xFF) * (1.0f / 255.0f);
-		//		a = ((c >> 24) & 0xFF) * (1.0f / 255.0f);
-		//		r = pow(r, 1.0f/2.2f);
-		//		b = pow(b, 1.0f/2.2f);
-		//		g = pow(g, 1.0f/2.2f);
-		//		r = min(1.0f, r);
-		//		g = min(1.0f, g);
-		//		b = min(1.0f, b);
-		//		*v = (uint32_t(a * 255) << 24) | (uint32_t(b * 255) << 16) | (uint32_t(g * 255) << 8) | uint32_t(r * 255);
-		//		v++;
-		//	}
-		//}
+		// Gamma
+		if (geKeyboard.IsKeyHeld(geK_G))
+		{
+			game::Color fc;
+			uint32_t c = 0;
+			uint32_t* v = pixelMode.videoBuffer;
+			float r = 0;
+			float g = 0;
+			float b = 0;
+			float a = 0;
+			for (int pos = 0; pos < resolution.height * resolution.width; pos++)
+			{
+				c = *v;
+				r = ((c >> 0) & 0xFF) * (1.0f / 255.0f);
+				g = ((c >> 8) & 0xFF) * (1.0f / 255.0f);
+				b = ((c >> 16) & 0xFF) * (1.0f / 255.0f);
+				a = ((c >> 24) & 0xFF) * (1.0f / 255.0f);
+				r = pow(r, 1.0f/2.2f);
+				b = pow(b, 1.0f/2.2f);
+				g = pow(g, 1.0f/2.2f);
+				r = min(1.0f, r);
+				g = min(1.0f, g);
+				b = min(1.0f, b);
+				*v = (uint32_t(a * 255) << 24) | (uint32_t(b * 255) << 16) | (uint32_t(g * 255) << 8) | uint32_t(r * 255);
+				v++;
+			}
+		}
 		
 		pixelMode.Render();
 		if (geKeyboard.WasKeyPressed(geK_F5))

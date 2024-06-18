@@ -1072,6 +1072,28 @@ namespace game
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
 							//vertexNormalEval.Normalize(); // needs?
 
+							// how to add lights
+							//vec3 lightDir = normalize(light.position - fragPos);
+							//// diffuse shading
+							//float diff = max(dot(normal, lightDir), 0.0);
+							//// specular shading
+							//vec3 reflectDir = reflect(-lightDir, normal);
+							// ret reflect(i, n)
+							// v = i - 2 * n * dot(i n) 
+							//float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+							//// attenuation
+							//float distance = length(light.position - fragPos);
+							//float attenuation = 1.0 / (light.constant + light.linear * distance +
+							//	light.quadratic * (distance * distance));
+							//// combine results
+							//vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
+							//vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
+							//vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
+							//ambient *= attenuation;
+							//diffuse *= attenuation;
+							//specular *= attenuation;
+							//return (ambient + diffuse + specular);
+
 							// Get direction of pixel to light
 							pixPos = { pixelPosEvalX * oneOverDepthEval,pixelPosEvalY * oneOverDepthEval,pixelPosEvalZ * oneOverDepthEval };
 							lightDir = pixPos - lights[0].position; // swapped instead of negating
@@ -1250,9 +1272,9 @@ namespace game
 						// texture lighting
 						if (lighting) // this may need to go to end
 						{
-							rSource = (rSource + lights[0].diffuse.rf) * 0.5f; // color light
-							gSource = (gSource + lights[0].diffuse.gf) * 0.5f;
-							bSource = (bSource + lights[0].diffuse.bf) * 0.5f;
+							rSource = (rSource + lights[1].diffuse.rf) * 0.5f; // color light
+							gSource = (gSource + lights[1].diffuse.gf) * 0.5f;
+							bSource = (bSource + lights[1].diffuse.bf) * 0.5f;
 							rSource *= intensity;
 							gSource *= intensity;
 							bSource *= intensity;
