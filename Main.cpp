@@ -312,7 +312,7 @@ public:
 		uiStateObject.texturing = true;
 		uiStateObject.lighting = false;
 		uiStateObject.lightingType = game::LightingType::Face;
-		uiStateObject.multiThreaded = true;
+		//uiStateObject.multiThreaded = true;
 
 		// Simple UI
 		int uiScaleX = (resolution.x / 1280);
@@ -502,14 +502,14 @@ public:
 		{
 			software3D.SetState(GAME_SOFTWARE3D_THREADED, -1);
 			clip.SetNumberOfClipsRects(1);
-			uiStateObject.multiThreaded = false;
+			//uiStateObject.multiThreaded = false;
 			clip.GenerateClips(resolution);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_RBRACKET))
 		{
 			software3D.SetState(GAME_SOFTWARE3D_THREADED, 0);
-			uiStateObject.multiThreaded = true;
+			//uiStateObject.multiThreaded = true;
 			clip.SetNumberOfClipsRects(24);
 			clip.GenerateClips(resolution);
 		}
@@ -724,6 +724,7 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_TEXTURE, true);
 		software3D.SetState(GAME_SOFTWARE3D_LIGHTING, false);
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
+		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
 		lights.lights[1].diffuse = game::Colors::Green;
 		lights.lights[2].diffuse = game::Colors::Blue;
@@ -849,8 +850,7 @@ int32_t main()
 	testmy_PerspectiveFOV (90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 	testmy_PerspectiveFOV2(90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 
-	game::Software3DStateObject sso = {};
-
+	std::cout << true << "\n";
 
 	// Create the needed bits for the engine
 	if (!engine.geCreate())

@@ -57,10 +57,6 @@ namespace game
 		case FillMode::WireFrame: return stream << "WireFrame";
 		case FillMode::Filled: return stream << "Filled";
 		case FillMode::WireFrameFilled: return stream << "WireFrame Filled";
-			//case FillMode::AffineTextureMapped: return stream << "Affine Texture Mapped";
-			//case FillMode::WireFrameAffTexture: return stream << "WireFrame Affine Texture Mapped";
-			//case FillMode::ProjectionTextureMapped: return stream << "Projection Correct Texture Mapped";
-			//case FillMode::WireFrameProjTexture: return stream << "WireFrame Projection Correct Texture Mapped";
 		default: return stream << "Unknown fill type";
 		}
 	}
@@ -98,7 +94,7 @@ namespace game
 		FillMode fillMode;					// How to fill the triangle or not default Filled
 		bool lighting;						// Do lighting default false
 		LightingType lightingType;			// Type of lighting default Face
-		bool multiThreaded;					// Do pipeline multithreading default true
+		//bool multiThreaded;					// Do pipeline multithreading default true
 		SortingType sortType;				// How to sort the triangles or not default FrontToBack
 		bool texturing;						// Do texturing default false
 		uint32_t wireFrameColor;			// Color of the wireframe default Colors::White.packedABGR
@@ -114,7 +110,7 @@ namespace game
 			fillMode = FillMode::Filled;
 			lighting = false;
 			lightingType = LightingType::Face;
-			multiThreaded = true;
+			//multiThreaded = true;
 			sortType = SortingType::FrontToBack;
 			texturing = false;
 			wireFrameColor = Colors::White.packedABGR;
@@ -138,12 +134,10 @@ namespace game
 		float_t radius = 0.0f;
 		void CalculateRadius() 
 		{
-			float lightMax = std::fmaxf(std::fmaxf(diffuse.rf, diffuse.gf), diffuse.bf);
+			float_t lightMax = max(max(diffuse.rf, diffuse.gf), diffuse.bf);
 			radius =
 				(float)(-attenuation.linear + std::sqrtf(attenuation.linear * attenuation.linear - 4.0f * attenuation.quadratic * (attenuation.constant - (256.0f / 5.0f) * lightMax)))
 				/ (2.0f * attenuation.quadratic);
-			//radius *= radius;
-			//std::cout << radius << "\n";
 		}
 	};
 #pragma pack(pop)
@@ -404,7 +398,7 @@ namespace game
 		~ClippingRects();
 
 		void SetNumberOfClipsRects(const uint32_t inNumberOfClipRects);
-		bool GenerateClips(const game::Pointi& size);
+		bool GenerateClips(const game::Pointi& size) const;
 	};
 
 	inline ClippingRects::ClippingRects() noexcept
@@ -450,7 +444,7 @@ namespace game
 		}
 	}
 
-	inline bool ClippingRects::GenerateClips(const game::Pointi& size)
+	inline bool ClippingRects::GenerateClips(const game::Pointi& size) const
 	{
 		if ((!size.width) || (!size.height)) return false;
 
@@ -460,24 +454,24 @@ namespace game
 		uint32_t colsize = (uint32_t)std::ceil(size.width / (float_t)cols);
 		uint32_t rowsize = (uint32_t)std::ceil(size.height / (float_t)rows);
 
-		uint32_t rc = 0;
-		uint32_t cc = 0;
+		uint32_t rowCount = 0;
+		uint32_t columnCount = 0;
 		game::Recti* clips2 = clips;
 		for (uint32_t row = 0; row < rows; row++)
 		{
-			rc = 0;
+			rowCount = 0;
 			for (uint32_t col = 0; col < cols; col++)
 			{
 				uint32_t access = row * cols + col;
-				clips2[access].left = (rc) * (colsize);
+				clips2[access].left = (rowCount) * (colsize);
 				clips2[access].right = (clips2[access].left + colsize) - 1;
 				if (clips2[access].right > size.width - 1) clips2[access].right = size.width - 1;
-				clips2[access].top = cc * (rowsize);
+				clips2[access].top = columnCount * (rowsize);
 				clips2[access].bottom = clips2[access].top + rowsize - 1;
 				if (clips2[access].bottom > size.height - 1) clips2[access].bottom = size.height - 1;
-				rc++;
+				rowCount++;
 			}
-			cc++;
+			columnCount++;
 		}
 		return true;
 	}

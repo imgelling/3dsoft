@@ -31,10 +31,10 @@ namespace game
 		void TriangleBoundingBox(Triangle& tri) const noexcept;
 		void Render(const std::vector<Triangle>& tris, const Recti& clip) noexcept;
 		template<bool wireFrame, bool filled, bool lighting, bool textured>
-		void DrawColored(const Triangle& tri, const Recti& __restrict clip) noexcept;
+		void Rasterize(const Triangle& tri, const Recti& __restrict clip) noexcept;
 		uint32_t NumberOfThreads() const noexcept { return _threadPool.NumberOfThreads(); }
 		void ClearDepth(const float_t depth);
-		void ClearRenderTarget(const Color& color, const float_t depth);
+		void ClearRenderTarget(const Color& color, const float_t depth) const;
 		void ScreenClip(std::vector<Triangle>& in, ClippingRects& clip, const uint32_t index) const noexcept;
 		bool CreateTexture(const uint32_t width, const uint32_t height, Texture& texture) noexcept;
 		bool CreateTexture(const Pointi size, Texture& texture) noexcept;
@@ -46,7 +46,7 @@ namespace game
 		void SetRenderTargetDefault() noexcept;
 		void SetStateObject(const Software3DStateObject& state) noexcept;
 
-		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) noexcept;
+		void VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept;
 		void RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept;
 		float_t* depthBuffer;
 		std::vector<Light> lights;
@@ -220,12 +220,12 @@ namespace game
 	inline void Software3D::_GenerateDefaultTexture(uint32_t* buff, const uint32_t w, const uint32_t h)
 	{
 		game::Color col1 = game::Colors::Yellow;
-		game::Color col2 = game::Colors::Magenta;
-		for (uint32_t y = 0; y < h; y++)
+		//game::Color col2 = game::Colors::Magenta;
+		for (uint32_t y = 0; y < h; ++y)
 		{
 			//if (y % 2 == 0)
 				//std::swap(col1, col2);
-			for (uint32_t x = 0; x < w; x++)
+			for (uint32_t x = 0; x < w; ++x)
 			{
 				//if (x % 2 == 0)
 					//std::swap(col1, col2);
@@ -348,7 +348,7 @@ namespace game
 		_fillMode = state.fillMode;								// How to fill the triangle or not
 		_enableLighting = state.lighting;						// Do lighting
 		_lightingType = state.lightingType;						// Type of lighting
-		_multiThreaded = state.multiThreaded;					// Do pipeline multithreading
+		//_multiThreaded = state.multiThreaded;					// Do pipeline multithreading
 		_sortType = state.sortType;								// How to sort the triangles or not
 		_enableTexturing = state.texturing;						// Do texturing
 		_wireFrameColor = state.wireFrameColor;					// Color of the wireframe
@@ -387,7 +387,7 @@ namespace game
 		//MoveMemory(depthBuffer, clearDepthBuffer, _totalBufferSize * 4);
 	}
 
-	inline void Software3D::ClearRenderTarget(const Color& color, const float_t depth)
+	inline void Software3D::ClearRenderTarget(const Color& color, const float_t depth) const
 	{
 		std::fill_n(_currentRenderTarget.depthBuffer, _currentRenderTarget.totalBufferSize, depth);
 		std::fill_n(_currentRenderTarget.colorBuffer, _currentRenderTarget.totalBufferSize, color.packedABGR);
@@ -597,10 +597,11 @@ namespace game
 		}
 	}
 
-	inline void Software3D::_Render(const std::vector<Triangle>& tris, const Recti& __restrict clip) noexcept //445
+	inline void Software3D::_Render(const std::vector<Triangle>& tris, const Recti& __restrict clip) noexcept
 	{
 		std::function<void(Triangle)> renderer;
-
+		std::function<void(Triangle, Recti)> renderer2 = std::bind(&Software3D::Rasterize<true, true, true, true>, this, std::placeholders::_1, std::placeholders::_2);;
+														
 		// lit variants
 		// alpha blend variants
 		// alpha test variants
@@ -610,9 +611,9 @@ namespace game
 		{
 			switch (_fillMode)
 			{
-			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::Rasterize<true, true, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::Rasterize<true, false, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::Rasterize<false, true, true, true>, this, std::placeholders::_1, std::cref(clip)); break;
 			default: break;
 			}
 		}
@@ -620,9 +621,9 @@ namespace game
 		{
 			switch (_fillMode)
 			{
-			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::Rasterize<true, true, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::Rasterize<true, false, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::Rasterize<false, true, false, true>, this, std::placeholders::_1, std::cref(clip)); break;
 			default: break;
 			}
 		}
@@ -630,9 +631,9 @@ namespace game
 		{
 			switch (_fillMode)
 			{
-			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::Rasterize<true, true, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::Rasterize<true, false, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::Rasterize<false, true, true, false>, this, std::placeholders::_1, std::cref(clip)); break;
 			default: break;
 			}
 		}
@@ -640,9 +641,9 @@ namespace game
 		{
 			switch (_fillMode)
 			{
-			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::DrawColored<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::DrawColored<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
-			case game::FillMode::Filled: renderer = std::bind(&Software3D::DrawColored<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrameFilled: renderer = std::bind(&Software3D::Rasterize<true, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::WireFrame: renderer = std::bind(&Software3D::Rasterize<true, false, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
+			case game::FillMode::Filled: renderer = std::bind(&Software3D::Rasterize<false, true, false, false>, this, std::placeholders::_1, std::cref(clip)); break;
 			default: break;
 			}
 		}
@@ -657,12 +658,12 @@ namespace game
 
 	inline void Software3D::TriangleBoundingBox(Triangle& tri) const noexcept
 	{
-		float_t sx1 = (tri.vertices[0].x);
-		float_t sx2 = (tri.vertices[1].x);
-		float_t sx3 = (tri.vertices[2].x);
-		float_t sy1 = (tri.vertices[0].y);
-		float_t sy2 = (tri.vertices[1].y);
-		float_t sy3 = (tri.vertices[2].y);
+		const float_t sx1 = (tri.vertices[0].x);
+		const float_t sx2 = (tri.vertices[1].x);
+		const float_t sx3 = (tri.vertices[2].x);
+		const float_t sy1 = (tri.vertices[0].y);
+		const float_t sy2 = (tri.vertices[1].y);
+		const float_t sy3 = (tri.vertices[2].y);
 
 		tri.boundingBox.right = (int32_t)(sx1 > sx2 ? (sx1 > sx3 ? sx1 : sx3) : (sx2 > sx3 ? sx2 : sx3));
 		tri.boundingBox.bottom = (int32_t)(sy1 > sy2 ? (sy1 > sy3 ? sy1 : sy3) : (sy2 > sy3 ? sy2 : sy3));
@@ -671,7 +672,7 @@ namespace game
 	}
 
 	template<bool renderWireFrame, bool filled, bool lighting, bool textured>
-	inline void Software3D::DrawColored(const Triangle& triangle, const Recti& __restrict clip) noexcept
+	inline void Software3D::Rasterize(const Triangle& triangle, const Recti& __restrict clip) noexcept
 	{
 		uint32_t foundTriangle = {};
 		const uint32_t videoBufferStride(_currentRenderTarget.size.width);
@@ -1086,13 +1087,13 @@ namespace game
 							//float attenuation = 1.0 / (light.constant + light.linear * distance +
 							//	light.quadratic * (distance * distance));
 							//// combine results
-							//vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
+							//vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords)); <------------
 							//vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
 							//vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
 							//ambient *= attenuation;
 							//diffuse *= attenuation;
 							//specular *= attenuation;
-							//return (ambient + diffuse + specular);
+							//return (ambient + diffuse + specular); <-----------------
 
 							// Get direction of pixel to light
 							pixPos = { pixelPosEvalX * oneOverDepthEval,pixelPosEvalY * oneOverDepthEval,pixelPosEvalZ * oneOverDepthEval };
@@ -1656,7 +1657,7 @@ namespace game
 		//vector = ret;
 	}
 
-	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) noexcept
+	inline void Software3D::VertexProcessor(game::Mesh& mesh, const uint64_t numberOfTris, const game::Matrix4x4f& __restrict mvp, std::vector<game::Triangle>& processedTris, Camera3D& camera) const noexcept
 	{
 		mesh.GenerateModelMatrix();
 		Matrix4x4f mvpCopy(mvp);
@@ -1771,20 +1772,20 @@ namespace game
 
 
 	// Insert vertices in the order of your triangle
-	inline game::Vector3f GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C)
+	inline Vector3f GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C) noexcept
 	{
-		game::Vector3f AC = C - A; // Vector from A to C
-		game::Vector3f AB = B - A; // Vector from A to B
-		game::Vector3f N = AC.Cross(AB); // Cross product of AB and AC
+		const Vector3f AC = C - A; // Vector from A to C
+		const Vector3f AB = B - A; // Vector from A to B
+		Vector3f N = AC.Cross(AB); // Cross product of AB and AC
 		N.Normalize();
 		return N;
 	}
 
 	// Insert vertices in the order of your triangle
-	inline void GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C, game::Vector3f& __restrict out)
+	inline void GenerateFaceNormal(game::Vector3f& __restrict A, game::Vector3f& __restrict B, game::Vector3f& __restrict C, game::Vector3f& __restrict out) noexcept
 	{
-		game::Vector3f AC = C - A; // Vector from A to C
-		game::Vector3f AB = B - A; // Vector from A to B
+		const Vector3f AC = C - A; // Vector from A to C
+		const Vector3f AB = B - A; // Vector from A to B
 		out = AC.Cross(AB); // Cross product of AB and AC
 		out.Normalize();
 	}
