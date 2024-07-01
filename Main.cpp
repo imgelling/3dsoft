@@ -51,6 +51,34 @@ public:
 };
 
 
+//public struct BoundingBox
+//{
+//	public float3 Min;
+//	public float3 Max;
+//	public float3 Centre = > (Min + Max) / 2;
+//	public float3 Size = > Max - Min;
+//	bool hasPoint;
+//
+//	public void GrowToInclude(float3 min, float3 max)
+//	{
+//		if (hasPoint)
+//		{
+//			Min.x = min.x < Min.x ? min.x : Min.x;
+//			Min.y = min.y < Min.y ? min.y : Min.y;
+//			Min.z = min.z < Min.z ? min.z : Min.z;
+//			Max.x = max.x > Max.x ? max.x : Max.x;
+//			Max.y = max.y > Max.y ? max.y : Max.y;
+//			Max.z = max.z > Max.z ? max.z : Max.z;
+//		}
+//		else
+//		{
+//			hasPoint = true;
+//			Min = min;
+//			Max = max;
+//		}
+//	}
+//}
+
 
 
 class Game : public game::Engine
@@ -95,6 +123,10 @@ public:
 	game::FillMode state = game::FillMode::Filled;
 	const game::Pointi resolution = { 1280 , 720 };
 	bool showText;
+
+	//// font test
+	//game::SpriteBatch spriteBatch;
+	//game::SpriteFont font;
 
 	Game() : game::Engine()
 	{
@@ -258,6 +290,16 @@ public:
 		{
 			geLogLastError();
 		}
+
+		//if (!spriteBatch.Initialize())
+		//{
+		//	geLogLastError();
+		//}
+
+		//if (!font.Load("Content/unnamed.fnt","Content/unnamed.png"))
+		//{
+		//	geLogLastError();
+		//}
 
 		software3D.SetState(GAME_SOFTWARE3D_FILL_MODE, state);
 
@@ -826,6 +868,10 @@ public:
 		}
 		
 		pixelMode.Render();
+
+		//spriteBatch.Begin();
+		//spriteBatch.DrawString(font, "Test a ronis!", 100, 100, game::Colors::Yellow,0.8f);
+		//spriteBatch.End();
 		if (geKeyboard.WasKeyPressed(geK_F5))
 		{
 			game::ImageSaver save;
