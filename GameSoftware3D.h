@@ -24,6 +24,7 @@ namespace game
 		int32_t SetState(const uint32_t state, const int32_t value) noexcept;
 		int32_t SetState(const uint32_t state, const float_t value) noexcept;
 		bool SetTexture(const Texture& texture) noexcept;
+		bool SetNormalMap(const Texture& texture) noexcept;
 		bool SetTexture(const RenderTarget& target) noexcept;
 		bool SetDefaultTexture() noexcept;
 		bool LoadTexture(const std::string& file, Texture& texture);
@@ -63,6 +64,7 @@ namespace game
 		uint32_t _numbuffers;
 		uint32_t _currentDepth;
 		Texture _currentTexture;
+		Texture _currentNormalMap;
 		ThreadPool _threadPool;
 
 		bool _multiThreaded;
@@ -141,6 +143,17 @@ namespace game
 			return false;
 		}
 		_currentTexture = texture;
+		return true;
+	}
+
+	inline bool Software3D::SetNormalMap(const Texture& texture) noexcept
+	{
+		if (texture.data == nullptr)
+		{
+			_currentNormalMap = _defaultTexture;
+			return false;
+		}
+		_currentNormalMap = texture;
 		return true;
 	}
 
@@ -541,9 +554,9 @@ namespace game
 
 	inline void Software3D::RenderMesh(Mesh& mesh, const uint64_t numberOfTris, Matrix4x4f& projection, Camera3D& camera, ClippingRects& clip) noexcept
 	{
-		
 		VertexProcessor(mesh, numberOfTris, projection, _trianglesToRender, camera);
 		SetTexture(mesh.texture);
+		SetNormalMap(mesh.normalMap);
 		uint64_t fenceCount = {};
 
 		// needs to sort length(cam.pos - vertex) 
@@ -1071,6 +1084,38 @@ namespace game
 							vertexNormalEval.x = nXEval * oneOverDepthEval;
 							vertexNormalEval.y = nYEval * oneOverDepthEval;
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
+
+							if (!uParam.first)
+							{
+								uParam.stepX(uEval);
+								vParam.stepX(vEval);
+							}
+							else
+							{
+								uParam.evaluate(pixelOffset.x, pixelOffset.y, uEval);
+								vParam.evaluate(pixelOffset.x, pixelOffset.y, vEval);
+							}
+							upDiv = uEval * oneOverDepthEval;
+							vpDiv = vEval * oneOverDepthEval;
+							// calculate texture lookup
+							upDiv = min(upDiv, 1.0f); //clamp
+							vpDiv = min(vpDiv, 1.0f); //clamp
+
+							upDiv = max(upDiv, 0.0f);  // something is causing a negative value
+							vpDiv = max(vpDiv, 0.0f);  // so these are here
+
+							tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+							ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
+							uint32_t normPack = _currentNormalMap.data[ty * _currentTexture.size.width + tx];
+
+							//rDest = ((destColor >> 0) & 0xFF) * (1.0f / 255.0f);
+							//gDest = ((destColor >> 8) & 0xFF) * (1.0f / 255.0f);
+							//bDest = ((destColor >> 16) & 0xFF) * (1.0f / 255.0f);
+							//aDest = ((destColor >> 24) & 0xFF) * (1.0f / 255.0f);
+
+							vertexNormalEval.x = (((normPack >> 0) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
+							vertexNormalEval.y = (((normPack >> 8) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
+							vertexNormalEval.z = -(((normPack >> 16) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
 							//vertexNormalEval.Normalize(); // needs?
 
 							// how to add lights
@@ -1197,27 +1242,31 @@ namespace game
 					
 					if (textured)
 					{
-						if (!uParam.first)
+						// test for normal mapping
+						if (!lighting)
 						{
-							uParam.stepX(uEval);
-							vParam.stepX(vEval);
-						}
-						else
-						{
-							uParam.evaluate(pixelOffset.x, pixelOffset.y, uEval);
-							vParam.evaluate(pixelOffset.x, pixelOffset.y, vEval);
-						}
-						upDiv = uEval * oneOverDepthEval;
-						vpDiv = vEval * oneOverDepthEval;
-						// calculate texture lookup
-						upDiv = min(upDiv, 1.0f); //clamp
-						vpDiv = min(vpDiv, 1.0f); //clamp
+							if (!uParam.first)
+							{
+								uParam.stepX(uEval);
+								vParam.stepX(vEval);
+							}
+							else
+							{
+								uParam.evaluate(pixelOffset.x, pixelOffset.y, uEval);
+								vParam.evaluate(pixelOffset.x, pixelOffset.y, vEval);
+							}
+							upDiv = uEval * oneOverDepthEval;
+							vpDiv = vEval * oneOverDepthEval;
+							// calculate texture lookup
+							upDiv = min(upDiv, 1.0f); //clamp
+							vpDiv = min(vpDiv, 1.0f); //clamp
 
-						upDiv = max(upDiv, 0.0f);  // something is causing a negative value
-						vpDiv = max(vpDiv, 0.0f);  // so these are here
+							upDiv = max(upDiv, 0.0f);  // something is causing a negative value
+							vpDiv = max(vpDiv, 0.0f);  // so these are here
 
-						tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-						ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
+						}
+							tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+							ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
 						colorAtPixel.packedABGR = _currentTexture.data[ty * _currentTexture.size.width + tx];
 
 						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * (1.0f / 255.0f);
@@ -1273,9 +1322,9 @@ namespace game
 						// texture lighting
 						if (lighting) // this may need to go to end
 						{
-							rSource = (rSource + lights[1].diffuse.rf) * 0.5f; // color light
-							gSource = (gSource + lights[1].diffuse.gf) * 0.5f;
-							bSource = (bSource + lights[1].diffuse.bf) * 0.5f;
+							rSource = (rSource + lights[0].diffuse.rf) * 0.5f; // color light
+							gSource = (gSource + lights[0].diffuse.gf) * 0.5f;
+							bSource = (bSource + lights[0].diffuse.bf) * 0.5f;
 							rSource *= intensity;
 							gSource *= intensity;
 							bSource *= intensity;
@@ -1647,7 +1696,7 @@ namespace game
 	}
 
 
-	inline void Vector3MultMatrix4x4(const Vector3f& vector, const Matrix4x4f& mat, Vector3f& out) noexcept
+	inline void Vector3MultMatrix4x4(const Vector3f & __restrict vector, const Matrix4x4f& __restrict mat, Vector3f& __restrict out) noexcept
 	{
 		//Vector3f ret;
 		out.x = vector.x * mat.m[0] + vector.y * mat.m[4] + vector.z * mat.m[8] + vector.w * mat.m[12];
@@ -1676,6 +1725,8 @@ namespace game
 			}
 		}
 
+
+
 		game::Triangle newClippedTris[2];
 		uint32_t numberTrisGenerated = {};
 		//int culled = 0;
@@ -1692,7 +1743,7 @@ namespace game
 			Vector3MultMatrix4x4(mesh.tris[i].faceNormal, mesh.rotation, workingTriangle.faceNormal);
 			//cameraRay = (workingTriangle.vertices[0] * mesh.model) - camera.position;
 			Vector3MultMatrix4x4(mesh.tris[i].vertices[0], mesh.model, cameraRay);
-			cameraRay -= camera.position;  //343
+			cameraRay -= camera.position;  
 
 			if (workingTriangle.faceNormal.Dot(cameraRay) >= 0.0f)
 			{
@@ -1722,6 +1773,15 @@ namespace game
 			Vector3MultMatrix4x4(mesh.tris[i].normals[0], mesh.rotation, workingTriangle.normals[0]);
 			Vector3MultMatrix4x4(mesh.tris[i].normals[1], mesh.rotation, workingTriangle.normals[1]);
 			Vector3MultMatrix4x4(mesh.tris[i].normals[2], mesh.rotation, workingTriangle.normals[2]);
+
+			// Color based on normals
+			//Color normC;
+			//workingTriangle.faceNormal.Normalize();
+			//normC.Set(workingTriangle.faceNormal.x * 0.5f + 0.5f, workingTriangle.faceNormal.y * 0.5f + 0.5f, workingTriangle.faceNormal.z * 0.5f + 0.5f, 1.0f);
+			//workingTriangle.color[0] = normC;
+			//workingTriangle.color[1] = normC;
+			//workingTriangle.color[2] = normC;
+
 
 			if ((workingTriangle.vertices[0].z < 0.1) ||
 				(workingTriangle.vertices[1].z < 0.1) ||

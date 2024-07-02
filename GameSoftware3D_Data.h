@@ -253,12 +253,22 @@ namespace game
 	{
 		std::vector<Triangle> tris;
 		Texture texture;
+		Texture normalMap;
 		Matrix4x4f model;
 		Matrix4x4f translate;
 		Matrix4x4f rotation;
 		Matrix4x4f scale;
 		Vector3f centerPoint;
 		Vector3f position;
+		bool SetNormalMap(const Texture& inTexture) noexcept
+		{
+			if (texture.data == nullptr)
+			{
+				return false;
+			}
+			normalMap = inTexture;
+			return true;
+		}
 		bool SetTexture(const Texture& inTexture) noexcept
 		{
 			if (texture.data == nullptr)

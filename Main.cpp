@@ -334,6 +334,8 @@ public:
 		//software3D.LoadTexture("content/sky.png", sky.texture);
 		//software3D.LoadTexture("content/grate0_alpha.png", alphaCube.texture);
 		software3D.LoadTexture("content/particle1.png", lights.mesh.texture);
+		software3D.LoadTexture("content/Ground054_1K-JPG_Color.png", room.texture);
+		software3D.LoadTexture("content/Ground054_1K-JPG_NormalDX.png", room.normalMap);
 		//software3D.LoadTexture("content/sky.png", room.texture);
 		//text.texture = lights.mesh.texture;
 		//model.texture = lights.mesh.texture;
@@ -414,7 +416,7 @@ public:
 		lights.lights[0].attenuation.constant = 1.0f;
 		lights.lights[0].attenuation.linear = 0.7f;
 		lights.lights[0].attenuation.quadratic = 1.8f;
-		lights.lights[0].diffuse = game::Colors::Red;
+		lights.lights[0].diffuse = game::Colors::DarkGray;
 		lights.lights[0].CalculateRadius();
 
 		pointLightConstSlider.position.x = 1100 * uiScaleX;
@@ -466,24 +468,22 @@ public:
 		simpleUI.Add(&pointLightQuadraticSlider);
 
 
-		//game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
-		game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
+		game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
+		//game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
 		//game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
 		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
-		for (uint32_t c = 0; c < room.tris.size(); c++)
-		{
-			room.tris[c].faceNormal *= -1.0f;
-			room.tris[c].faceNormal.Normalize();
-			room.tris[c].normals[0] *= -1.0f;
-			room.tris[c].normals[1] *= -1.0f;
-			room.tris[c].normals[2] *= -1.0f;
-			std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
-			std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
-			std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
-			std::swap(room.tris[c].faceNormal, room.tris[c].faceNormal);
-		}
+		//for (uint32_t c = 0; c < room.tris.size(); c++)
+		//{
+		//	room.tris[c].faceNormal *= -1.0f;
+		//	room.tris[c].normals[0] *= -1.0f;
+		//	room.tris[c].normals[1] *= -1.0f;
+		//	room.tris[c].normals[2] *= -1.0f;
+		//	std::swap(room.tris[c].vertices[1], room.tris[c].vertices[2]);
+		//	std::swap(room.tris[c].uvs[1], room.tris[c].uvs[2]);
+		//	std::swap(room.tris[c].normals[1], room.tris[c].normals[2]);
+		//}
 
 
 	}
@@ -493,6 +493,7 @@ public:
 		//software3D.DeleteRenderTarget(renderTarget);
 		//software3D.DeleteTexture(sky.texture);
 		software3D.DeleteTexture(room.texture);
+		software3D.DeleteTexture(room.normalMap);
 		software3D.DeleteTexture(lights.mesh.texture);
 		//software3D.DeleteTexture(alphaCube.texture);
 		//software3D.DeleteTexture(fire.mesh.texture);
@@ -514,24 +515,24 @@ public:
 		{
 			lightColor--;
 			lightColor = max(0, lightColor);
-			switch (lightColor)
-			{
-			case 0: lights.lights[0].diffuse = game::Colors::Red; break;
-			case 1: lights.lights[0].diffuse = game::Colors::Green; break;
-			case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
-			}
+			//switch (lightColor)
+			//{
+			//case 0: lights.lights[0].diffuse = game::Colors::Red; break;
+			//case 1: lights.lights[0].diffuse = game::Colors::Green; break;
+			//case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
+			//}
 		}
 
 		if (geKeyboard.WasKeyReleased(geK_PERIOD))
 		{
 			lightColor++;
 			lightColor = min(2, lightColor);
-			switch (lightColor)
-			{
-			case 0: lights.lights[0].diffuse = game::Colors::Red; break;
-			case 1: lights.lights[0].diffuse = game::Colors::Green; break;
-			case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
-			}
+			//switch (lightColor)
+			//{
+			//case 0: lights.lights[0].diffuse = game::Colors::Red; break;
+			//case 1: lights.lights[0].diffuse = game::Colors::Green; break;
+			//case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
+			//}
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_F1))
@@ -628,6 +629,22 @@ public:
 				}
 				else
 				camera.position.y += speed;
+			}
+
+			if (geKeyboard.IsKeyHeld(geK_LEFT))
+			{
+				if (geKeyboard.IsKeyHeld(geK_SPACE))
+				{
+					lights.lights[0].position.x -= speed;
+				}
+			}
+
+			if (geKeyboard.IsKeyHeld(geK_RIGHT))
+			{
+				if (geKeyboard.IsKeyHeld(geK_SPACE))
+				{
+					lights.lights[0].position.x += speed;
+				}
 			}
 		}
 
@@ -757,8 +774,8 @@ public:
 
 
 		software3D.SetStateObject(uiStateObject);
-		 
-		//room.SetRotation(rotation, -rotation, 2.0f * rotation);
+		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
+		//room.SetRotation(rotation, 0, 0);
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 
@@ -768,8 +785,8 @@ public:
 		software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, true);
 		software3D.SetState(GAME_SOFTWARE3D_BACKFACECULL, false);
 
-		lights.lights[1].diffuse = game::Colors::Green;
-		lights.lights[2].diffuse = game::Colors::Blue;
+		//lights.lights[1].diffuse = game::Colors::Green;
+		//lights.lights[2].diffuse = game::Colors::Blue;
 
 		//lights.lights[0].diffuse = game::Colors::Blue;
 		//lights.lights[0].position = { 0.75f,0.0f,0.75f };
@@ -780,7 +797,7 @@ public:
 		software3D.lights = lights.lights;
 		lights.GeneratePointSpriteMatrix(camera);
 		lights.GenerateQuads();
-		software3D.RenderMesh(lights.mesh, lights.particlesAlive << 1, mvpMat, camera, clip);
+		software3D.RenderMesh(lights.mesh, 2 /*lights.particlesAlive << 1*/, mvpMat, camera, clip);
 
 		//// show depth buffer
 		//if (!geKeyboard.IsTextInput() && geKeyboard.IsKeyHeld(geK_SPACE))
