@@ -1104,14 +1104,10 @@ namespace game
 							upDiv = max(upDiv, 0.0f);  // something is causing a negative value
 							vpDiv = max(vpDiv, 0.0f);  // so these are here
 
-							tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-							ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
+							tx = max((uint32_t)(upDiv * (_currentNormalMap.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+							ty = max((uint32_t)(vpDiv * (_currentNormalMap.sizeMinusOne.height) + 0.5f), 0);
 							uint32_t normPack = _currentNormalMap.data[ty * _currentTexture.size.width + tx];
 
-							//rDest = ((destColor >> 0) & 0xFF) * (1.0f / 255.0f);
-							//gDest = ((destColor >> 8) & 0xFF) * (1.0f / 255.0f);
-							//bDest = ((destColor >> 16) & 0xFF) * (1.0f / 255.0f);
-							//aDest = ((destColor >> 24) & 0xFF) * (1.0f / 255.0f);
 
 							vertexNormalEval.x = (((normPack >> 0) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
 							vertexNormalEval.y = (((normPack >> 8) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;

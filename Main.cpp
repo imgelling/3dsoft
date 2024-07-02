@@ -416,7 +416,7 @@ public:
 		lights.lights[0].attenuation.constant = 1.0f;
 		lights.lights[0].attenuation.linear = 0.7f;
 		lights.lights[0].attenuation.quadratic = 1.8f;
-		lights.lights[0].diffuse = game::Colors::DarkGray;
+		lights.lights[0].diffuse = game::Colors::Gray;
 		lights.lights[0].CalculateRadius();
 
 		pointLightConstSlider.position.x = 1100 * uiScaleX;
