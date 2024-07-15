@@ -211,6 +211,8 @@ namespace game
 		Color color[3];
 		Vector3f faceNormal;
 		Vector3f normals[3];
+		Vector3f tangent;
+		Vector3f biNormal;
 		Vector2f uvs[3];
 		Vector3f pixelPos[3];
 

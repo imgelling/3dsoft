@@ -1085,6 +1085,7 @@ namespace game
 							vertexNormalEval.y = nYEval * oneOverDepthEval;
 							vertexNormalEval.z = nZEval * oneOverDepthEval;
 
+							// normal mapping stuff
 							if (!uParam.first)
 							{
 								uParam.stepX(uEval);
@@ -1112,7 +1113,8 @@ namespace game
 							vertexNormalEval.x = (((normPack >> 0) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
 							vertexNormalEval.y = (((normPack >> 8) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
 							vertexNormalEval.z = -(((normPack >> 16) & 0xFF) * (1.0f / 255.0f)) * 2.0f - 1.0f;
-							//vertexNormalEval.Normalize(); // needs?
+							vertexNormalEval.Normalize(); // needs? yes
+							// --- end normal mapping stuff
 
 							// how to add lights
 							//vec3 lightDir = normalize(light.position - fragPos);
@@ -1991,6 +1993,7 @@ namespace game
 		const game::Vector3f normal = { 0,0,-1 };
 		game::Triangle topLeftTri;
 		game::Triangle bottomRightTri;
+		const game::Vector3f t = { size * (resolution - 1),size * (resolution - 1),0 };
 
 		for (float_t y = 0; y < 1.0f; y += subdivisionSize)
 		{
@@ -2055,9 +2058,9 @@ namespace game
 				bottomRightTri.color[2] = game::Colors::White; //game::Colors::Blue;
 				bottomRightTri.normals[2] = normal;
 
-				for (int e = 0; e < 3; e++)
+				for (int e = 0; e < 3; ++e)
 				{
-					game::Vector3f t = { size * (resolution - 1),size * (resolution - 1),0 };
+
 					topLeftTri.vertices[e] = topLeftTri.vertices[e] - t;
 					bottomRightTri.vertices[e] = bottomRightTri.vertices[e] - t;
 				}
