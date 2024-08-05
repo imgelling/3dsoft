@@ -946,6 +946,7 @@ namespace game
 					depthParam.evaluate(pixelOffset.x, pixelOffset.y, dEval);
 				}			
 				oneOverDepthEval = 1.0f / dEval;
+				// Insert depth testing here, can block out all code below
 				if (oneOverDepthEval < *depthBufferPtr)  // add depth testing
 				{
 					if (textured)
@@ -1074,9 +1075,9 @@ namespace game
 							}
 							else
 							{
-								vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
-								vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
-								vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
+								//vnx.evaluate(pixelOffset.x, pixelOffset.y, nXEval);
+								//vny.evaluate(pixelOffset.x, pixelOffset.y, nYEval);
+								//vnz.evaluate(pixelOffset.x, pixelOffset.y, nZEval);
 								pixelPosParam[0].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalX);
 								pixelPosParam[1].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalY);
 								pixelPosParam[2].evaluate(pixelOffset.x, pixelOffset.y, pixelPosEvalZ);
