@@ -1242,7 +1242,8 @@ namespace game
 					if (textured)
 					{
 						// test for normal mapping
-						if (!lighting)
+						//if (!lighting)
+						if (!lighting || (_lightingType != LightingType::Point))
 						{
 							if (!uParam.first)
 							{
@@ -1264,8 +1265,8 @@ namespace game
 							vpDiv = max(vpDiv, 0.0f);  // so these are here
 
 						}
-							tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
-							ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
+						tx = max((uint32_t)(upDiv * (_currentTexture.sizeMinusOne.width) + 0.5f), 0);	// -1 fix texture seams at max texW and texH
+						ty = max((uint32_t)(vpDiv * (_currentTexture.sizeMinusOne.height) + 0.5f), 0);
 						colorAtPixel.packedABGR = _currentTexture.data[ty * _currentTexture.size.width + tx];
 
 						rSource = ((colorAtPixel.packedABGR >> 0) & 0xFF) * (1.0f / 255.0f);

@@ -355,7 +355,7 @@ public:
 		// State stuff
 		uiStateObject.texturing = true;
 		uiStateObject.lighting = false;
-		uiStateObject.lightingType = game::LightingType::Face;
+		uiStateObject.lightingType = game::LightingType::Depth;
 		//uiStateObject.multiThreaded = true;
 
 		// Simple UI
@@ -390,13 +390,14 @@ public:
 		lightingDepthRadial.label = "Depth Lighting";
 		lightingDepthRadial.name = "LightingDepthRadial";
 		lightingDepthRadial.labelColor = game::Colors::White;
+		lightingDepthRadial.checked = true;
 
 		lightingFaceRadial.position.x = 1100 * uiScaleX;
 		lightingFaceRadial.position.y = 80;
 		lightingFaceRadial.label = "Face Lighting";
 		lightingFaceRadial.name = "LightingFaceRadial";
 		lightingFaceRadial.labelColor = game::Colors::White;
-		lightingFaceRadial.checked = true;
+		//lightingFaceRadial.checked = true;
 
 		lightingVertexRadial.position.x = 1100 * uiScaleX;
 		lightingVertexRadial.position.y = 100;
@@ -468,10 +469,11 @@ public:
 		simpleUI.Add(&pointLightQuadraticSlider);
 
 
-		game::GeneratePlane(room, { 0,0,0 }, 1, game::Colors::White);
+		game::GeneratePlane(room, { 0,0,0 }, 10, game::Colors::White);
 		//game::GenerateCube(room, { 0,0,0 }, game::Colors::Black);
 		//game::GenerateUVSphere(room, 10, 20, { 0,0,0 }, game::Colors::White);
-		//game::GenerateCylinder(room, 0.0f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
+		//game::GenerateCylinder(room, 0.5f, 0.5f, 20, 1, { 0,0,0 }, game::Colors::White);
+		//GenerateTextMesh(room, "Boobs", { 0,0,0 }, true, true, 0, game::Colors::White);
 		room.SetScale(2.00f, 2.00f, 2.00f);
 		// invert model
 		//for (uint32_t c = 0; c < room.tris.size(); c++)
@@ -515,30 +517,33 @@ public:
 		{
 			lightColor--;
 			lightColor = max(0, lightColor);
-			//switch (lightColor)
-			//{
-			//case 0: lights.lights[0].diffuse = game::Colors::Red; break;
-			//case 1: lights.lights[0].diffuse = game::Colors::Green; break;
-			//case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
-			//}
+			switch (lightColor)
+			{
+			case 0: lights.lights[0].diffuse = game::Colors::Red; break;
+			case 1: lights.lights[0].diffuse = game::Colors::Green; break;
+			case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
+			case 3: lights.lights[0].diffuse = game::Colors::White; break;
+			}
 		}
 
 		if (geKeyboard.WasKeyReleased(geK_PERIOD))
 		{
 			lightColor++;
-			lightColor = min(2, lightColor);
-			//switch (lightColor)
-			//{
-			//case 0: lights.lights[0].diffuse = game::Colors::Red; break;
-			//case 1: lights.lights[0].diffuse = game::Colors::Green; break;
-			//case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
-			//}
+			lightColor = min(3, lightColor);
+			switch (lightColor)
+			{
+			case 0: lights.lights[0].diffuse = game::Colors::Red; break;
+			case 1: lights.lights[0].diffuse = game::Colors::Green; break;
+			case 2: lights.lights[0].diffuse = game::Colors::Blue; break;
+			case 3: lights.lights[0].diffuse = game::Colors::White; break;
+			}
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_F1))
 		{
 			state++;
-			software3D.SetState(GAME_SOFTWARE3D_FILL_MODE, state);
+			uiStateObject.fillMode = state;
+			//software3D.SetState(GAME_SOFTWARE3D_FILL_MODE, state);
 		}
 
 		if (geKeyboard.WasKeyPressed(geK_LBRACKET))
@@ -737,7 +742,7 @@ public:
 						//game::GenerateCube(cube, p, color);
 						//game::GenerateUVSphere(cube, 10, 20, p, color);
 						//GenerateCylinder(cube, size, size, 10, 0.5f, p, color);
-						GeneratePlane(cube, p, 1, color);
+						GeneratePlane(cube, p, 10, color);
 						const uint64_t size = cube.tris.size();
 						for (uint32_t i = 0; i < size; ++i)
 						{
@@ -853,6 +858,7 @@ public:
 		//lights.lights[0].position = game::RotateX(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
 		//lights.lights[0].position = game::RotateY(lights.lights[0].position, -(1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
 		//lights.lights[0].position = game::RotateZ(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f) * 0.75f);
+		room.SetRotation(rotation, 0, 0);
 		lights.Update();
 		software3D.lights = lights.lights;
 		lights.GeneratePointSpriteMatrix(camera);
