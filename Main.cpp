@@ -117,7 +117,7 @@ public:
 	game::Camera3D camera;
 	uint32_t maxFPS;
 
-	int32_t lightColor = 0;
+	int32_t lightColor = 3;
 
 
 	game::FillMode state = game::FillMode::Filled;
@@ -417,7 +417,7 @@ public:
 		lights.lights[0].attenuation.constant = 1.0f;
 		lights.lights[0].attenuation.linear = 0.7f;
 		lights.lights[0].attenuation.quadratic = 1.8f;
-		lights.lights[0].diffuse = game::Colors::Gray;
+		lights.lights[0].diffuse = game::Colors::White;
 		lights.lights[0].CalculateRadius();
 
 		pointLightConstSlider.position.x = 1100 * uiScaleX;
@@ -701,7 +701,7 @@ public:
 	// Generate points (particles/etc)
 	// torus 
 	// Needs a data structure
-	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color)  noexcept
+	void GenerateTextMesh(game::Mesh& mesh, const std::string& text, const game::Vector3f& __restrict pos, const bool centerX, const bool centerY, float_t value, game::Color color) const  noexcept
 	{
 		static std::string old;
 		//if (text == old) return;
@@ -841,6 +841,7 @@ public:
 		//software3D.SetState(GAME_SOFTWARE3D_COLOR_TINTING, false);
 		//software3D.SetState(GAME_SOFTWARE3D_FILL_MODE, game::FillMode::WireFrameFilled);
 		//room.SetRotation(rotation, 0, 0);
+		room.SetRotation(rotation, 0, 0);
 		software3D.RenderMesh(room, room.tris.size(), mvpMat, camera, clip);
 
 
@@ -858,7 +859,6 @@ public:
 		//lights.lights[0].position = game::RotateX(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
 		//lights.lights[0].position = game::RotateY(lights.lights[0].position, -(1 * 3.14f / 10.0f) * (msElapsed / 1000.0f));
 		//lights.lights[0].position = game::RotateZ(lights.lights[0].position, (1 * 3.14f / 10.0f) * (msElapsed / 1000.0f) * 0.75f);
-		room.SetRotation(rotation, 0, 0);
 		lights.Update();
 		software3D.lights = lights.lights;
 		lights.GeneratePointSpriteMatrix(camera);
