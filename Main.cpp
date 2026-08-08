@@ -501,7 +501,7 @@ public:
 		//software3D.DeleteTexture(fire.mesh.texture);
 	}
 
-	void Update(const float_t msElapsed)
+	void Update(const double msElapsed)
 	{
 		if (geKeyboard.WasKeyPressed(geK_ESCAPE))
 		{
@@ -564,10 +564,10 @@ public:
 
 		if (!geKeyboard.IsTextInput())
 		{
-			float_t speed = 5.0f * msElapsed / 1000.0f;
+			float_t speed = (float)(5.0f * msElapsed / 1000.0f);
 			if (geKeyboard.IsKeyHeld(geK_SHIFT))
 			{
-				speed = 0.1f * msElapsed / 1000.0f;
+				speed = (float)(0.1f * msElapsed / 1000.0f);
 			}
 
 			// Move forward
@@ -816,15 +816,15 @@ public:
 	// 	bumpNormal = (normalMap.x * input.tangent) + (normalMap.y * input.binormal) + (normalMap.z * input.normal);
 
 
-	void Render(const float_t msElapsed)
+	void Render(const double msElapsed)
 	{
 		static float_t rotation = 0.0f;
 		static float_t pos = 0.0f;
 
 		//if (geKeyboard.IsKeyHeld(geK_R)) 
-			rotation += (1 *  3.14f / 10.0f) * (msElapsed / 1000.0f);
+			rotation += (float)((1 *  3.14f / 10.0f) * (msElapsed / 1000.0f));
 
-		pos += 1.5f * (msElapsed / 1000.0f);
+		pos += (float)(1.5f * (msElapsed / 1000.0f));
 
 		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Blue);
 
